@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/bundle.ts","./src/graph.ts","./src/main.tsx","./src/types.ts","./src/components/graphcanvas.tsx","./src/hooks/useboxselection.ts","./src/hooks/usenodedrag.ts","./src/hooks/usenoderesize.ts"],"version":"5.9.3"}

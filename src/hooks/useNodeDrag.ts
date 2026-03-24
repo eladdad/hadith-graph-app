@@ -1,0 +1,195 @@
+﻿import {
+  Dispatch,
+  PointerEvent as ReactPointerEvent,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import type { GraphNode, HadithBundle } from '../types';
+
+interface DragNodeState {
+  x: number;
+  y: number;
+  halfWidth: number;
+  halfHeight: number;
+}
+
+interface DragState {
+  nodeIds: string[];
+  pointerStartX: number;
+  pointerStartY: number;
+  initialNodes: Record<string, DragNodeState>;
+  moved: boolean;
+}
+
+interface UseNodeDragParams {
+  graphNodes: GraphNode[];
+  selectedNodeIds: string[];
+  setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
+  clientPointToSvg: (clientX: number, clientY: number) => { x: number; y: number } | null;
+  setBundle: Dispatch<SetStateAction<HadithBundle>>;
+  onDragCommitted: (movedCount: number) => void;
+}
+
+interface UseNodeDragResult {
+  isDragging: boolean;
+  handleNodePointerDown: (event: ReactPointerEvent<SVGGElement>, nodeId: string) => void;
+}
+
+export function useNodeDrag({
+  graphNodes,
+  selectedNodeIds,
+  setSelectedNodeIds,
+  clientPointToSvg,
+  setBundle,
+  onDragCommitted,
+}: UseNodeDragParams): UseNodeDragResult {
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStateRef = useRef<DragState | null>(null);
+
+  useEffect(() => {
+    if (!isDragging) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event: PointerEvent): void => {
+      const dragState = dragStateRef.current;
+      if (!dragState) {
+        return;
+      }
+
+      const point = clientPointToSvg(event.clientX, event.clientY);
+      if (!point) {
+        return;
+      }
+
+      const deltaX = point.x - dragState.pointerStartX;
+      const deltaY = point.y - dragState.pointerStartY;
+
+      setBundle((previous) => {
+        let changed = false;
+        const nextNodePositions = { ...previous.nodePositions };
+
+        for (const nodeId of dragState.nodeIds) {
+          const start = dragState.initialNodes[nodeId];
+          if (!start) {
+            continue;
+          }
+
+          const nextX = Math.max(start.halfWidth + 8, Math.round(start.x + deltaX));
+          const nextY = Math.max(start.halfHeight + 8, Math.round(start.y + deltaY));
+          const current = previous.nodePositions[nodeId];
+
+          if (!current || current.x !== nextX || current.y !== nextY) {
+            nextNodePositions[nodeId] = { x: nextX, y: nextY };
+            changed = true;
+          }
+        }
+
+        if (!changed) {
+          return previous;
+        }
+
+        dragState.moved = true;
+        return {
+          ...previous,
+          nodePositions: nextNodePositions,
+        };
+      });
+    };
+
+    const finishDragging = (): void => {
+      const dragState = dragStateRef.current;
+      dragStateRef.current = null;
+      setIsDragging(false);
+
+      if (dragState?.moved) {
+        setBundle((previous) => ({
+          ...previous,
+          updatedAt: new Date().toISOString(),
+        }));
+        onDragCommitted(dragState.nodeIds.length);
+      }
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', finishDragging);
+    window.addEventListener('pointercancel', finishDragging);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', finishDragging);
+      window.removeEventListener('pointercancel', finishDragging);
+    };
+  }, [isDragging, clientPointToSvg, setBundle, onDragCommitted]);
+
+  const handleNodePointerDown = (
+    event: ReactPointerEvent<SVGGElement>,
+    nodeId: string,
+  ): void => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const point = clientPointToSvg(event.clientX, event.clientY);
+    if (!point) {
+      return;
+    }
+
+    const selectedSet = new Set(selectedNodeIds);
+    const additiveSelect = event.shiftKey || event.ctrlKey || event.metaKey;
+
+    let nextSelection: string[];
+    if (additiveSelect) {
+      if (selectedSet.has(nodeId)) {
+        nextSelection = selectedNodeIds.filter((id) => id !== nodeId);
+      } else {
+        nextSelection = [...selectedNodeIds, nodeId];
+      }
+    } else if (selectedSet.has(nodeId)) {
+      nextSelection = selectedNodeIds;
+    } else {
+      nextSelection = [nodeId];
+    }
+
+    setSelectedNodeIds(nextSelection);
+    if (nextSelection.length === 0) {
+      event.stopPropagation();
+      return;
+    }
+
+    const nodeMap = new Map(graphNodes.map((node) => [node.id, node]));
+    const initialNodes: Record<string, DragNodeState> = {};
+
+    for (const selectedId of nextSelection) {
+      const node = nodeMap.get(selectedId);
+      if (!node) {
+        continue;
+      }
+      initialNodes[selectedId] = {
+        x: node.x,
+        y: node.y,
+        halfWidth: node.width / 2,
+        halfHeight: node.height / 2,
+      };
+    }
+
+    dragStateRef.current = {
+      nodeIds: nextSelection,
+      pointerStartX: point.x,
+      pointerStartY: point.y,
+      initialNodes,
+      moved: false,
+    };
+
+    setIsDragging(true);
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  return {
+    isDragging,
+    handleNodePointerDown,
+  };
+}
