@@ -13,6 +13,11 @@ export interface NodePosition {
 export type NodePositionMap = Record<string, NodePosition>;
 export type NodeWidthMap = Record<string, number>;
 
+export interface HadithFontSizes {
+  narrator: number;
+  matn: number;
+}
+
 export interface HadithBundle {
   format: 'hadith-graph-bundle';
   version: 1;
@@ -22,6 +27,7 @@ export interface HadithBundle {
   reports: HadithReport[];
   nodePositions: NodePositionMap;
   nodeWidths: NodeWidthMap;
+  fontSizes: HadithFontSizes;
 }
 
 export type GraphNodeType = 'narrator' | 'report';

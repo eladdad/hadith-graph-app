@@ -1,5 +1,10 @@
-﻿import { hasNarratorCycle } from './graph';
-import type { HadithBundle, HadithReport, NodePositionMap, NodeWidthMap } from './types';
+﻿import {
+  DEFAULT_MATN_FONT_SIZE,
+  DEFAULT_NARRATOR_FONT_SIZE,
+  clampFontSize,
+  hasNarratorCycle,
+} from './graph';
+import type { HadithBundle, HadithFontSizes, HadithReport, NodePositionMap, NodeWidthMap } from './types';
 
 const BUNDLE_FORMAT = 'hadith-graph-bundle';
 const NARRATOR_PREFIX = 'n:';
@@ -86,6 +91,34 @@ function parseNodeWidths(raw: unknown): { widths?: NodeWidthMap; error?: string 
   return { widths };
 }
 
+function parseFontSizes(raw: unknown): { fontSizes?: HadithFontSizes; error?: string } {
+  if (typeof raw === 'undefined') {
+    return {
+      fontSizes: {
+        narrator: DEFAULT_NARRATOR_FONT_SIZE,
+        matn: DEFAULT_MATN_FONT_SIZE,
+      },
+    };
+  }
+
+  if (!isObjectLike(raw)) {
+    return { error: 'Bundle field "fontSizes" must be an object.' };
+  }
+
+  const narrator = clampFontSize(
+    typeof raw.narrator === 'number' ? raw.narrator : DEFAULT_NARRATOR_FONT_SIZE,
+    DEFAULT_NARRATOR_FONT_SIZE,
+  );
+  const matn = clampFontSize(
+    typeof raw.matn === 'number' ? raw.matn : DEFAULT_MATN_FONT_SIZE,
+    DEFAULT_MATN_FONT_SIZE,
+  );
+
+  return {
+    fontSizes: { narrator, matn },
+  };
+}
+
 export function getNodeIdsForReport(report: HadithReport): string[] {
   const ids = new Set<string>();
   ids.add(`${REPORT_PREFIX}${report.id}`);
@@ -168,6 +201,10 @@ export function createEmptyBundle(title = 'Untitled Bundle'): HadithBundle {
     reports: [],
     nodePositions: {},
     nodeWidths: {},
+    fontSizes: {
+      narrator: DEFAULT_NARRATOR_FONT_SIZE,
+      matn: DEFAULT_MATN_FONT_SIZE,
+    },
   };
 }
 
@@ -338,6 +375,11 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
     return { error: parsedNodeWidths.error ?? 'Invalid node widths.' };
   }
 
+  const parsedFontSizes = parseFontSizes(parsed.fontSizes);
+  if (!parsedFontSizes.fontSizes) {
+    return { error: parsedFontSizes.error ?? 'Invalid font sizes.' };
+  }
+
   const createdAt = typeof parsed.createdAt === 'string' ? parsed.createdAt : nowIso();
   const updatedAt = typeof parsed.updatedAt === 'string' ? parsed.updatedAt : nowIso();
   const title = typeof parsed.title === 'string' ? sanitizeText(parsed.title) : 'Untitled Bundle';
@@ -352,6 +394,7 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       reports,
       nodePositions: parsedNodePositions.positions,
       nodeWidths: parsedNodeWidths.widths,
+      fontSizes: parsedFontSizes.fontSizes,
     },
   };
 }

@@ -1,21 +1,47 @@
-﻿import type { HadithReport, NodePositionMap, NodeWidthMap, RenderableGraph } from './types';
+﻿import type { HadithFontSizes, HadithReport, NodePositionMap, NodeWidthMap, RenderableGraph } from './types';
 
 const NARRATOR_PREFIX = 'n:';
 const REPORT_PREFIX = 'r:';
 
 const NARRATOR_NODE_WIDTH = 190;
 const NARRATOR_MIN_HEIGHT = 56;
-const NARRATOR_MAX_CHARS_PER_LINE = 18;
+const NARRATOR_SIDE_PADDING = 16;
 
 const REPORT_DEFAULT_WIDTH = 360;
 export const REPORT_MIN_WIDTH = 220;
 export const REPORT_MAX_WIDTH = 760;
 export const REPORT_SIDE_PADDING = 14;
 const REPORT_TITLE_HEIGHT = 18;
-const REPORT_TEXT_LINE_HEIGHT = 16;
 const REPORT_TOP_PADDING = 14;
 const REPORT_BOTTOM_PADDING = 14;
 const REPORT_GAP_AFTER_TITLE = 10;
+export const DEFAULT_NARRATOR_FONT_SIZE = 13;
+export const DEFAULT_MATN_FONT_SIZE = 12;
+export const MIN_FONT_SIZE = 10;
+export const MAX_FONT_SIZE = 24;
+
+export function clampFontSize(value: number, fallback: number): number {
+  if (!Number.isFinite(value)) {
+    return fallback;
+  }
+
+  return Math.min(MAX_FONT_SIZE, Math.max(MIN_FONT_SIZE, Math.round(value)));
+}
+
+export function getNormalizedFontSizes(fontSizes?: Partial<HadithFontSizes>): HadithFontSizes {
+  return {
+    narrator: clampFontSize(fontSizes?.narrator ?? DEFAULT_NARRATOR_FONT_SIZE, DEFAULT_NARRATOR_FONT_SIZE),
+    matn: clampFontSize(fontSizes?.matn ?? DEFAULT_MATN_FONT_SIZE, DEFAULT_MATN_FONT_SIZE),
+  };
+}
+
+function narratorLineHeight(fontSize: number): number {
+  return fontSize + 4;
+}
+
+function matnLineHeight(fontSize: number): number {
+  return fontSize + 4;
+}
 
 export function clampReportWidth(width: number): number {
   return Math.min(REPORT_MAX_WIDTH, Math.max(REPORT_MIN_WIDTH, Math.round(width)));
@@ -43,41 +69,6 @@ function splitLongToken(token: string, maxCharsPerLine: number): string[] {
   return slices;
 }
 
-function wrapText(text: string, maxCharsPerLine: number): string[] {
-  const words = text.split(/\s+/).filter((word) => word.length > 0);
-  if (words.length === 0) {
-    return [''];
-  }
-
-  const lines: string[] = [];
-  let current = '';
-
-  for (const rawWord of words) {
-    const pieces = rawWord.length > maxCharsPerLine ? splitLongToken(rawWord, maxCharsPerLine) : [rawWord];
-
-    for (const piece of pieces) {
-      if (current.length === 0) {
-        current = piece;
-        continue;
-      }
-
-      const candidate = `${current} ${piece}`;
-      if (candidate.length <= maxCharsPerLine) {
-        current = candidate;
-      } else {
-        lines.push(current);
-        current = piece;
-      }
-    }
-  }
-
-  if (current.length > 0) {
-    lines.push(current);
-  }
-
-  return lines.length > 0 ? lines : [''];
-}
-
 let textMeasureContext: CanvasRenderingContext2D | null | undefined;
 
 function getTextMeasureContext(): CanvasRenderingContext2D | null {
@@ -99,23 +90,24 @@ function getTextMeasureContext(): CanvasRenderingContext2D | null {
   return textMeasureContext;
 }
 
-function measureTextWidth(text: string): number {
+function measureTextWidth(text: string, fontSize: number): number {
   const context = getTextMeasureContext();
   if (!context) {
-    return text.length * 7.2;
+    return text.length * fontSize * 0.6;
   }
 
+  context.font = `${fontSize}px 'IBM Plex Sans', 'Noto Naskh Arabic', 'Trebuchet MS', sans-serif`;
   return context.measureText(text).width;
 }
 
-function wrapTextToWidth(text: string, maxWidth: number): string[] {
+function wrapTextToWidth(text: string, maxWidth: number, fontSize: number): string[] {
   const splitWordToWidth = (word: string): string[] => {
     const segments: string[] = [];
     let segment = '';
 
     for (const char of word) {
       const candidate = `${segment}${char}`;
-      if (segment.length > 0 && measureTextWidth(candidate) > maxWidth) {
+      if (segment.length > 0 && measureTextWidth(candidate, fontSize) > maxWidth) {
         segments.push(segment);
         segment = char;
       } else {
@@ -148,14 +140,14 @@ function wrapTextToWidth(text: string, maxWidth: number): string[] {
 
     for (const word of words) {
       const candidate = current.length > 0 ? `${current} ${word}` : word;
-      if (measureTextWidth(candidate) <= maxWidth) {
+      if (measureTextWidth(candidate, fontSize) <= maxWidth) {
         current = candidate;
         continue;
       }
 
       pushCurrent();
 
-      if (measureTextWidth(word) <= maxWidth) {
+      if (measureTextWidth(word, fontSize) <= maxWidth) {
         current = word;
         continue;
       }
@@ -233,7 +225,9 @@ export function buildRenderableGraph(
   reports: HadithReport[],
   nodePositions: NodePositionMap = {},
   nodeWidths: NodeWidthMap = {},
+  fontSizes?: Partial<HadithFontSizes>,
 ): RenderableGraph {
+  const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
   const labels = new Map<string, string>();
   const reportMatnById = new Map<string, string>();
   const types = new Map<string, 'narrator' | 'report'>();
@@ -381,11 +375,12 @@ export function buildRenderableGraph(
       const matnLines = wrapTextToWidth(
         reportMatnById.get(id) ?? '',
         Math.max(80, reportWidth - REPORT_SIDE_PADDING * 2),
+        normalizedFontSizes.matn,
       );
       const height = REPORT_TOP_PADDING
         + REPORT_TITLE_HEIGHT
         + REPORT_GAP_AFTER_TITLE
-        + matnLines.length * REPORT_TEXT_LINE_HEIGHT
+        + matnLines.length * matnLineHeight(normalizedFontSizes.matn)
         + REPORT_BOTTOM_PADDING;
 
       nodeMeta.set(id, {
@@ -397,8 +392,12 @@ export function buildRenderableGraph(
       continue;
     }
 
-    const labelLines = wrapText(label, NARRATOR_MAX_CHARS_PER_LINE);
-    const height = Math.max(NARRATOR_MIN_HEIGHT, 24 + labelLines.length * REPORT_TEXT_LINE_HEIGHT);
+    const labelLines = wrapTextToWidth(
+      label,
+      Math.max(80, NARRATOR_NODE_WIDTH - NARRATOR_SIDE_PADDING * 2),
+      normalizedFontSizes.narrator,
+    );
+    const height = Math.max(NARRATOR_MIN_HEIGHT, 24 + labelLines.length * narratorLineHeight(normalizedFontSizes.narrator));
     nodeMeta.set(id, {
       width: NARRATOR_NODE_WIDTH,
       height,

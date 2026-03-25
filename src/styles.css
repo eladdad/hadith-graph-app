@@ -53,6 +53,31 @@ h3 {
   flex-wrap: wrap;
 }
 
+.font-controls {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fbf6ef;
+}
+
+.font-control {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.font-control span {
+  color: #5c4a38;
+  font-weight: 600;
+}
+
+.font-control input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
 button {
   border: 1px solid #a98a72;
   background: #fff4e6;

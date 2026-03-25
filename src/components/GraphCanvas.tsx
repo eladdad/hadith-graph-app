@@ -1,4 +1,5 @@
 import { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { REPORT_SIDE_PADDING } from '../graph';
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
 
@@ -6,6 +7,8 @@ interface GraphCanvasProps {
   graph: RenderableGraph;
   zoom: number;
   svgRef: RefObject<SVGSVGElement | null>;
+  narratorFontSize: number;
+  matnFontSize: number;
   isBoxSelecting: boolean;
   selectionBox: SelectionBox | null;
   selectedSet: Set<string>;
@@ -20,6 +23,8 @@ export function GraphCanvas({
   graph,
   zoom,
   svgRef,
+  narratorFontSize,
+  matnFontSize,
   isBoxSelecting,
   selectionBox,
   selectedSet,
@@ -82,10 +87,13 @@ export function GraphCanvas({
           .filter((value) => value.length > 0)
           .join(' ');
 
-        const labelStartDy = -((node.labelLines.length - 1) * 8);
+        const narratorLineStep = narratorFontSize + 4;
+        const matnLineStep = matnFontSize + 4;
+        const labelStartDy = -((node.labelLines.length - 1) * narratorLineStep) / 2;
         const reportTitleY = -node.height / 2 + 18;
         const reportDividerY = -node.height / 2 + 28;
         const reportMatnStartY = reportDividerY + 15;
+        const reportTextX = node.width / 2 - REPORT_SIDE_PADDING;
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
 
@@ -127,7 +135,7 @@ export function GraphCanvas({
                     />
                   </>
                 ) : null}
-                <text textAnchor="middle" className="node-label report-title" y={reportTitleY}>
+                <text textAnchor="end" className="node-label report-title" x={reportTextX} y={reportTitleY}>
                   {node.label}
                 </text>
                 <line
@@ -137,18 +145,24 @@ export function GraphCanvas({
                   y2={reportDividerY}
                   className="report-divider"
                 />
-                <text textAnchor="middle" className="node-matn" y={reportMatnStartY}>
+                <text
+                  textAnchor="end"
+                  className="node-matn"
+                  x={reportTextX}
+                  y={reportMatnStartY}
+                  style={{ fontSize: `${matnFontSize}px` }}
+                >
                   {(node.matnLines ?? ['']).map((line, index) => (
-                    <tspan key={`${node.id}-matn-${index}`} x="0" dy={index === 0 ? 0 : 16}>
+                    <tspan key={`${node.id}-matn-${index}`} x={reportTextX} dy={index === 0 ? 0 : matnLineStep}>
                       {line.length > 0 ? line : '\u00a0'}
                     </tspan>
                   ))}
                 </text>
               </>
             ) : (
-              <text textAnchor="middle" className="node-label">
+              <text textAnchor="middle" className="node-label" style={{ fontSize: `${narratorFontSize}px` }}>
                 {node.labelLines.map((line, index) => (
-                  <tspan key={`${node.id}-label-${index}`} x="0" dy={index === 0 ? labelStartDy : 16}>
+                  <tspan key={`${node.id}-label-${index}`} x="0" dy={index === 0 ? labelStartDy : narratorLineStep}>
                     {line}
                   </tspan>
                 ))}

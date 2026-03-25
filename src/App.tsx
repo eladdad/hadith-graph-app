@@ -21,7 +21,7 @@ import {
   updateReportInBundle,
 } from './bundle';
 import { GraphCanvas } from './components/GraphCanvas';
-import { buildRenderableGraph } from './graph';
+import { MAX_FONT_SIZE, MIN_FONT_SIZE, buildRenderableGraph, clampFontSize } from './graph';
 import { useBoxSelection } from './hooks/useBoxSelection';
 import { useNodeDrag } from './hooks/useNodeDrag';
 import { useNodeResize } from './hooks/useNodeResize';
@@ -92,8 +92,8 @@ function App() {
   const panStateRef = useRef<PanState | null>(null);
 
   const graph = useMemo(
-    () => buildRenderableGraph(bundle.reports, bundle.nodePositions, bundle.nodeWidths),
-    [bundle.reports, bundle.nodePositions, bundle.nodeWidths],
+    () => buildRenderableGraph(bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes),
+    [bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes],
   );
 
   const selectedSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -412,6 +412,29 @@ function App() {
     fileInputRef.current?.click();
   };
 
+  const handleFontSizeChange = (key: 'narrator' | 'matn', rawValue: string): void => {
+    const numericValue = Number(rawValue);
+    const nextValue = clampFontSize(
+      Number.isFinite(numericValue) ? numericValue : bundle.fontSizes[key],
+      bundle.fontSizes[key],
+    );
+
+    setBundle((previous) => {
+      if (previous.fontSizes[key] === nextValue) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        updatedAt: new Date().toISOString(),
+        fontSizes: {
+          ...previous.fontSizes,
+          [key]: nextValue,
+        },
+      };
+    });
+  };
+
   const handleImport = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -621,6 +644,8 @@ function App() {
               graph={graph}
               zoom={zoom}
               svgRef={svgRef}
+              narratorFontSize={bundle.fontSizes.narrator}
+              matnFontSize={bundle.fontSizes.matn}
               isBoxSelecting={isBoxSelecting}
               selectionBox={selectionBox}
               selectedSet={selectedSet}
@@ -643,6 +668,30 @@ function App() {
               <button type="button" onClick={handleNewBundle}>New Bundle</button>
               <button type="button" onClick={handleOpenImport}>Import JSON</button>
               <button type="button" onClick={handleExport}>Export JSON</button>
+            </div>
+            <div className="font-controls">
+              <label className="font-control">
+                <span>Narrator Font {bundle.fontSizes.narrator}px</span>
+                <input
+                  type="range"
+                  min={MIN_FONT_SIZE}
+                  max={MAX_FONT_SIZE}
+                  step={1}
+                  value={bundle.fontSizes.narrator}
+                  onChange={(event) => handleFontSizeChange('narrator', event.target.value)}
+                />
+              </label>
+              <label className="font-control">
+                <span>Matn Font {bundle.fontSizes.matn}px</span>
+                <input
+                  type="range"
+                  min={MIN_FONT_SIZE}
+                  max={MAX_FONT_SIZE}
+                  step={1}
+                  value={bundle.fontSizes.matn}
+                  onChange={(event) => handleFontSizeChange('matn', event.target.value)}
+                />
+              </label>
             </div>
             <input
               ref={fileInputRef}
