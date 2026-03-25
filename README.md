@@ -55,6 +55,8 @@ filled in with safe defaults during import.
   ],
   "nodePositions": {
     "n:Narrator A": { "x": 120, "y": 100 },
+    "n:Narrator B": { "x": 120, "y": 220 },
+    "c:uuid": { "x": 120, "y": 340 },
     "r:uuid": { "x": 680, "y": 220 }
   },
   "nodeWidths": {
@@ -73,7 +75,7 @@ Bundle rules:
 - `reports[].matn` is normalized on import and cannot be empty.
 - `reports[].matnHighlights` reference `highlightLegend[].id` values by `legendId`.
 - Highlight ranges are sanitized on import: invalid, unknown, empty, or overlapping ranges are dropped.
-- Node IDs in `nodePositions` and `nodeWidths` use `n:<narrator name>` for narrator nodes and `r:<report id>` for report nodes.
+- Node IDs in `nodePositions` and `nodeWidths` use `n:<narrator name>` for shared narrator nodes, `c:<report id>` for the final collector node in each report, and `r:<report id>` for report nodes.
 - `fontSizes.narrator` and `fontSizes.matn` are clamped to the app's supported range. The current defaults are `13` and `12`.
 - Bundles that would introduce a narrator cycle are rejected during import.
 
@@ -82,6 +84,7 @@ Compatibility notes:
 - Older bundles that omit `highlightLegend`, `matnHighlights`, `nodePositions`, `nodeWidths`, or `fontSizes` still load.
 - Missing `title`, `createdAt`, `updatedAt`, report `id`, and report `createdAt` values are regenerated or defaulted during import.
 - Invalid legend colors fall back to a safe default color.
+- Older saved `nodePositions` that keyed the final collector as `n:<name>` still load, but future exports should use `c:<report id>`.
 
 ## Run locally
 

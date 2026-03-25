@@ -11,6 +11,7 @@ import type {
 } from './types';
 
 const NARRATOR_PREFIX = 'n:';
+const COLLECTOR_PREFIX = 'c:';
 const MATN_NODE_PREFIX = 'r:';
 
 const NARRATOR_NODE_WIDTH = 190;
@@ -55,8 +56,22 @@ export function clampMatnNodeWidth(width: number): number {
   return Math.min(MATN_NODE_MAX_WIDTH, Math.max(MATN_NODE_MIN_WIDTH, Math.round(width)));
 }
 
-function narratorId(name: string): string {
+export function getSharedNarratorNodeId(name: string): string {
   return `${NARRATOR_PREFIX}${name}`;
+}
+
+export function getCollectorNodeId(reportId: string): string {
+  return `${COLLECTOR_PREFIX}${reportId}`;
+}
+
+export function getNarratorNodeIdForReport(
+  report: Pick<HadithReport, 'id' | 'isnad'>,
+  narratorIndex: number,
+): string {
+  const narratorName = report.isnad[narratorIndex] ?? '';
+  return narratorIndex === report.isnad.length - 1
+    ? getCollectorNodeId(report.id)
+    : getSharedNarratorNodeId(narratorName);
 }
 
 function matnNodeId(sourceReportId: string): string {
@@ -466,19 +481,18 @@ export function buildRenderableGraph(
     matnByNodeId.set(matnId, report.matn);
     matnHighlightsByNodeId.set(matnId, report.matnHighlights);
 
-    report.isnad.forEach((narratorName) => {
-      ensureNode(narratorId(narratorName), narratorName, 'narrator');
+    report.isnad.forEach((narratorName, narratorIndex) => {
+      ensureNode(getNarratorNodeIdForReport(report, narratorIndex), narratorName, 'narrator');
     });
 
     for (let i = 0; i < report.isnad.length - 1; i += 1) {
-      const source = narratorId(report.isnad[i]);
-      const target = narratorId(report.isnad[i + 1]);
+      const source = getNarratorNodeIdForReport(report, i);
+      const target = getNarratorNodeIdForReport(report, i + 1);
       addEdge(source, target, true);
     }
 
-    const lastNarrator = report.isnad[report.isnad.length - 1];
-    if (lastNarrator) {
-      matnAnchorByNodeId.set(matnId, narratorId(lastNarrator));
+    if (report.isnad.length > 0) {
+      matnAnchorByNodeId.set(matnId, getNarratorNodeIdForReport(report, report.isnad.length - 1));
     }
   });
 
@@ -644,7 +658,10 @@ export function buildRenderableGraph(
     const defaultX = autoX.get(id) ?? paddingX;
     const defaultY = rowCenterY.get(rowIndex) ?? paddingY;
 
-    const savedPosition = nodePositions[id];
+    const legacyCollectorPosition = id.startsWith(COLLECTOR_PREFIX)
+      ? nodePositions[getSharedNarratorNodeId(labels.get(id) ?? id)]
+      : undefined;
+    const savedPosition = nodePositions[id] ?? legacyCollectorPosition;
 
     return {
       id,
@@ -716,8 +733,7 @@ export function buildRenderableGraph(
       const verticalDirection = dy >= 0 ? 1 : -1;
       const sourceY = source.y + verticalDirection * (source.height / 2);
       const targetY = target.y - verticalDirection * (target.height / 2);
-      const control = Math.max(50, Math.abs(dy) * 0.35);
-      const path = `M ${source.x} ${sourceY} C ${source.x} ${sourceY + verticalDirection * control}, ${target.x} ${targetY - verticalDirection * control}, ${target.x} ${targetY}`;
+      const path = `M ${source.x} ${sourceY} L ${target.x} ${targetY}`;
 
       return {
         id: edgeId,

@@ -2,6 +2,7 @@
   DEFAULT_MATN_FONT_SIZE,
   DEFAULT_NARRATOR_FONT_SIZE,
   clampFontSize,
+  getNarratorNodeIdForReport,
   hasNarratorCycle,
 } from './graph';
 import { sanitizeHighlightLegend, sanitizeMatnHighlights } from './matnHighlights';
@@ -16,7 +17,6 @@ import type {
 } from './types';
 
 const BUNDLE_FORMAT = 'hadith-graph-bundle';
-const NARRATOR_PREFIX = 'n:';
 const MATN_NODE_PREFIX = 'r:';
 
 function nowIso(): string {
@@ -157,8 +157,8 @@ function parseHighlightLegend(raw: unknown): { legend?: HighlightLegendItem[]; e
 export function getNodeIdsForReport(report: HadithReport): string[] {
   const ids = new Set<string>();
   ids.add(`${MATN_NODE_PREFIX}${report.id}`);
-  for (const narrator of report.isnad) {
-    ids.add(`${NARRATOR_PREFIX}${narrator}`);
+  for (let narratorIndex = 0; narratorIndex < report.isnad.length; narratorIndex += 1) {
+    ids.add(getNarratorNodeIdForReport(report, narratorIndex));
   }
   return Array.from(ids);
 }
