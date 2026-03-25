@@ -3,7 +3,6 @@ import {
   FormEvent,
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
-  WheelEvent as ReactWheelEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -195,7 +194,7 @@ function App() {
     event.preventDefault();
   }, [isDragging, isResizing, isBoxSelecting]);
 
-  const handleGraphWheel = useCallback((event: ReactWheelEvent<HTMLDivElement>): void => {
+  const handleGraphWheel = useCallback((event: WheelEvent): void => {
     if (!event.ctrlKey) {
       return;
     }
@@ -206,6 +205,7 @@ function App() {
     }
 
     event.preventDefault();
+    event.stopPropagation();
 
     const rect = scrollContainer.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
@@ -233,6 +233,19 @@ function App() {
       return nextZoom;
     });
   }, []);
+
+  useEffect(() => {
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer) {
+      return undefined;
+    }
+
+    scrollContainer.addEventListener('wheel', handleGraphWheel, { passive: false });
+
+    return () => {
+      scrollContainer.removeEventListener('wheel', handleGraphWheel);
+    };
+  }, [handleGraphWheel]);
 
   const handleGraphContextMenu = useCallback((event: ReactMouseEvent<HTMLDivElement>): void => {
     event.preventDefault();
@@ -304,25 +317,6 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <div>
-          <h1>Hadith Graph Builder</h1>
-          <p className="subtitle">Bundle: {bundle.title}</p>
-        </div>
-        <div className="actions">
-          <button type="button" onClick={handleNewBundle}>New Bundle</button>
-          <button type="button" onClick={handleOpenImport}>Import JSON</button>
-          <button type="button" onClick={handleExport}>Export JSON</button>
-        </div>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".json,.hadith-graph.json"
-          hidden
-          onChange={handleImport}
-        />
-      </header>
-
       <main className="layout">
         <section className="panel">
           <h2>Add Report</h2>
@@ -351,37 +345,13 @@ function App() {
           </form>
 
           <div className="status" role="status">{message}</div>
-
-          <div className="list-header">
-            <h3>Reports ({bundle.reports.length})</h3>
-          </div>
-          <ol className="report-list">
-            {bundle.reports.map((report, index) => (
-              <li key={report.id}>
-                <div className="report-chain" dir="auto">{report.isnad.join(' -> ')}</div>
-                <div className="report-matn" dir="auto">{report.matn}</div>
-                <div className="report-meta">#{index + 1}</div>
-              </li>
-            ))}
-          </ol>
         </section>
 
         <section className="graph-card">
-          <div className="graph-header">
-            <h2>Graph</h2>
-            <p>
-              Nodes: {graph.nodes.length} | Edges: {graph.edges.length}
-              {graph.hasCycle ? ' | Warning: cycle detected' : ''}
-            </p>
-            <p className="hint">
-              Tip: Ctrl + wheel zooms. Hold right mouse button and drag to pan. Zoom: {Math.round(zoom * 100)}%.
-            </p>
-          </div>
           <div
             ref={graphScrollRef}
             className={isPanning ? 'graph-scroll panning' : 'graph-scroll'}
             onPointerDown={handleGraphPointerDown}
-            onWheel={handleGraphWheel}
             onContextMenu={handleGraphContextMenu}
           >
             <GraphCanvas
@@ -399,6 +369,42 @@ function App() {
             />
           </div>
         </section>
+
+        <aside className="sidebar">
+          <section className="panel sidebar-panel">
+            <div>
+              <h1>Hadith Graph Builder</h1>
+              <p className="subtitle">Bundle: {bundle.title}</p>
+            </div>
+            <div className="actions">
+              <button type="button" onClick={handleNewBundle}>New Bundle</button>
+              <button type="button" onClick={handleOpenImport}>Import JSON</button>
+              <button type="button" onClick={handleExport}>Export JSON</button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json,.hadith-graph.json"
+              hidden
+              onChange={handleImport}
+            />
+          </section>
+
+          <section className="panel sidebar-panel reports-panel">
+            <div className="list-header">
+              <h3>Reports ({bundle.reports.length})</h3>
+            </div>
+            <ol className="report-list">
+              {bundle.reports.map((report, index) => (
+                <li key={report.id}>
+                  <div className="report-chain" dir="auto">{report.isnad.join(' -> ')}</div>
+                  <div className="report-matn" dir="auto">{report.matn}</div>
+                  <div className="report-meta">#{index + 1}</div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        </aside>
       </main>
     </div>
   );

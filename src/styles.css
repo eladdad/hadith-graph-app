@@ -29,21 +29,6 @@ body {
 .app-shell {
   min-height: 100vh;
   padding: 1rem;
-  display: grid;
-  gap: 1rem;
-}
-
-.topbar {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  background: color-mix(in srgb, var(--panel) 90%, white 10%);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  backdrop-filter: blur(2px);
 }
 
 h1,
@@ -92,8 +77,9 @@ button.primary:hover {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(290px, 360px) minmax(0, 1fr) minmax(280px, 340px);
   gap: 1rem;
+  min-height: calc(100vh - 2rem);
 }
 
 .panel,
@@ -109,6 +95,16 @@ button.primary:hover {
   display: grid;
   gap: 0.9rem;
   align-content: start;
+}
+
+.sidebar {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.sidebar-panel {
+  min-width: 0;
 }
 
 .form {
@@ -186,24 +182,15 @@ textarea:focus {
 }
 
 .graph-card {
-  display: grid;
-  grid-template-rows: auto 1fr;
   min-height: 66vh;
-}
-
-.graph-header {
-  padding: 1rem;
-  border-bottom: 1px solid var(--line);
-}
-
-.graph-header p {
-  margin: 0.3rem 0 0;
-  color: var(--muted);
+  min-width: 0;
 }
 
 .graph-scroll {
   overflow: auto;
   cursor: default;
+  min-height: 100%;
+  border-radius: 14px;
   background:
     linear-gradient(to right, rgba(156, 79, 53, 0.08) 1px, transparent 1px) 0 0 / 28px 28px,
     linear-gradient(to bottom, rgba(79, 111, 152, 0.07) 1px, transparent 1px) 0 0 / 28px 28px,
@@ -219,6 +206,21 @@ textarea:focus {
   stroke: var(--edge);
   stroke-width: 1.6;
   opacity: 0.9;
+}
+
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .graph-card {
+    min-height: 56vh;
+  }
+
+  .report-list {
+    max-height: 28vh;
+  }
 }
 
 .edge-label {
@@ -249,23 +251,6 @@ textarea:focus {
 .node-subtitle {
   font-size: 0.67rem;
   fill: #2e4e73;
-}
-
-@media (max-width: 980px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .graph-card {
-    min-height: 56vh;
-  }
-
-  .report-list {
-    max-height: 28vh;
-  }
-}
-.hint {
-  font-size: 0.85rem;
 }
 
 .node-group {
@@ -353,4 +338,3 @@ textarea:focus {
 .graph-scroll.panning * {
   cursor: grabbing;
 }
-

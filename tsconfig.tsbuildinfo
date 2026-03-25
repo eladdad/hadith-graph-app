@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/bundle.ts","./src/graph.ts","./src/main.tsx","./src/types.ts","./src/components/graphcanvas.tsx","./src/hooks/useboxselection.ts","./src/hooks/usenodedrag.ts","./src/hooks/usenoderesize.ts"],"version":"5.9.3"}
+{"root":["./src/App.tsx","./src/bundle.ts","./src/graph.ts","./src/main.tsx","./src/types.ts","./src/components/GraphCanvas.tsx","./src/hooks/useBoxSelection.ts","./src/hooks/useNodeDrag.ts","./src/hooks/useNodeResize.ts"],"version":"5.9.3"}
