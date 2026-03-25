@@ -140,7 +140,7 @@ export function GraphCanvas({
                 <text textAnchor="middle" className="node-matn" y={reportMatnStartY}>
                   {(node.matnLines ?? ['']).map((line, index) => (
                     <tspan key={`${node.id}-matn-${index}`} x="0" dy={index === 0 ? 0 : 16}>
-                      {line}
+                      {line.length > 0 ? line : '\u00a0'}
                     </tspan>
                   ))}
                 </text>

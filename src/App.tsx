@@ -45,6 +45,15 @@ function normalizeDraftText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function normalizeDraftMatn(value: string): string {
+  return value
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[^\S\n]+/g, ' ').trim())
+    .join('\n')
+    .trim();
+}
+
 function normalizeDraftNarrators(values: string[]): string[] {
   return values
     .map((value) => normalizeDraftText(value))
@@ -100,7 +109,7 @@ function App() {
   );
 
   const normalizedDraftNarrators = useMemo(() => normalizeDraftNarrators(editorNarrators), [editorNarrators]);
-  const normalizedDraftMatn = useMemo(() => normalizeDraftText(editorMatn), [editorMatn]);
+  const normalizedDraftMatn = useMemo(() => normalizeDraftMatn(editorMatn), [editorMatn]);
 
   const editorIsDirty = useMemo(() => {
     if (editingReport) {

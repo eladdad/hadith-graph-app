@@ -294,6 +294,7 @@ textarea:focus {
   margin-top: 0.25rem;
   font-size: 0.9rem;
   color: #4a3f33;
+  white-space: pre-wrap;
 }
 
 .report-meta {

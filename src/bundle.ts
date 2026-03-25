@@ -20,6 +20,15 @@ function sanitizeText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function sanitizeMatn(value: string): string {
+  return value
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[^\S\n]+/g, ' ').trim())
+    .join('\n')
+    .trim();
+}
+
 function sanitizeNarrators(values: string[]): string[] {
   return values
     .map((value) => sanitizeText(value))
@@ -128,7 +137,7 @@ function validateReportFields(
   matnInput: string,
 ): { isnad?: string[]; matn?: string; error?: string } {
   const isnad = sanitizeNarrators(narratorsInput);
-  const matn = sanitizeText(matnInput);
+  const matn = sanitizeMatn(matnInput);
 
   if (isnad.length < 1) {
     return { error: 'Isnad must include at least one narrator.' };
@@ -302,14 +311,14 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       return { error: `Report ${index + 1} must have at least one narrator in isnad.` };
     }
 
-    if (typeof rawMatn !== 'string' || sanitizeText(rawMatn).length === 0) {
+    if (typeof rawMatn !== 'string' || sanitizeMatn(rawMatn).length === 0) {
       return { error: `Report ${index + 1} has an empty matn.` };
     }
 
     const report: HadithReport = {
       id: typeof raw.id === 'string' && raw.id.trim().length > 0 ? raw.id : makeId(),
       isnad,
-      matn: sanitizeText(rawMatn),
+      matn: sanitizeMatn(rawMatn),
       createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : nowIso(),
     };
     reports.push(report);

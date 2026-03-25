@@ -109,21 +109,6 @@ function measureTextWidth(text: string): number {
 }
 
 function wrapTextToWidth(text: string, maxWidth: number): string[] {
-  const words = text.split(/\s+/).filter((word) => word.length > 0);
-  if (words.length === 0) {
-    return [''];
-  }
-
-  const lines: string[] = [];
-  let current = '';
-
-  const pushCurrent = (): void => {
-    if (current.length > 0) {
-      lines.push(current);
-      current = '';
-    }
-  };
-
   const splitWordToWidth = (word: string): string[] => {
     const segments: string[] = [];
     let segment = '';
@@ -145,28 +130,50 @@ function wrapTextToWidth(text: string, maxWidth: number): string[] {
     return segments;
   };
 
-  for (const word of words) {
-    const candidate = current.length > 0 ? `${current} ${word}` : word;
-    if (measureTextWidth(candidate) <= maxWidth) {
-      current = candidate;
-      continue;
+  const wrapSingleLine = (line: string): string[] => {
+    const words = line.split(/\s+/).filter((word) => word.length > 0);
+    if (words.length === 0) {
+      return [''];
+    }
+
+    const lines: string[] = [];
+    let current = '';
+
+    const pushCurrent = (): void => {
+      if (current.length > 0) {
+        lines.push(current);
+        current = '';
+      }
+    };
+
+    for (const word of words) {
+      const candidate = current.length > 0 ? `${current} ${word}` : word;
+      if (measureTextWidth(candidate) <= maxWidth) {
+        current = candidate;
+        continue;
+      }
+
+      pushCurrent();
+
+      if (measureTextWidth(word) <= maxWidth) {
+        current = word;
+        continue;
+      }
+
+      const segments = splitWordToWidth(word);
+      lines.push(...segments.slice(0, -1));
+      current = segments[segments.length - 1] ?? '';
     }
 
     pushCurrent();
 
-    if (measureTextWidth(word) <= maxWidth) {
-      current = word;
-      continue;
-    }
+    return lines.length > 0 ? lines : [''];
+  };
 
-    const segments = splitWordToWidth(word);
-    lines.push(...segments.slice(0, -1));
-    current = segments[segments.length - 1] ?? '';
-  }
-
-  pushCurrent();
-
-  return lines.length > 0 ? lines : [''];
+  return text
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .flatMap((line) => wrapSingleLine(line));
 }
 
 export function hasNarratorCycle(reports: HadithReport[]): boolean {
