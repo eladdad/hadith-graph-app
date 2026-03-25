@@ -10,13 +10,22 @@ import {
   useState,
 } from 'react';
 import './styles.css';
-import { addReportToBundle, bundleToJson, createEmptyBundle, makeExportFilename, parseBundleJson } from './bundle';
+import {
+  addReportToBundleFromFields,
+  bundleToJson,
+  createEmptyBundle,
+  deleteReportFromBundle,
+  getNodeIdsForReport,
+  makeExportFilename,
+  parseBundleJson,
+  updateReportInBundle,
+} from './bundle';
 import { GraphCanvas } from './components/GraphCanvas';
 import { buildRenderableGraph } from './graph';
 import { useBoxSelection } from './hooks/useBoxSelection';
 import { useNodeDrag } from './hooks/useNodeDrag';
 import { useNodeResize } from './hooks/useNodeResize';
-import type { GraphNode, HadithBundle } from './types';
+import type { GraphNode, HadithBundle, HadithReport } from './types';
 
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 2.8;
@@ -26,6 +35,24 @@ interface PanState {
   startClientY: number;
   startScrollLeft: number;
   startScrollTop: number;
+}
+
+function emptyNarratorDraft(): string[] {
+  return [''];
+}
+
+function normalizeDraftText(value: string): string {
+  return value.replace(/\s+/g, ' ').trim();
+}
+
+function normalizeDraftNarrators(values: string[]): string[] {
+  return values
+    .map((value) => normalizeDraftText(value))
+    .filter((value) => value.length > 0);
+}
+
+function arraysEqual(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function downloadJson(filename: string, contents: string): void {
@@ -42,8 +69,9 @@ function downloadJson(filename: string, contents: string): void {
 
 function App() {
   const [bundle, setBundle] = useState<HadithBundle>(() => createEmptyBundle('My Hadith Bundle'));
-  const [isnadText, setIsnadText] = useState('');
-  const [matnText, setMatnText] = useState('');
+  const [editorNarrators, setEditorNarrators] = useState<string[]>(() => emptyNarratorDraft());
+  const [editorMatn, setEditorMatn] = useState('');
+  const [editingReportId, setEditingReportId] = useState<string | null>(null);
   const [message, setMessage] = useState('Ready. Create reports and drag nodes to arrange your graph.');
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState(1);
@@ -61,6 +89,56 @@ function App() {
 
   const selectedSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
 
+  const editingReport = useMemo(
+    () => bundle.reports.find((report) => report.id === editingReportId) ?? null,
+    [bundle.reports, editingReportId],
+  );
+
+  const editingReportIndex = useMemo(
+    () => (editingReportId ? bundle.reports.findIndex((report) => report.id === editingReportId) : -1),
+    [bundle.reports, editingReportId],
+  );
+
+  const normalizedDraftNarrators = useMemo(() => normalizeDraftNarrators(editorNarrators), [editorNarrators]);
+  const normalizedDraftMatn = useMemo(() => normalizeDraftText(editorMatn), [editorMatn]);
+
+  const editorIsDirty = useMemo(() => {
+    if (editingReport) {
+      return (
+        !arraysEqual(normalizedDraftNarrators, editingReport.isnad)
+        || normalizedDraftMatn !== editingReport.matn
+      );
+    }
+
+    return normalizedDraftNarrators.length > 0 || normalizedDraftMatn.length > 0;
+  }, [editingReport, normalizedDraftNarrators, normalizedDraftMatn]);
+
+  const resetEditor = useCallback((): void => {
+    setEditingReportId(null);
+    setEditorNarrators(emptyNarratorDraft());
+    setEditorMatn('');
+  }, []);
+
+  const loadReportIntoEditor = useCallback((report: HadithReport): void => {
+    setEditingReportId(report.id);
+    setEditorNarrators(report.isnad.length > 0 ? [...report.isnad] : emptyNarratorDraft());
+    setEditorMatn(report.matn);
+  }, []);
+
+  const loadReportIntoCreateForm = useCallback((report: HadithReport): void => {
+    setEditingReportId(null);
+    setEditorNarrators(report.isnad.length > 0 ? [...report.isnad] : emptyNarratorDraft());
+    setEditorMatn(report.matn);
+  }, []);
+
+  const confirmDiscardEditorChanges = useCallback((): boolean => {
+    if (!editorIsDirty) {
+      return true;
+    }
+
+    return window.confirm('Discard unsaved report changes?');
+  }, [editorIsDirty]);
+
   useEffect(() => {
     const validNodeIds = new Set(graph.nodes.map((node) => node.id));
     setSelectedNodeIds((previous) => {
@@ -68,6 +146,12 @@ function App() {
       return filtered.length === previous.length ? previous : filtered;
     });
   }, [graph.nodes]);
+
+  useEffect(() => {
+    if (editingReportId && !editingReport) {
+      resetEditor();
+    }
+  }, [editingReport, editingReportId, resetEditor]);
 
   useEffect(() => {
     if (!isPanning) {
@@ -262,12 +346,48 @@ function App() {
     event.preventDefault();
   }, []);
 
+  const handleStartNewReport = useCallback((): void => {
+    if (!confirmDiscardEditorChanges()) {
+      return;
+    }
+
+    resetEditor();
+    setSelectedNodeIds([]);
+    resetBoxSelection();
+    setMessage('Report editor cleared. Add a new chain and matn.');
+  }, [confirmDiscardEditorChanges, resetBoxSelection, resetEditor]);
+
+  const handleSelectReport = useCallback((report: HadithReport): void => {
+    if (editingReportId !== report.id && !confirmDiscardEditorChanges()) {
+      return;
+    }
+
+    loadReportIntoEditor(report);
+    setSelectedNodeIds(getNodeIdsForReport(report));
+    resetBoxSelection();
+    setMessage('Editing selected report. Save changes to update the graph.');
+  }, [confirmDiscardEditorChanges, editingReportId, loadReportIntoEditor, resetBoxSelection]);
+
+  const handleUseReportAsTemplate = useCallback((report: HadithReport): void => {
+    if (!confirmDiscardEditorChanges()) {
+      return;
+    }
+
+    loadReportIntoCreateForm(report);
+    setSelectedNodeIds(getNodeIdsForReport(report));
+    resetBoxSelection();
+    setMessage('Report copied into the add form. Adjust the chain or matn, then add it as a new report.');
+  }, [confirmDiscardEditorChanges, loadReportIntoCreateForm, resetBoxSelection]);
+
   const handleNewBundle = (): void => {
+    if (!confirmDiscardEditorChanges()) {
+      return;
+    }
+
     const title = window.prompt('Bundle title', 'My Hadith Bundle');
     const nextBundle = createEmptyBundle(title ?? 'My Hadith Bundle');
     setBundle(nextBundle);
-    setIsnadText('');
-    setMatnText('');
+    resetEditor();
     setSelectedNodeIds([]);
     resetBoxSelection();
     setMessage('Started a fresh bundle in memory. Use Export to save it as a file.');
@@ -298,24 +418,68 @@ function App() {
       return;
     }
 
+    if (!confirmDiscardEditorChanges()) {
+      return;
+    }
+
     setBundle(parsed.bundle);
+    resetEditor();
     setSelectedNodeIds([]);
     resetBoxSelection();
     setMessage(`Imported ${file.name} with ${parsed.bundle.reports.length} report(s).`);
   };
 
-  const handleAddReport = (event: FormEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-    const result = addReportToBundle(bundle, isnadText, matnText);
+  const handleNarratorChange = (index: number, value: string): void => {
+    setEditorNarrators((previous) => previous.map((item, itemIndex) => (itemIndex === index ? value : item)));
+  };
 
+  const handleAddNarrator = (): void => {
+    setEditorNarrators((previous) => [...previous, '']);
+  };
+
+  const handleRemoveNarrator = (index: number): void => {
+    setEditorNarrators((previous) => {
+      if (previous.length <= 1) {
+        return emptyNarratorDraft();
+      }
+
+      const next = previous.filter((_, itemIndex) => itemIndex !== index);
+      return next.length > 0 ? next : emptyNarratorDraft();
+    });
+  };
+
+  const handleSaveReport = (event: FormEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+
+    if (editingReportId) {
+      const result = updateReportInBundle(bundle, editingReportId, editorNarrators, editorMatn);
+      if (!result.bundle) {
+        setMessage(result.error ?? 'Failed to save report.');
+        return;
+      }
+
+      setBundle(result.bundle);
+      const savedReport = result.bundle.reports.find((report) => report.id === editingReportId);
+      if (savedReport) {
+        loadReportIntoEditor(savedReport);
+      }
+
+      if (result.updatedNodeIds && result.updatedNodeIds.length > 0) {
+        setSelectedNodeIds(result.updatedNodeIds);
+      }
+
+      setMessage('Report updated and graph refreshed.');
+      return;
+    }
+
+    const result = addReportToBundleFromFields(bundle, editorNarrators, editorMatn);
     if (!result.bundle) {
       setMessage(result.error ?? 'Failed to add report.');
       return;
     }
 
     setBundle(result.bundle);
-    setIsnadText('');
-    setMatnText('');
+    resetEditor();
 
     if (result.addedNodeIds && result.addedNodeIds.length > 0) {
       setSelectedNodeIds(result.addedNodeIds);
@@ -326,33 +490,112 @@ function App() {
     setMessage('Report added and graph updated.');
   };
 
+  const handleDeleteReport = (): void => {
+    if (!editingReportId) {
+      return;
+    }
+
+    if (!window.confirm('Delete this report from the bundle?')) {
+      return;
+    }
+
+    const result = deleteReportFromBundle(bundle, editingReportId);
+    if (!result.bundle) {
+      setMessage(result.error ?? 'Failed to delete report.');
+      return;
+    }
+
+    setBundle(result.bundle);
+    resetEditor();
+    setSelectedNodeIds([]);
+    resetBoxSelection();
+    setMessage('Report deleted.');
+  };
+
+  const chainPreview = normalizedDraftNarrators.length > 0
+    ? normalizedDraftNarrators.join(' -> ')
+    : 'Add narrators to build the chain.';
+
   return (
     <div className="app-shell">
       <main className="layout">
         <section className="panel">
-          <h2>Add Report</h2>
-          <form className="form" onSubmit={handleAddReport}>
-            <label>
-              Isnad (one narrator per line, or use -&gt;)
-              <textarea
-                dir="auto"
-                value={isnadText}
-                onChange={(event) => setIsnadText(event.target.value)}
-                placeholder={'Narrator A\nNarrator B\nNarrator C'}
-                rows={6}
-              />
-            </label>
+          <div className="editor-header">
+            <div>
+              <h2>{editingReport ? `Edit Report #${editingReportIndex + 1}` : 'Create Report'}</h2>
+              <p className="subtitle">
+                {editingReport
+                  ? 'Update the chain and matn, then save to refresh the graph.'
+                  : 'Build a chain one narrator at a time, then add the report.'}
+              </p>
+            </div>
+            {editingReport ? (
+              <button type="button" onClick={handleStartNewReport}>New Report</button>
+            ) : null}
+          </div>
+
+          <form className="form" onSubmit={handleSaveReport}>
+            <div className="field-group">
+              <div className="field-label-row">
+                <span className="field-label">Chain</span>
+                <button type="button" onClick={handleAddNarrator}>Add Narrator</button>
+              </div>
+
+              <div className="chain-editor">
+                {editorNarrators.map((narrator, index) => (
+                  <div className="chain-row" key={`narrator-${index}`}>
+                    <div className="chain-index">{index + 1}</div>
+                    <input
+                      type="text"
+                      dir="auto"
+                      value={narrator}
+                      onChange={(event) => handleNarratorChange(index, event.target.value)}
+                      placeholder={`Narrator ${index + 1}`}
+                    />
+                    <button
+                      type="button"
+                      className="danger-button"
+                      onClick={() => handleRemoveNarrator(index)}
+                      disabled={editorNarrators.length <= 1}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="chain-preview" dir="auto">{chainPreview}</div>
+            </div>
+
             <label>
               Matn
               <textarea
                 dir="auto"
-                value={matnText}
-                onChange={(event) => setMatnText(event.target.value)}
+                value={editorMatn}
+                onChange={(event) => setEditorMatn(event.target.value)}
                 placeholder="The report statement"
-                rows={5}
+                rows={6}
               />
             </label>
-            <button type="submit" className="primary">Add Report</button>
+
+            <div className="editor-actions">
+              <button type="submit" className="primary">
+                {editingReport ? 'Save Changes' : 'Add Report'}
+              </button>
+              {editingReport ? (
+                <button type="button" onClick={() => handleUseReportAsTemplate(editingReport)}>
+                  Copy To New
+                </button>
+              ) : null}
+              {editingReport ? (
+                <button type="button" onClick={handleStartNewReport}>Cancel</button>
+              ) : null}
+              {editingReport ? (
+                <button type="button" className="danger-button" onClick={handleDeleteReport}>
+                  Delete Report
+                </button>
+              ) : null}
+            </div>
           </form>
 
           <div className="status" role="status">{message}</div>
@@ -404,15 +647,32 @@ function App() {
           <section className="panel sidebar-panel reports-panel">
             <div className="list-header">
               <h3>Reports ({bundle.reports.length})</h3>
+              <button type="button" onClick={handleStartNewReport}>New</button>
             </div>
             <ol className="report-list">
-              {bundle.reports.map((report, index) => (
-                <li key={report.id}>
-                  <div className="report-chain" dir="auto">{report.isnad.join(' -> ')}</div>
-                  <div className="report-matn" dir="auto">{report.matn}</div>
-                  <div className="report-meta">#{index + 1}</div>
-                </li>
-              ))}
+              {bundle.reports.map((report, index) => {
+                const selected = editingReportId === report.id;
+
+                return (
+                  <li key={report.id}>
+                    <div className={selected ? 'report-card selected' : 'report-card'}>
+                      <button
+                        type="button"
+                        className="report-card-main"
+                        onClick={() => handleSelectReport(report)}
+                      >
+                        <div className="report-chain" dir="auto">{report.isnad.join(' -> ')}</div>
+                        <div className="report-matn" dir="auto">{report.matn}</div>
+                        <div className="report-meta">#{index + 1}</div>
+                      </button>
+                      <div className="report-card-actions">
+                        <button type="button" onClick={() => handleSelectReport(report)}>Edit</button>
+                        <button type="button" onClick={() => handleUseReportAsTemplate(report)}>Use As Template</button>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           </section>
         </aside>

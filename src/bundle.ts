@@ -20,6 +20,12 @@ function sanitizeText(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+function sanitizeNarrators(values: string[]): string[] {
+  return values
+    .map((value) => sanitizeText(value))
+    .filter((value) => value.length > 0);
+}
+
 function isObjectLike(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
@@ -71,13 +77,68 @@ function parseNodeWidths(raw: unknown): { widths?: NodeWidthMap; error?: string 
   return { widths };
 }
 
-function nodeIdsForReport(report: HadithReport): string[] {
+export function getNodeIdsForReport(report: HadithReport): string[] {
   const ids = new Set<string>();
   ids.add(`${REPORT_PREFIX}${report.id}`);
   for (const narrator of report.isnad) {
     ids.add(`${NARRATOR_PREFIX}${narrator}`);
   }
   return Array.from(ids);
+}
+
+function filterMapKeys<T>(input: Record<string, T>, validKeys: Set<string>): Record<string, T> {
+  const next: Record<string, T> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (validKeys.has(key)) {
+      next[key] = value;
+    }
+  }
+  return next;
+}
+
+function finalizeReportsUpdate(
+  bundle: HadithBundle,
+  nextReports: HadithReport[],
+): { bundle?: HadithBundle; error?: string } {
+  if (hasNarratorCycle(nextReports)) {
+    return {
+      error:
+        'This report creates a cycle in the narrator chain. The graph must stay acyclic, so the change was not saved.',
+    };
+  }
+
+  const validNodeIds = new Set<string>();
+  nextReports.forEach((report) => {
+    getNodeIdsForReport(report).forEach((nodeId) => validNodeIds.add(nodeId));
+  });
+
+  return {
+    bundle: {
+      ...bundle,
+      updatedAt: nowIso(),
+      reports: nextReports,
+      nodePositions: filterMapKeys(bundle.nodePositions, validNodeIds) as NodePositionMap,
+      nodeWidths: filterMapKeys(bundle.nodeWidths, validNodeIds) as NodeWidthMap,
+    },
+  };
+}
+
+function validateReportFields(
+  narratorsInput: string[],
+  matnInput: string,
+): { isnad?: string[]; matn?: string; error?: string } {
+  const isnad = sanitizeNarrators(narratorsInput);
+  const matn = sanitizeText(matnInput);
+
+  if (isnad.length < 1) {
+    return { error: 'Isnad must include at least one narrator.' };
+  }
+
+  if (matn.length === 0) {
+    return { error: 'Matn cannot be empty.' };
+  }
+
+  return { isnad, matn };
 }
 
 export function parseIsnadText(input: string): string[] {
@@ -106,38 +167,91 @@ export function addReportToBundle(
   isnadInput: string,
   matnInput: string,
 ): { bundle?: HadithBundle; addedNodeIds?: string[]; error?: string } {
-  const isnad = parseIsnadText(isnadInput);
-  const matn = sanitizeText(matnInput);
+  return addReportToBundleFromFields(bundle, parseIsnadText(isnadInput), matnInput);
+}
 
-  if (isnad.length < 1) {
-    return { error: 'Isnad must include at least one narrator.' };
-  }
-  if (matn.length === 0) {
-    return { error: 'Matn cannot be empty.' };
+export function addReportToBundleFromFields(
+  bundle: HadithBundle,
+  narratorsInput: string[],
+  matnInput: string,
+): { bundle?: HadithBundle; addedNodeIds?: string[]; error?: string } {
+  const validated = validateReportFields(narratorsInput, matnInput);
+  if (!validated.isnad || typeof validated.matn !== 'string') {
+    return { error: validated.error ?? 'Could not add this report.' };
   }
 
   const report: HadithReport = {
     id: makeId(),
-    isnad,
-    matn,
+    isnad: validated.isnad,
+    matn: validated.matn,
     createdAt: nowIso(),
   };
 
   const nextReports = [...bundle.reports, report];
-  if (hasNarratorCycle(nextReports)) {
+  const result = finalizeReportsUpdate(bundle, nextReports);
+  if (!result.bundle) {
     return {
-      error:
-        'This report creates a cycle in the narrator chain. The graph must stay acyclic, so the report was not added.',
+      error: result.error?.replace('change was not saved', 'report was not added') ?? 'Could not add this report.',
     };
   }
 
   return {
-    bundle: {
-      ...bundle,
-      updatedAt: nowIso(),
-      reports: nextReports,
-    },
-    addedNodeIds: nodeIdsForReport(report),
+    bundle: result.bundle,
+    addedNodeIds: getNodeIdsForReport(report),
+  };
+}
+
+export function updateReportInBundle(
+  bundle: HadithBundle,
+  reportId: string,
+  narratorsInput: string[],
+  matnInput: string,
+): { bundle?: HadithBundle; updatedNodeIds?: string[]; error?: string } {
+  const existingReport = bundle.reports.find((report) => report.id === reportId);
+  if (!existingReport) {
+    return { error: 'Report not found.' };
+  }
+
+  const validated = validateReportFields(narratorsInput, matnInput);
+  if (!validated.isnad || typeof validated.matn !== 'string') {
+    return { error: validated.error ?? 'Could not save this report.' };
+  }
+
+  const updatedReport: HadithReport = {
+    ...existingReport,
+    isnad: validated.isnad,
+    matn: validated.matn,
+  };
+
+  const nextReports = bundle.reports.map((report) => (report.id === reportId ? updatedReport : report));
+  const result = finalizeReportsUpdate(bundle, nextReports);
+  if (!result.bundle) {
+    return { error: result.error ?? 'Could not save this report.' };
+  }
+
+  return {
+    bundle: result.bundle,
+    updatedNodeIds: getNodeIdsForReport(updatedReport),
+  };
+}
+
+export function deleteReportFromBundle(
+  bundle: HadithBundle,
+  reportId: string,
+): { bundle?: HadithBundle; error?: string } {
+  const reportExists = bundle.reports.some((report) => report.id === reportId);
+  if (!reportExists) {
+    return { error: 'Report not found.' };
+  }
+
+  const nextReports = bundle.reports.filter((report) => report.id !== reportId);
+  const result = finalizeReportsUpdate(bundle, nextReports);
+  if (!result.bundle) {
+    return { error: result.error ?? 'Could not delete this report.' };
+  }
+
+  return {
+    bundle: result.bundle,
   };
 }
 
