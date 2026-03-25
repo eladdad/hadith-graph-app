@@ -1,7 +1,9 @@
-﻿import {
+import {
   ChangeEvent,
   FormEvent,
+  MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
+  WheelEvent as ReactWheelEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -16,6 +18,16 @@ import { useBoxSelection } from './hooks/useBoxSelection';
 import { useNodeDrag } from './hooks/useNodeDrag';
 import { useNodeResize } from './hooks/useNodeResize';
 import type { GraphNode, HadithBundle } from './types';
+
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 2.8;
+
+interface PanState {
+  startClientX: number;
+  startClientY: number;
+  startScrollLeft: number;
+  startScrollTop: number;
+}
 
 function downloadJson(filename: string, contents: string): void {
   const blob = new Blob([contents], { type: 'application/json' });
@@ -35,9 +47,13 @@ function App() {
   const [matnText, setMatnText] = useState('');
   const [message, setMessage] = useState('Ready. Create reports and drag nodes to arrange your graph.');
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
+  const [zoom, setZoom] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const graphScrollRef = useRef<HTMLDivElement>(null);
+  const panStateRef = useRef<PanState | null>(null);
 
   const graph = useMemo(
     () => buildRenderableGraph(bundle.reports, bundle.nodePositions, bundle.nodeWidths),
@@ -53,6 +69,41 @@ function App() {
       return filtered.length === previous.length ? previous : filtered;
     });
   }, [graph.nodes]);
+
+  useEffect(() => {
+    if (!isPanning) {
+      return undefined;
+    }
+
+    const handlePointerMove = (event: PointerEvent): void => {
+      const panState = panStateRef.current;
+      const scrollContainer = graphScrollRef.current;
+      if (!panState || !scrollContainer) {
+        return;
+      }
+
+      const deltaX = event.clientX - panState.startClientX;
+      const deltaY = event.clientY - panState.startClientY;
+
+      scrollContainer.scrollLeft = panState.startScrollLeft - deltaX;
+      scrollContainer.scrollTop = panState.startScrollTop - deltaY;
+    };
+
+    const finishPan = (): void => {
+      panStateRef.current = null;
+      setIsPanning(false);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', finishPan);
+    window.addEventListener('pointercancel', finishPan);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', finishPan);
+      window.removeEventListener('pointercancel', finishPan);
+    };
+  }, [isPanning]);
 
   const clientPointToSvg = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
     const svg = svgRef.current;
@@ -122,6 +173,70 @@ function App() {
     },
     [isDragging, isBoxSelecting, onResizePointerDownRaw],
   );
+
+  const handleGraphPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>): void => {
+    if (event.button !== 2 || isDragging || isResizing || isBoxSelecting) {
+      return;
+    }
+
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    panStateRef.current = {
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startScrollLeft: scrollContainer.scrollLeft,
+      startScrollTop: scrollContainer.scrollTop,
+    };
+
+    setIsPanning(true);
+    event.preventDefault();
+  }, [isDragging, isResizing, isBoxSelecting]);
+
+  const handleGraphWheel = useCallback((event: ReactWheelEvent<HTMLDivElement>): void => {
+    if (!event.ctrlKey) {
+      return;
+    }
+
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const rect = scrollContainer.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+
+    setZoom((previousZoom) => {
+      const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, previousZoom * Math.exp(-event.deltaY * 0.0015)));
+      if (Math.abs(nextZoom - previousZoom) < 0.0001) {
+        return previousZoom;
+      }
+
+      const graphX = (scrollContainer.scrollLeft + pointerX) / previousZoom;
+      const graphY = (scrollContainer.scrollTop + pointerY) / previousZoom;
+
+      requestAnimationFrame(() => {
+        const nextScrollContainer = graphScrollRef.current;
+        if (!nextScrollContainer) {
+          return;
+        }
+
+        nextScrollContainer.scrollLeft = graphX * nextZoom - pointerX;
+        nextScrollContainer.scrollTop = graphY * nextZoom - pointerY;
+      });
+
+      return nextZoom;
+    });
+  }, []);
+
+  const handleGraphContextMenu = useCallback((event: ReactMouseEvent<HTMLDivElement>): void => {
+    event.preventDefault();
+  }, []);
 
   const handleNewBundle = (): void => {
     const title = window.prompt('Bundle title', 'My Hadith Bundle');
@@ -258,11 +373,20 @@ function App() {
               Nodes: {graph.nodes.length} | Edges: {graph.edges.length}
               {graph.hasCycle ? ' | Warning: cycle detected' : ''}
             </p>
-            <p className="hint">Tip: select a report node, then drag its left or right edge to resize text width.</p>
+            <p className="hint">
+              Tip: Ctrl + wheel zooms. Hold right mouse button and drag to pan. Zoom: {Math.round(zoom * 100)}%.
+            </p>
           </div>
-          <div className="graph-scroll">
+          <div
+            ref={graphScrollRef}
+            className={isPanning ? 'graph-scroll panning' : 'graph-scroll'}
+            onPointerDown={handleGraphPointerDown}
+            onWheel={handleGraphWheel}
+            onContextMenu={handleGraphContextMenu}
+          >
             <GraphCanvas
               graph={graph}
+              zoom={zoom}
               svgRef={svgRef}
               isBoxSelecting={isBoxSelecting}
               selectionBox={selectionBox}

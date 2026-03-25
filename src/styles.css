@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: light;
   --bg: #f2ecdf;
   --panel: #fffdfa;
@@ -203,6 +203,7 @@ textarea:focus {
 
 .graph-scroll {
   overflow: auto;
+  cursor: default;
   background:
     linear-gradient(to right, rgba(156, 79, 53, 0.08) 1px, transparent 1px) 0 0 / 28px 28px,
     linear-gradient(to bottom, rgba(79, 111, 152, 0.07) 1px, transparent 1px) 0 0 / 28px 28px,
@@ -343,3 +344,13 @@ textarea:focus {
 .resize-handle-right {
   rx: 6;
 }
+
+.graph-scroll.panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.graph-scroll.panning * {
+  cursor: grabbing;
+}
+

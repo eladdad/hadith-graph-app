@@ -1,9 +1,10 @@
-﻿import { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { PointerEvent as ReactPointerEvent, RefObject } from 'react';
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
 
 interface GraphCanvasProps {
   graph: RenderableGraph;
+  zoom: number;
   svgRef: RefObject<SVGSVGElement | null>;
   isBoxSelecting: boolean;
   selectionBox: SelectionBox | null;
@@ -17,6 +18,7 @@ interface GraphCanvasProps {
 
 export function GraphCanvas({
   graph,
+  zoom,
   svgRef,
   isBoxSelecting,
   selectionBox,
@@ -30,8 +32,9 @@ export function GraphCanvas({
   return (
     <svg
       ref={svgRef}
-      width={graph.width}
-      height={graph.height}
+      width={Math.round(graph.width * zoom)}
+      height={Math.round(graph.height * zoom)}
+      viewBox={`0 0 ${graph.width} ${graph.height}`}
       className={isBoxSelecting ? 'graph-svg selecting' : 'graph-svg'}
       onPointerDown={onCanvasPointerDown}
     >
