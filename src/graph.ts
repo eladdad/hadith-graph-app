@@ -1,4 +1,14 @@
-﻿import type { HadithFontSizes, HadithReport, NodePositionMap, NodeWidthMap, RenderableGraph } from './types';
+﻿import { buildMatnTextSegments } from './matnHighlights';
+import type {
+  GraphTextLine,
+  GraphTextSegment,
+  HadithFontSizes,
+  HadithReport,
+  HighlightLegendItem,
+  NodePositionMap,
+  NodeWidthMap,
+  RenderableGraph,
+} from './types';
 
 const NARRATOR_PREFIX = 'n:';
 const MATN_NODE_PREFIX = 'r:';
@@ -166,6 +176,181 @@ function wrapTextToWidth(text: string, maxWidth: number, fontSize: number): stri
     .flatMap((line) => wrapSingleLine(line));
 }
 
+function splitSegmentToWidth(
+  segment: { text: string; color?: string; highlightId?: string; label?: string },
+  maxWidth: number,
+  fontSize: number,
+): GraphTextSegment[] {
+  const parts: GraphTextSegment[] = [];
+  let current = '';
+
+  for (const char of segment.text) {
+    const candidate = `${current}${char}`;
+    if (current.length > 0 && measureTextWidth(candidate, fontSize) > maxWidth) {
+      parts.push({
+        text: current,
+        width: measureTextWidth(current, fontSize),
+        color: segment.color,
+        highlightId: segment.highlightId,
+        label: segment.label,
+      });
+      current = char;
+    } else {
+      current = candidate;
+    }
+  }
+
+  if (current.length > 0) {
+    parts.push({
+      text: current,
+      width: measureTextWidth(current, fontSize),
+      color: segment.color,
+      highlightId: segment.highlightId,
+      label: segment.label,
+    });
+  }
+
+  return parts;
+}
+
+function tokenizeMatnSegments(
+  segments: ReturnType<typeof buildMatnTextSegments>,
+): Array<{ text: string; color?: string; highlightId?: string; label?: string; isNewline: boolean; isWhitespace: boolean }> {
+  const tokens: Array<{ text: string; color?: string; highlightId?: string; label?: string; isNewline: boolean; isWhitespace: boolean }> = [];
+
+  for (const segment of segments) {
+    const parts = segment.text.split(/(\n|\s+)/);
+    for (const part of parts) {
+      if (part.length === 0) {
+        continue;
+      }
+
+      tokens.push({
+        text: part,
+        color: segment.color,
+        highlightId: segment.highlightId,
+        label: segment.label,
+        isNewline: part === '\n',
+        isWhitespace: part.trim().length === 0 && part !== '\n',
+      });
+    }
+  }
+
+  return tokens;
+}
+
+function wrapMatnSegmentsToWidth(
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+  legendById: Map<string, HighlightLegendItem>,
+  highlights: HadithReport['matnHighlights'],
+): GraphTextLine[] {
+  const sourceSegments = buildMatnTextSegments(text, highlights, legendById);
+  const tokens = tokenizeMatnSegments(sourceSegments);
+  const lines: GraphTextLine[] = [];
+  let currentSegments: GraphTextSegment[] = [];
+  let currentText = '';
+
+  const appendSegment = (segment: GraphTextSegment): void => {
+    const previous = currentSegments[currentSegments.length - 1];
+    if (
+      previous
+      && previous.color === segment.color
+      && previous.highlightId === segment.highlightId
+      && previous.label === segment.label
+    ) {
+      previous.text += segment.text;
+      previous.width += segment.width;
+      return;
+    }
+
+    currentSegments.push(segment);
+  };
+
+  const pushLine = (): void => {
+    const width = currentSegments.reduce((sum, segment) => sum + segment.width, 0);
+    lines.push({
+      width,
+      segments: currentSegments.length > 0 ? currentSegments : [{ text: '', width: 0 }],
+    });
+    currentSegments = [];
+    currentText = '';
+  };
+
+  const addToken = (token: { text: string; color?: string; highlightId?: string; label?: string }): void => {
+    const width = measureTextWidth(token.text, fontSize);
+    appendSegment({
+      text: token.text,
+      width,
+      color: token.color,
+      highlightId: token.highlightId,
+      label: token.label,
+    });
+    currentText += token.text;
+  };
+
+  for (const token of tokens) {
+    if (token.isNewline) {
+      pushLine();
+      continue;
+    }
+
+    if (currentText.length === 0 && token.isWhitespace) {
+      continue;
+    }
+
+    const tokenWidth = measureTextWidth(token.text, fontSize);
+    const candidate = `${currentText}${token.text}`;
+    const candidateWidth = measureTextWidth(candidate, fontSize);
+
+    if (currentText.length === 0) {
+      if (tokenWidth <= maxWidth) {
+        addToken(token);
+      } else {
+        splitSegmentToWidth(token, maxWidth, fontSize).forEach((segment, index, splitParts) => {
+          appendSegment(segment);
+          currentText += segment.text;
+          if (index < splitParts.length - 1) {
+            pushLine();
+          }
+        });
+      }
+      continue;
+    }
+
+    if (candidateWidth <= maxWidth) {
+      addToken(token);
+      continue;
+    }
+
+    if (token.isWhitespace) {
+      pushLine();
+      continue;
+    }
+
+    pushLine();
+    if (tokenWidth <= maxWidth) {
+      addToken(token);
+      continue;
+    }
+
+    splitSegmentToWidth(token, maxWidth, fontSize).forEach((segment, index, splitParts) => {
+      appendSegment(segment);
+      currentText += segment.text;
+      if (index < splitParts.length - 1) {
+        pushLine();
+      }
+    });
+  }
+
+  if (currentSegments.length > 0 || lines.length === 0) {
+    pushLine();
+  }
+
+  return lines;
+}
+
 export function hasNarratorCycle(reports: HadithReport[]): boolean {
   const nodes = new Set<string>();
   const adjacency = new Map<string, Set<string>>();
@@ -224,12 +409,15 @@ export function buildRenderableGraph(
   nodePositions: NodePositionMap = {},
   nodeWidths: NodeWidthMap = {},
   fontSizes?: Partial<HadithFontSizes>,
+  highlightLegend: HighlightLegendItem[] = [],
 ): RenderableGraph {
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
   const labels = new Map<string, string>();
   const matnByNodeId = new Map<string, string>();
+  const matnHighlightsByNodeId = new Map<string, HadithReport['matnHighlights']>();
   const matnAnchorByNodeId = new Map<string, string>();
   const types = new Map<string, 'narrator' | 'matn'>();
+  const highlightLegendById = new Map(highlightLegend.map((entry) => [entry.id, entry]));
 
   const adjacency = new Map<string, Set<string>>();
   const indegree = new Map<string, number>();
@@ -276,6 +464,7 @@ export function buildRenderableGraph(
     const matnId = matnNodeId(report.id);
     ensureNode(matnId, `Matn ${index + 1}`, 'matn');
     matnByNodeId.set(matnId, report.matn);
+    matnHighlightsByNodeId.set(matnId, report.matnHighlights);
 
     report.isnad.forEach((narratorName) => {
       ensureNode(narratorId(narratorName), narratorName, 'narrator');
@@ -367,20 +556,23 @@ export function buildRenderableGraph(
     });
   });
 
-  const nodeMeta = new Map<string, { width: number; height: number; labelLines: string[]; matnLines?: string[] }>();
+  const nodeMeta = new Map<string, { width: number; height: number; labelLines: string[]; matnLines?: string[]; matnLineSegments?: GraphTextLine[] }>();
   for (const id of labels.keys()) {
     const type = types.get(id) ?? 'narrator';
     const label = labels.get(id) ?? id;
 
     if (type === 'matn') {
       const matnNodeWidth = clampMatnNodeWidth(nodeWidths[id] ?? MATN_NODE_DEFAULT_WIDTH);
-      const matnLines = wrapTextToWidth(
+      const matnLineSegments = wrapMatnSegmentsToWidth(
         matnByNodeId.get(id) ?? '',
         Math.max(80, matnNodeWidth - MATN_NODE_SIDE_PADDING * 2),
         normalizedFontSizes.matn,
+        highlightLegendById,
+        matnHighlightsByNodeId.get(id) ?? [],
       );
+      const matnLines = matnLineSegments.map((line) => line.segments.map((segment) => segment.text).join(''));
       const height = MATN_NODE_TOP_PADDING
-        + matnLines.length * matnLineHeight(normalizedFontSizes.matn)
+        + matnLineSegments.length * matnLineHeight(normalizedFontSizes.matn)
         + MATN_NODE_BOTTOM_PADDING;
 
       nodeMeta.set(id, {
@@ -388,6 +580,7 @@ export function buildRenderableGraph(
         height,
         labelLines: [label],
         matnLines,
+        matnLineSegments,
       });
       continue;
     }
@@ -458,6 +651,7 @@ export function buildRenderableGraph(
       label: labels.get(id) ?? id,
       labelLines: meta?.labelLines ?? [labels.get(id) ?? id],
       matnLines: meta?.matnLines,
+      matnLineSegments: meta?.matnLineSegments,
       type: types.get(id) ?? 'narrator',
       width: meta?.width ?? NARRATOR_NODE_WIDTH,
       height: meta?.height ?? NARRATOR_MIN_HEIGHT,
@@ -484,6 +678,7 @@ export function buildRenderableGraph(
       label: labels.get(id) ?? id,
       labelLines: meta?.labelLines ?? [labels.get(id) ?? id],
       matnLines: meta?.matnLines,
+      matnLineSegments: meta?.matnLineSegments,
       type: types.get(id) ?? 'matn',
       width,
       height,

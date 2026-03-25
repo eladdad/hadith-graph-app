@@ -4,7 +4,16 @@
   clampFontSize,
   hasNarratorCycle,
 } from './graph';
-import type { HadithBundle, HadithFontSizes, HadithReport, NodePositionMap, NodeWidthMap } from './types';
+import { sanitizeHighlightLegend, sanitizeMatnHighlights } from './matnHighlights';
+import type {
+  HadithBundle,
+  HadithFontSizes,
+  HadithReport,
+  HighlightLegendItem,
+  MatnHighlight,
+  NodePositionMap,
+  NodeWidthMap,
+} from './types';
 
 const BUNDLE_FORMAT = 'hadith-graph-bundle';
 const NARRATOR_PREFIX = 'n:';
@@ -119,6 +128,32 @@ function parseFontSizes(raw: unknown): { fontSizes?: HadithFontSizes; error?: st
   };
 }
 
+function parseHighlightLegend(raw: unknown): { legend?: HighlightLegendItem[]; error?: string } {
+  if (typeof raw === 'undefined') {
+    return { legend: [] };
+  }
+
+  if (!Array.isArray(raw)) {
+    return { error: 'Bundle field "highlightLegend" must be an array.' };
+  }
+
+  const rawEntries = raw.flatMap((entry) => {
+    if (!isObjectLike(entry)) {
+      return [];
+    }
+
+    return [{
+      id: typeof entry.id === 'string' ? entry.id : '',
+      label: typeof entry.label === 'string' ? entry.label : '',
+      color: typeof entry.color === 'string' ? entry.color : '',
+    }];
+  });
+
+  return {
+    legend: sanitizeHighlightLegend(rawEntries),
+  };
+}
+
 export function getNodeIdsForReport(report: HadithReport): string[] {
   const ids = new Set<string>();
   ids.add(`${MATN_NODE_PREFIX}${report.id}`);
@@ -168,7 +203,9 @@ function finalizeReportsUpdate(
 function validateReportFields(
   narratorsInput: string[],
   matnInput: string,
-): { isnad?: string[]; matn?: string; error?: string } {
+  rawHighlights: MatnHighlight[] = [],
+  highlightLegend: HighlightLegendItem[] = [],
+): { isnad?: string[]; matn?: string; matnHighlights?: MatnHighlight[]; error?: string } {
   const isnad = sanitizeNarrators(narratorsInput);
   const matn = sanitizeMatn(matnInput);
 
@@ -180,7 +217,11 @@ function validateReportFields(
     return { error: 'Matn cannot be empty.' };
   }
 
-  return { isnad, matn };
+  return {
+    isnad,
+    matn,
+    matnHighlights: sanitizeMatnHighlights(rawHighlights, matn, new Set(highlightLegend.map((entry) => entry.id))),
+  };
 }
 
 export function parseIsnadText(input: string): string[] {
@@ -199,6 +240,7 @@ export function createEmptyBundle(title = 'Untitled Bundle'): HadithBundle {
     createdAt: timestamp,
     updatedAt: timestamp,
     reports: [],
+    highlightLegend: [],
     nodePositions: {},
     nodeWidths: {},
     fontSizes: {
@@ -220,9 +262,10 @@ export function addReportToBundleFromFields(
   bundle: HadithBundle,
   narratorsInput: string[],
   matnInput: string,
+  rawHighlights: MatnHighlight[] = [],
 ): { bundle?: HadithBundle; addedNodeIds?: string[]; error?: string } {
-  const validated = validateReportFields(narratorsInput, matnInput);
-  if (!validated.isnad || typeof validated.matn !== 'string') {
+  const validated = validateReportFields(narratorsInput, matnInput, rawHighlights, bundle.highlightLegend);
+  if (!validated.isnad || typeof validated.matn !== 'string' || !validated.matnHighlights) {
     return { error: validated.error ?? 'Could not add this report.' };
   }
 
@@ -230,6 +273,7 @@ export function addReportToBundleFromFields(
     id: makeId(),
     isnad: validated.isnad,
     matn: validated.matn,
+    matnHighlights: validated.matnHighlights,
     createdAt: nowIso(),
   };
 
@@ -252,14 +296,15 @@ export function updateReportInBundle(
   reportId: string,
   narratorsInput: string[],
   matnInput: string,
+  rawHighlights: MatnHighlight[] = [],
 ): { bundle?: HadithBundle; updatedNodeIds?: string[]; error?: string } {
   const existingReport = bundle.reports.find((report) => report.id === reportId);
   if (!existingReport) {
     return { error: 'Report not found.' };
   }
 
-  const validated = validateReportFields(narratorsInput, matnInput);
-  if (!validated.isnad || typeof validated.matn !== 'string') {
+  const validated = validateReportFields(narratorsInput, matnInput, rawHighlights, bundle.highlightLegend);
+  if (!validated.isnad || typeof validated.matn !== 'string' || !validated.matnHighlights) {
     return { error: validated.error ?? 'Could not save this report.' };
   }
 
@@ -267,6 +312,7 @@ export function updateReportInBundle(
     ...existingReport,
     isnad: validated.isnad,
     matn: validated.matn,
+    matnHighlights: validated.matnHighlights,
   };
 
   const nextReports = bundle.reports.map((report) => (report.id === reportId ? updatedReport : report));
@@ -325,6 +371,12 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
     return { error: 'Bundle field "reports" must be an array.' };
   }
 
+  const parsedHighlightLegend = parseHighlightLegend(parsed.highlightLegend);
+  if (!parsedHighlightLegend.legend) {
+    return { error: parsedHighlightLegend.error ?? 'Invalid highlight legend.' };
+  }
+
+  const legendIds = new Set(parsedHighlightLegend.legend.map((entry) => entry.id));
   const reports: HadithReport[] = [];
   for (let index = 0; index < parsed.reports.length; index += 1) {
     const raw = parsed.reports[index];
@@ -352,10 +404,27 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       return { error: `Report ${index + 1} has an empty matn.` };
     }
 
+    const matn = sanitizeMatn(rawMatn);
+    const rawHighlights = Array.isArray(raw.matnHighlights)
+      ? raw.matnHighlights.flatMap((entry) => {
+        if (!isObjectLike(entry)) {
+          return [];
+        }
+
+        return [{
+          id: typeof entry.id === 'string' ? entry.id : '',
+          legendId: typeof entry.legendId === 'string' ? entry.legendId : '',
+          start: typeof entry.start === 'number' ? entry.start : -1,
+          end: typeof entry.end === 'number' ? entry.end : -1,
+        }];
+      })
+      : [];
+
     const report: HadithReport = {
       id: typeof raw.id === 'string' && raw.id.trim().length > 0 ? raw.id : makeId(),
       isnad,
-      matn: sanitizeMatn(rawMatn),
+      matn,
+      matnHighlights: sanitizeMatnHighlights(rawHighlights, matn, legendIds),
       createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : nowIso(),
     };
     reports.push(report);
@@ -392,6 +461,7 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       createdAt,
       updatedAt,
       reports,
+      highlightLegend: parsedHighlightLegend.legend,
       nodePositions: parsedNodePositions.positions,
       nodeWidths: parsedNodeWidths.widths,
       fontSizes: parsedFontSizes.fontSizes,

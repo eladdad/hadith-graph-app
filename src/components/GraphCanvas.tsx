@@ -144,19 +144,36 @@ export function GraphCanvas({
                     />
                   </>
                 ) : null}
-                <text
-                  textAnchor="end"
-                  className="matn-node-text"
-                  x={matnNodeTextX}
-                  y={matnNodeTextStartY}
-                  style={{ fontSize: `${matnFontSize}px` }}
-                >
-                  {(node.matnLines ?? ['']).map((line, index) => (
-                    <tspan key={`${node.id}-matn-${index}`} x={matnNodeTextX} dy={index === 0 ? 0 : matnLineStep}>
-                      {line.length > 0 ? line : '\u00a0'}
-                    </tspan>
-                  ))}
-                </text>
+                {(node.matnLineSegments ?? []).map((line, index) => {
+                  let segmentX = matnNodeTextX - line.width;
+                  const lineY = matnNodeTextStartY + index * matnLineStep;
+
+                  return (
+                    <g key={`${node.id}-matn-line-${index}`}>
+                      {line.segments.map((segment, segmentIndex) => {
+                        const currentX = segmentX;
+                        segmentX += segment.width;
+
+                        return (
+                          <text
+                            key={`${node.id}-matn-${index}-${segmentIndex}`}
+                            x={currentX}
+                            y={lineY}
+                            textAnchor="start"
+                            xmlSpace="preserve"
+                            className="matn-node-text"
+                            style={{
+                              fontSize: `${matnFontSize}px`,
+                              fill: segment.color ?? undefined,
+                            }}
+                          >
+                            {segment.text.length > 0 ? segment.text : '\u00a0'}
+                          </text>
+                        );
+                      })}
+                    </g>
+                  );
+                })}
               </>
             ) : (
               <text textAnchor="middle" className="node-label" style={{ fontSize: `${narratorFontSize}px` }}>

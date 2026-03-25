@@ -21,17 +21,29 @@ import {
   updateReportInBundle,
 } from './bundle';
 import { GraphCanvas } from './components/GraphCanvas';
+import { HighlightedMatn } from './components/HighlightedMatn';
 import { MAX_FONT_SIZE, MIN_FONT_SIZE, buildRenderableGraph, clampFontSize } from './graph';
 import { useBoxSelection } from './hooks/useBoxSelection';
 import { useNodeDrag } from './hooks/useNodeDrag';
 import { useNodeResize } from './hooks/useNodeResize';
-import type { GraphNode, HadithBundle, HadithReport } from './types';
+import {
+  HIGHLIGHT_COLOR_OPTIONS,
+  getHighlightExcerpt,
+  sanitizeHighlightColor,
+  sanitizeMatnHighlights,
+} from './matnHighlights';
+import type { GraphNode, HadithBundle, HadithReport, HighlightLegendItem, MatnHighlight } from './types';
 
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 2.8;
 const THEME_STORAGE_KEY = 'hadith-graph-theme';
 
 type ThemeMode = 'light' | 'dark';
+
+interface SelectionRange {
+  start: number;
+  end: number;
+}
 
 interface PanState {
   startClientX: number;
@@ -79,6 +91,47 @@ function downloadJson(filename: string, contents: string): void {
   URL.revokeObjectURL(url);
 }
 
+function createClientId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function highlightsEqual(left: MatnHighlight[], right: MatnHighlight[]): boolean {
+  return left.length === right.length
+    && left.every((item, index) => (
+      item.id === right[index]?.id
+      && item.legendId === right[index]?.legendId
+      && item.start === right[index]?.start
+      && item.end === right[index]?.end
+    ));
+}
+
+function getSelectionRangeWithin(root: HTMLElement): SelectionRange | null {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    return null;
+  }
+
+  const range = selection.getRangeAt(0);
+  if (!root.contains(range.startContainer) || !root.contains(range.endContainer)) {
+    return null;
+  }
+
+  const startRange = document.createRange();
+  startRange.selectNodeContents(root);
+  startRange.setEnd(range.startContainer, range.startOffset);
+
+  const endRange = document.createRange();
+  endRange.selectNodeContents(root);
+  endRange.setEnd(range.endContainer, range.endOffset);
+
+  const start = startRange.toString().length;
+  const end = endRange.toString().length;
+  return end > start ? { start, end } : null;
+}
+
 function getInitialTheme(): ThemeMode {
   if (typeof window === 'undefined') {
     return 'light';
@@ -96,21 +149,33 @@ function App() {
   const [bundle, setBundle] = useState<HadithBundle>(() => createEmptyBundle('My Hadith Bundle'));
   const [editorNarrators, setEditorNarrators] = useState<string[]>(() => emptyNarratorDraft());
   const [editorMatn, setEditorMatn] = useState('');
+  const [editorHighlights, setEditorHighlights] = useState<MatnHighlight[]>([]);
   const [editingReportId, setEditingReportId] = useState<string | null>(null);
   const [message, setMessage] = useState('Ready. Create reports and drag nodes to arrange your graph.');
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
+  const [previewSelection, setPreviewSelection] = useState<SelectionRange | null>(null);
+  const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+  const [newLegendLabel, setNewLegendLabel] = useState('');
+  const [newLegendColor, setNewLegendColor] = useState(HIGHLIGHT_COLOR_OPTIONS[0]?.color ?? '#f59e0b');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const matnPreviewRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const graphScrollRef = useRef<HTMLDivElement>(null);
   const panStateRef = useRef<PanState | null>(null);
 
   const graph = useMemo(
-    () => buildRenderableGraph(bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes),
-    [bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes],
+    () => buildRenderableGraph(
+      bundle.reports,
+      bundle.nodePositions,
+      bundle.nodeWidths,
+      bundle.fontSizes,
+      bundle.highlightLegend,
+    ),
+    [bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend],
   );
 
   const selectedSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -127,34 +192,57 @@ function App() {
 
   const normalizedDraftNarrators = useMemo(() => normalizeDraftNarrators(editorNarrators), [editorNarrators]);
   const normalizedDraftMatn = useMemo(() => normalizeDraftMatn(editorMatn), [editorMatn]);
+  const highlightLegendById = useMemo(
+    () => new Map(bundle.highlightLegend.map((entry) => [entry.id, entry])),
+    [bundle.highlightLegend],
+  );
+  const highlightUsageCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    bundle.reports.forEach((report) => {
+      report.matnHighlights.forEach((highlight) => {
+        counts.set(highlight.legendId, (counts.get(highlight.legendId) ?? 0) + 1);
+      });
+    });
+    return counts;
+  }, [bundle.reports]);
 
   const editorIsDirty = useMemo(() => {
     if (editingReport) {
       return (
         !arraysEqual(normalizedDraftNarrators, editingReport.isnad)
         || normalizedDraftMatn !== editingReport.matn
+        || !highlightsEqual(editorHighlights, editingReport.matnHighlights)
       );
     }
 
-    return normalizedDraftNarrators.length > 0 || normalizedDraftMatn.length > 0;
-  }, [editingReport, normalizedDraftNarrators, normalizedDraftMatn]);
+    return normalizedDraftNarrators.length > 0 || normalizedDraftMatn.length > 0 || editorHighlights.length > 0;
+  }, [editingReport, editorHighlights, normalizedDraftNarrators, normalizedDraftMatn]);
 
   const resetEditor = useCallback((): void => {
     setEditingReportId(null);
     setEditorNarrators(emptyNarratorDraft());
     setEditorMatn('');
+    setEditorHighlights([]);
+    setPreviewSelection(null);
+    setActiveHighlightId(null);
   }, []);
 
   const loadReportIntoEditor = useCallback((report: HadithReport): void => {
     setEditingReportId(report.id);
     setEditorNarrators(report.isnad.length > 0 ? [...report.isnad] : emptyNarratorDraft());
     setEditorMatn(report.matn);
+    setEditorHighlights(report.matnHighlights.map((highlight) => ({ ...highlight })));
+    setPreviewSelection(null);
+    setActiveHighlightId(null);
   }, []);
 
   const loadReportIntoCreateForm = useCallback((report: HadithReport): void => {
     setEditingReportId(null);
     setEditorNarrators(report.isnad.length > 0 ? [...report.isnad] : emptyNarratorDraft());
     setEditorMatn(report.matn);
+    setEditorHighlights(report.matnHighlights.map((highlight) => ({ ...highlight })));
+    setPreviewSelection(null);
+    setActiveHighlightId(null);
   }, []);
 
   const confirmDiscardEditorChanges = useCallback((): boolean => {
@@ -178,6 +266,35 @@ function App() {
       resetEditor();
     }
   }, [editingReport, editingReportId, resetEditor]);
+
+  useEffect(() => {
+    const validLegendIds = new Set(bundle.highlightLegend.map((entry) => entry.id));
+    setEditorHighlights((previous) => {
+      const next = sanitizeMatnHighlights(previous, normalizedDraftMatn, validLegendIds);
+      return highlightsEqual(previous, next) ? previous : next;
+    });
+  }, [bundle.highlightLegend, normalizedDraftMatn]);
+
+  useEffect(() => {
+    setPreviewSelection((previous) => {
+      if (!previous) {
+        return previous;
+      }
+      const end = Math.min(previous.end, normalizedDraftMatn.length);
+      const start = Math.min(previous.start, end);
+      return end > start ? { start, end } : null;
+    });
+  }, [normalizedDraftMatn]);
+
+  useEffect(() => {
+    if (!activeHighlightId) {
+      return;
+    }
+
+    if (!editorHighlights.some((highlight) => highlight.id === activeHighlightId)) {
+      setActiveHighlightId(null);
+    }
+  }, [activeHighlightId, editorHighlights]);
 
   useEffect(() => {
     if (!isPanning) {
@@ -487,6 +604,107 @@ function App() {
     setEditorNarrators((previous) => previous.map((item, itemIndex) => (itemIndex === index ? value : item)));
   };
 
+  const capturePreviewSelection = useCallback((): void => {
+    const preview = matnPreviewRef.current;
+    if (!preview) {
+      return;
+    }
+
+    const nextRange = getSelectionRangeWithin(preview);
+    setPreviewSelection(nextRange);
+    if (!nextRange) {
+      setActiveHighlightId(null);
+    }
+  }, []);
+
+  const applyHighlightToRange = useCallback((legend: HighlightLegendItem, range: SelectionRange): void => {
+    setEditorHighlights((previous) => {
+      const remaining = previous.filter((highlight) => highlight.end <= range.start || highlight.start >= range.end);
+      return sanitizeMatnHighlights(
+        [
+          ...remaining,
+          {
+            id: createClientId(),
+            legendId: legend.id,
+            start: range.start,
+            end: range.end,
+          },
+        ],
+        normalizedDraftMatn,
+        new Set([...bundle.highlightLegend.map((entry) => entry.id), legend.id]),
+      );
+    });
+    setActiveHighlightId(null);
+  }, [bundle.highlightLegend, normalizedDraftMatn]);
+
+  const handleApplyExistingLegend = useCallback((legendId: string): void => {
+    if (!previewSelection) {
+      setMessage('Select text in the normalized matn preview first.');
+      return;
+    }
+
+    const legend = highlightLegendById.get(legendId);
+    if (!legend) {
+      setMessage('That highlight label is no longer available.');
+      return;
+    }
+
+    applyHighlightToRange(legend, previewSelection);
+    setMessage(`Applied "${legend.label}" to the selected matn text.`);
+  }, [applyHighlightToRange, highlightLegendById, previewSelection]);
+
+  const handleCreateLegendAndApply = useCallback((): void => {
+    if (!previewSelection) {
+      setMessage('Select text in the normalized matn preview first.');
+      return;
+    }
+
+    const label = normalizeDraftText(newLegendLabel);
+    if (label.length === 0) {
+      setMessage('Enter a label before creating a shared highlight.');
+      return;
+    }
+
+    const color = sanitizeHighlightColor(newLegendColor);
+    const existing = bundle.highlightLegend.find((entry) => (
+      entry.label.localeCompare(label, undefined, { sensitivity: 'accent' }) === 0
+      && entry.color === color
+    ));
+    const legend = existing ?? {
+      id: createClientId(),
+      label,
+      color,
+    };
+
+    if (!existing) {
+      setBundle((previous) => ({
+        ...previous,
+        updatedAt: new Date().toISOString(),
+        highlightLegend: [...previous.highlightLegend, legend],
+      }));
+    }
+
+    applyHighlightToRange(legend, previewSelection);
+    setNewLegendLabel('');
+    setMessage(existing
+      ? `Reused "${legend.label}" for the selected matn text.`
+      : `Added "${legend.label}" to the shared legend and applied it.`);
+  }, [applyHighlightToRange, bundle.highlightLegend, newLegendColor, newLegendLabel, previewSelection]);
+
+  const handleRemoveHighlight = useCallback((highlightId: string): void => {
+    setEditorHighlights((previous) => previous.filter((highlight) => highlight.id !== highlightId));
+    if (activeHighlightId === highlightId) {
+      setActiveHighlightId(null);
+    }
+  }, [activeHighlightId]);
+
+  const handleFocusHighlight = useCallback((highlight: MatnHighlight): void => {
+    setPreviewSelection({ start: highlight.start, end: highlight.end });
+    setActiveHighlightId(highlight.id);
+    const highlightedElement = matnPreviewRef.current?.querySelector<HTMLElement>(`[data-highlight-id="${highlight.id}"]`);
+    highlightedElement?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, []);
+
   const handleAddNarrator = (): void => {
     setEditorNarrators((previous) => [...previous, '']);
   };
@@ -506,7 +724,7 @@ function App() {
     event.preventDefault();
 
     if (editingReportId) {
-      const result = updateReportInBundle(bundle, editingReportId, editorNarrators, editorMatn);
+      const result = updateReportInBundle(bundle, editingReportId, editorNarrators, editorMatn, editorHighlights);
       if (!result.bundle) {
         setMessage(result.error ?? 'Failed to save report.');
         return;
@@ -526,7 +744,7 @@ function App() {
       return;
     }
 
-    const result = addReportToBundleFromFields(bundle, editorNarrators, editorMatn);
+    const result = addReportToBundleFromFields(bundle, editorNarrators, editorMatn, editorHighlights);
     if (!result.bundle) {
       setMessage(result.error ?? 'Failed to add report.');
       return;
@@ -632,6 +850,98 @@ function App() {
               />
             </label>
 
+            <div className="field-group">
+              <div className="field-label-row">
+                <span className="field-label">Highlights</span>
+                <span className="highlight-selection-note" dir="auto">
+                  {previewSelection
+                    ? `"${normalizedDraftMatn.slice(previewSelection.start, previewSelection.end)}"`
+                    : 'Select text in the normalized preview to tag it.'}
+                </span>
+              </div>
+
+              {bundle.highlightLegend.length > 0 ? (
+                <div className="highlight-actions">
+                  {bundle.highlightLegend.map((entry) => (
+                    <button
+                      key={entry.id}
+                      type="button"
+                      className="legend-apply-button"
+                      onClick={() => handleApplyExistingLegend(entry.id)}
+                      disabled={!previewSelection}
+                    >
+                      <span className="legend-swatch" style={{ backgroundColor: entry.color }} />
+                      <span>{entry.label}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="highlight-create">
+                <input
+                  type="text"
+                  value={newLegendLabel}
+                  onChange={(event) => setNewLegendLabel(event.target.value)}
+                  placeholder="New highlight label"
+                />
+                <div className="highlight-color-row">
+                  {HIGHLIGHT_COLOR_OPTIONS.map((option) => (
+                    <button
+                      key={option.color}
+                      type="button"
+                      className={newLegendColor === option.color ? 'color-swatch-button selected' : 'color-swatch-button'}
+                      onClick={() => setNewLegendColor(option.color)}
+                      aria-label={`Use ${option.name}`}
+                      title={option.name}
+                    >
+                      <span className="color-swatch-dot" style={{ backgroundColor: option.color }} />
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={handleCreateLegendAndApply} disabled={!previewSelection}>
+                  Create & Apply
+                </button>
+              </div>
+
+              <HighlightedMatn
+                ref={matnPreviewRef}
+                className="matn-preview"
+                text={normalizedDraftMatn}
+                highlights={editorHighlights}
+                legend={bundle.highlightLegend}
+                activeHighlightId={activeHighlightId}
+                dir="auto"
+                tabIndex={0}
+                onMouseUp={capturePreviewSelection}
+                onKeyUp={capturePreviewSelection}
+              />
+
+              {editorHighlights.length > 0 ? (
+                <div className="highlight-chip-list">
+                  {editorHighlights.map((highlight) => {
+                    const legend = highlightLegendById.get(highlight.legendId);
+                    const excerpt = getHighlightExcerpt(normalizedDraftMatn, highlight);
+                    if (!legend) {
+                      return null;
+                    }
+
+                    return (
+                      <div key={highlight.id} className={activeHighlightId === highlight.id ? 'highlight-chip active' : 'highlight-chip'}>
+                        <button type="button" className="highlight-chip-main" onClick={() => handleFocusHighlight(highlight)}>
+                          <span className="legend-swatch" style={{ backgroundColor: legend.color }} />
+                          <span className="highlight-chip-label">{legend.label}</span>
+                          <span className="highlight-chip-text" dir="auto">{excerpt}</span>
+                        </button>
+                        <button type="button" className="highlight-chip-remove" onClick={() => handleRemoveHighlight(highlight.id)}>
+                          Remove
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+
             <div className="editor-actions">
               <button type="submit" className="primary">
                 {editingReport ? 'Save Changes' : 'Add Report'}
@@ -718,6 +1028,24 @@ function App() {
                 />
               </label>
             </div>
+            <div className="shared-legend">
+              <div className="list-header">
+                <h3>Highlight Legend</h3>
+              </div>
+              {bundle.highlightLegend.length > 0 ? (
+                <div className="shared-legend-list">
+                  {bundle.highlightLegend.map((entry) => (
+                    <div key={entry.id} className="shared-legend-item">
+                      <span className="legend-swatch" style={{ backgroundColor: entry.color }} />
+                      <span className="shared-legend-label">{entry.label}</span>
+                      <span className="shared-legend-count">{highlightUsageCounts.get(entry.id) ?? 0}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="subtitle">Add highlights from the matn preview to build a shared legend.</p>
+              )}
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -745,7 +1073,13 @@ function App() {
                         onClick={() => handleSelectReport(report)}
                       >
                         <div className="report-chain" dir="auto">{report.isnad.join(' -> ')}</div>
-                        <div className="report-matn" dir="auto">{report.matn}</div>
+                        <HighlightedMatn
+                          className="report-matn"
+                          text={report.matn}
+                          highlights={report.matnHighlights}
+                          legend={bundle.highlightLegend}
+                          dir="auto"
+                        />
                         <div className="report-meta">#{index + 1}</div>
                       </button>
                       <div className="report-card-actions">
