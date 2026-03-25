@@ -8,7 +8,7 @@
   --accent: #9c4f35;
   --accent-soft: #f6d9c8;
   --narrator: #f8efdf;
-  --report: #e9f3ff;
+  --matn-node: #e9f3ff;
   --edge: #4f6f98;
 }
 
@@ -454,8 +454,8 @@ textarea:focus {
   stroke-width: 1.1;
 }
 
-.node-report {
-  fill: var(--report);
+.node-matn-card {
+  fill: var(--matn-node);
   stroke: #87a5c7;
   stroke-width: 1.1;
 }
@@ -491,7 +491,7 @@ textarea:focus {
   fill: #fce8cf;
 }
 
-.node-group.selected .node-report {
+.node-group.selected .node-matn-card {
   stroke: #2f6ea9;
   stroke-width: 2.2;
   fill: #dff0ff;
@@ -514,17 +514,17 @@ textarea:focus {
   stroke-width: 1.3;
   stroke-dasharray: 5 4;
 }
-.report-title {
+.matn-node-title {
   font-size: 0.8rem;
   font-weight: 700;
 }
 
-.report-divider {
+.matn-node-divider {
   stroke: #86a8cb;
   stroke-width: 1;
 }
 
-.node-matn {
+.matn-node-text {
   font-size: 0.75rem;
   fill: #244566;
 }

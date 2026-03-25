@@ -6,7 +6,7 @@
   useRef,
   useState,
 } from 'react';
-import { clampReportWidth } from '../graph';
+import { clampMatnNodeWidth } from '../graph';
 import type { GraphNode, HadithBundle } from '../types';
 
 interface ResizeState {
@@ -66,10 +66,10 @@ export function useNodeResize({
       let nextX = resizeState.initialCenterX;
 
       if (resizeState.edge === 'right') {
-        nextWidth = clampReportWidth(point.x - initialLeft);
+        nextWidth = clampMatnNodeWidth(point.x - initialLeft);
         nextX = initialLeft + nextWidth / 2;
       } else {
-        nextWidth = clampReportWidth(initialRight - point.x);
+        nextWidth = clampMatnNodeWidth(initialRight - point.x);
         nextX = initialRight - nextWidth / 2;
       }
 
@@ -138,7 +138,7 @@ export function useNodeResize({
     node: GraphNode,
     edge: 'left' | 'right',
   ): void => {
-    if (event.button !== 0 || node.type !== 'report') {
+    if (event.button !== 0 || node.type !== 'matn') {
       return;
     }
 

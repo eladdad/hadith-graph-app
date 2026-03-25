@@ -30,7 +30,7 @@ export interface HadithBundle {
   fontSizes: HadithFontSizes;
 }
 
-export type GraphNodeType = 'narrator' | 'report';
+export type GraphNodeType = 'narrator' | 'matn';
 
 export interface GraphNode {
   id: string;

@@ -1,5 +1,5 @@
 import { PointerEvent as ReactPointerEvent, RefObject } from 'react';
-import { REPORT_SIDE_PADDING } from '../graph';
+import { MATN_NODE_SIDE_PADDING } from '../graph';
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
 
@@ -90,10 +90,10 @@ export function GraphCanvas({
         const narratorLineStep = narratorFontSize + 4;
         const matnLineStep = matnFontSize + 4;
         const labelStartDy = -((node.labelLines.length - 1) * narratorLineStep) / 2;
-        const reportTitleY = -node.height / 2 + 18;
-        const reportDividerY = -node.height / 2 + 28;
-        const reportMatnStartY = reportDividerY + 15;
-        const reportTextX = node.width / 2 - REPORT_SIDE_PADDING;
+        const matnNodeTitleY = -node.height / 2 + 18;
+        const matnNodeDividerY = -node.height / 2 + 28;
+        const matnNodeTextStartY = matnNodeDividerY + 15;
+        const matnNodeTextX = node.width / 2 - MATN_NODE_SIDE_PADDING;
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
 
@@ -110,10 +110,10 @@ export function GraphCanvas({
               width={node.width}
               height={node.height}
               rx={14}
-              className={node.type === 'narrator' ? 'node-narrator' : 'node-report'}
+              className={node.type === 'narrator' ? 'node-narrator' : 'node-matn-card'}
             />
 
-            {node.type === 'report' ? (
+            {node.type === 'matn' ? (
               <>
                 {selected ? (
                   <>
@@ -135,25 +135,25 @@ export function GraphCanvas({
                     />
                   </>
                 ) : null}
-                <text textAnchor="end" className="node-label report-title" x={reportTextX} y={reportTitleY}>
+                <text textAnchor="end" className="node-label matn-node-title" x={matnNodeTextX} y={matnNodeTitleY}>
                   {node.label}
                 </text>
                 <line
                   x1={-node.width / 2 + 10}
-                  y1={reportDividerY}
+                  y1={matnNodeDividerY}
                   x2={node.width / 2 - 10}
-                  y2={reportDividerY}
-                  className="report-divider"
+                  y2={matnNodeDividerY}
+                  className="matn-node-divider"
                 />
                 <text
                   textAnchor="end"
-                  className="node-matn"
-                  x={reportTextX}
-                  y={reportMatnStartY}
+                  className="matn-node-text"
+                  x={matnNodeTextX}
+                  y={matnNodeTextStartY}
                   style={{ fontSize: `${matnFontSize}px` }}
                 >
                   {(node.matnLines ?? ['']).map((line, index) => (
-                    <tspan key={`${node.id}-matn-${index}`} x={reportTextX} dy={index === 0 ? 0 : matnLineStep}>
+                    <tspan key={`${node.id}-matn-${index}`} x={matnNodeTextX} dy={index === 0 ? 0 : matnLineStep}>
                       {line.length > 0 ? line : '\u00a0'}
                     </tspan>
                   ))}

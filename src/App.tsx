@@ -231,7 +231,7 @@ function App() {
     setSelectedNodeIds,
     setBundle,
     onResizeCommitted: () => {
-      setMessage('Report node resized. Export JSON to save width and layout.');
+      setMessage('Matn node resized. Export JSON to save width and layout.');
     },
   });
 

@@ -8,7 +8,7 @@ import type { HadithBundle, HadithFontSizes, HadithReport, NodePositionMap, Node
 
 const BUNDLE_FORMAT = 'hadith-graph-bundle';
 const NARRATOR_PREFIX = 'n:';
-const REPORT_PREFIX = 'r:';
+const MATN_NODE_PREFIX = 'r:';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -121,7 +121,7 @@ function parseFontSizes(raw: unknown): { fontSizes?: HadithFontSizes; error?: st
 
 export function getNodeIdsForReport(report: HadithReport): string[] {
   const ids = new Set<string>();
-  ids.add(`${REPORT_PREFIX}${report.id}`);
+  ids.add(`${MATN_NODE_PREFIX}${report.id}`);
   for (const narrator of report.isnad) {
     ids.add(`${NARRATOR_PREFIX}${narrator}`);
   }

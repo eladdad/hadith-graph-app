@@ -1,20 +1,20 @@
 ﻿import type { HadithFontSizes, HadithReport, NodePositionMap, NodeWidthMap, RenderableGraph } from './types';
 
 const NARRATOR_PREFIX = 'n:';
-const REPORT_PREFIX = 'r:';
+const MATN_NODE_PREFIX = 'r:';
 
 const NARRATOR_NODE_WIDTH = 190;
 const NARRATOR_MIN_HEIGHT = 56;
 const NARRATOR_SIDE_PADDING = 16;
 
-const REPORT_DEFAULT_WIDTH = 360;
-export const REPORT_MIN_WIDTH = 220;
-export const REPORT_MAX_WIDTH = 760;
-export const REPORT_SIDE_PADDING = 14;
-const REPORT_TITLE_HEIGHT = 18;
-const REPORT_TOP_PADDING = 14;
-const REPORT_BOTTOM_PADDING = 14;
-const REPORT_GAP_AFTER_TITLE = 10;
+const MATN_NODE_DEFAULT_WIDTH = 360;
+export const MATN_NODE_MIN_WIDTH = 220;
+export const MATN_NODE_MAX_WIDTH = 760;
+export const MATN_NODE_SIDE_PADDING = 14;
+const MATN_NODE_TITLE_HEIGHT = 18;
+const MATN_NODE_TOP_PADDING = 14;
+const MATN_NODE_BOTTOM_PADDING = 14;
+const MATN_NODE_GAP_AFTER_TITLE = 10;
 export const DEFAULT_NARRATOR_FONT_SIZE = 13;
 export const DEFAULT_MATN_FONT_SIZE = 12;
 export const MIN_FONT_SIZE = 10;
@@ -43,16 +43,16 @@ function matnLineHeight(fontSize: number): number {
   return fontSize + 4;
 }
 
-export function clampReportWidth(width: number): number {
-  return Math.min(REPORT_MAX_WIDTH, Math.max(REPORT_MIN_WIDTH, Math.round(width)));
+export function clampMatnNodeWidth(width: number): number {
+  return Math.min(MATN_NODE_MAX_WIDTH, Math.max(MATN_NODE_MIN_WIDTH, Math.round(width)));
 }
 
 function narratorId(name: string): string {
   return `${NARRATOR_PREFIX}${name}`;
 }
 
-function reportId(reportIdValue: string): string {
-  return `${REPORT_PREFIX}${reportIdValue}`;
+function matnNodeId(sourceReportId: string): string {
+  return `${MATN_NODE_PREFIX}${sourceReportId}`;
 }
 
 function nodeLabelSort(a: string, b: string, labels: Map<string, string>): number {
@@ -229,14 +229,14 @@ export function buildRenderableGraph(
 ): RenderableGraph {
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
   const labels = new Map<string, string>();
-  const reportMatnById = new Map<string, string>();
-  const types = new Map<string, 'narrator' | 'report'>();
+  const matnByNodeId = new Map<string, string>();
+  const types = new Map<string, 'narrator' | 'matn'>();
 
   const adjacency = new Map<string, Set<string>>();
   const indegree = new Map<string, number>();
   const edgeWeights = new Map<string, { source: string; target: string; weight: number; showWeight: boolean }>();
 
-  const ensureNode = (id: string, label: string, type: 'narrator' | 'report'): void => {
+  const ensureNode = (id: string, label: string, type: 'narrator' | 'matn'): void => {
     if (!labels.has(id)) {
       labels.set(id, label);
       types.set(id, type);
@@ -274,9 +274,9 @@ export function buildRenderableGraph(
   };
 
   reports.forEach((report, index) => {
-    const reportNodeId = reportId(report.id);
-    ensureNode(reportNodeId, `Report ${index + 1}`, 'report');
-    reportMatnById.set(reportNodeId, report.matn);
+    const matnId = matnNodeId(report.id);
+    ensureNode(matnId, `Matn ${index + 1}`, 'matn');
+    matnByNodeId.set(matnId, report.matn);
 
     report.isnad.forEach((narratorName) => {
       ensureNode(narratorId(narratorName), narratorName, 'narrator');
@@ -290,7 +290,7 @@ export function buildRenderableGraph(
 
     const lastNarrator = report.isnad[report.isnad.length - 1];
     if (lastNarrator) {
-      addEdge(narratorId(lastNarrator), reportNodeId, false);
+      addEdge(narratorId(lastNarrator), matnId, false);
     }
   });
 
@@ -370,21 +370,21 @@ export function buildRenderableGraph(
     const type = types.get(id) ?? 'narrator';
     const label = labels.get(id) ?? id;
 
-    if (type === 'report') {
-      const reportWidth = clampReportWidth(nodeWidths[id] ?? REPORT_DEFAULT_WIDTH);
+    if (type === 'matn') {
+      const matnNodeWidth = clampMatnNodeWidth(nodeWidths[id] ?? MATN_NODE_DEFAULT_WIDTH);
       const matnLines = wrapTextToWidth(
-        reportMatnById.get(id) ?? '',
-        Math.max(80, reportWidth - REPORT_SIDE_PADDING * 2),
+        matnByNodeId.get(id) ?? '',
+        Math.max(80, matnNodeWidth - MATN_NODE_SIDE_PADDING * 2),
         normalizedFontSizes.matn,
       );
-      const height = REPORT_TOP_PADDING
-        + REPORT_TITLE_HEIGHT
-        + REPORT_GAP_AFTER_TITLE
+      const height = MATN_NODE_TOP_PADDING
+        + MATN_NODE_TITLE_HEIGHT
+        + MATN_NODE_GAP_AFTER_TITLE
         + matnLines.length * matnLineHeight(normalizedFontSizes.matn)
-        + REPORT_BOTTOM_PADDING;
+        + MATN_NODE_BOTTOM_PADDING;
 
       nodeMeta.set(id, {
-        width: reportWidth,
+        width: matnNodeWidth,
         height,
         labelLines: [label],
         matnLines,
