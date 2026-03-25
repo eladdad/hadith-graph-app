@@ -15,11 +15,18 @@ export interface HighlightColorOption {
 
 export const HIGHLIGHT_COLOR_OPTIONS: HighlightColorOption[] = [
   { name: 'Amber', color: '#f59e0b' },
+  { name: 'Orange', color: '#f97316' },
   { name: 'Rose', color: '#f43f5e' },
+  { name: 'Pink', color: '#ec4899' },
   { name: 'Violet', color: '#8b5cf6' },
+  { name: 'Indigo', color: '#6366f1' },
   { name: 'Sky', color: '#0ea5e9' },
+  { name: 'Cyan', color: '#06b6d4' },
+  { name: 'Teal', color: '#14b8a6' },
   { name: 'Emerald', color: '#10b981' },
+  { name: 'Lime', color: '#84cc16' },
   { name: 'Slate', color: '#64748b' },
+  { name: 'Stone', color: '#78716c' },
 ];
 
 const FALLBACK_HIGHLIGHT_COLOR = HIGHLIGHT_COLOR_OPTIONS[0]?.color ?? '#f59e0b';

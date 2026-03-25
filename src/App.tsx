@@ -160,6 +160,7 @@ function App() {
   const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
   const [newLegendLabel, setNewLegendLabel] = useState('');
   const [newLegendColor, setNewLegendColor] = useState(HIGHLIGHT_COLOR_OPTIONS[0]?.color ?? '#f59e0b');
+  const [isSharedLegendOpen, setIsSharedLegendOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const matnPreviewRef = useRef<HTMLDivElement>(null);
@@ -884,6 +885,18 @@ function App() {
                   onChange={(event) => setNewLegendLabel(event.target.value)}
                   placeholder="New highlight label"
                 />
+                <div className="color-picker-row">
+                  <label className="color-picker-field">
+                    <span>Custom color</span>
+                    <input
+                      type="color"
+                      value={newLegendColor}
+                      onChange={(event) => setNewLegendColor(sanitizeHighlightColor(event.target.value))}
+                      aria-label="Choose custom highlight color"
+                    />
+                  </label>
+                  <span className="color-code">{newLegendColor}</span>
+                </div>
                 <div className="highlight-color-row">
                   {HIGHLIGHT_COLOR_OPTIONS.map((option) => (
                     <button
@@ -1029,22 +1042,29 @@ function App() {
               </label>
             </div>
             <div className="shared-legend">
-              <div className="list-header">
-                <h3>Highlight Legend</h3>
-              </div>
-              {bundle.highlightLegend.length > 0 ? (
-                <div className="shared-legend-list">
-                  {bundle.highlightLegend.map((entry) => (
-                    <div key={entry.id} className="shared-legend-item">
-                      <span className="legend-swatch" style={{ backgroundColor: entry.color }} />
-                      <span className="shared-legend-label">{entry.label}</span>
-                      <span className="shared-legend-count">{highlightUsageCounts.get(entry.id) ?? 0}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="subtitle">Add highlights from the matn preview to build a shared legend.</p>
-              )}
+              <button
+                type="button"
+                className="shared-legend-toggle"
+                onClick={() => setIsSharedLegendOpen((current) => !current)}
+              >
+                <span>Highlight Legend</span>
+                <span>{isSharedLegendOpen ? 'Hide' : `Show (${bundle.highlightLegend.length})`}</span>
+              </button>
+              {isSharedLegendOpen ? (
+                bundle.highlightLegend.length > 0 ? (
+                  <div className="shared-legend-list">
+                    {bundle.highlightLegend.map((entry) => (
+                      <div key={entry.id} className="shared-legend-item">
+                        <span className="legend-swatch" style={{ backgroundColor: entry.color }} />
+                        <span className="shared-legend-label">{entry.label}</span>
+                        <span className="shared-legend-count">{highlightUsageCounts.get(entry.id) ?? 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="subtitle">Add highlights from the matn preview to build a shared legend.</p>
+                )
+              ) : null}
             </div>
             <input
               ref={fileInputRef}

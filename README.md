@@ -19,7 +19,9 @@ A browser-only starter app for plotting hadith report graphs as a directed acycl
 
 ## Bundle format
 
-This app uses a versioned JSON format:
+This app imports and exports a versioned JSON bundle. The `format` and `version`
+fields identify the schema, while older optional fields are still accepted and
+filled in with safe defaults during import.
 
 ```json
 {
@@ -33,7 +35,22 @@ This app uses a versioned JSON format:
       "id": "uuid",
       "isnad": ["Narrator A", "Narrator B", "Narrator C"],
       "matn": "The report statement",
+      "matnHighlights": [
+        {
+          "id": "highlight-1",
+          "legendId": "theme-mercy",
+          "start": 4,
+          "end": 10
+        }
+      ],
       "createdAt": "2026-03-24T18:05:00.000Z"
+    }
+  ],
+  "highlightLegend": [
+    {
+      "id": "theme-mercy",
+      "label": "Mercy",
+      "color": "#f59e0b"
     }
   ],
   "nodePositions": {
@@ -42,9 +59,29 @@ This app uses a versioned JSON format:
   },
   "nodeWidths": {
     "r:uuid": 420
+  },
+  "fontSizes": {
+    "narrator": 13,
+    "matn": 12
   }
 }
 ```
+
+Bundle rules:
+
+- `reports[].isnad` must contain at least one narrator string after trimming.
+- `reports[].matn` is normalized on import and cannot be empty.
+- `reports[].matnHighlights` reference `highlightLegend[].id` values by `legendId`.
+- Highlight ranges are sanitized on import: invalid, unknown, empty, or overlapping ranges are dropped.
+- Node IDs in `nodePositions` and `nodeWidths` use `n:<narrator name>` for narrator nodes and `r:<report id>` for report nodes.
+- `fontSizes.narrator` and `fontSizes.matn` are clamped to the app's supported range. The current defaults are `13` and `12`.
+- Bundles that would introduce a narrator cycle are rejected during import.
+
+Compatibility notes:
+
+- Older bundles that omit `highlightLegend`, `matnHighlights`, `nodePositions`, `nodeWidths`, or `fontSizes` still load.
+- Missing `title`, `createdAt`, `updatedAt`, report `id`, and report `createdAt` values are regenerated or defaulted during import.
+- Invalid legend colors fall back to a safe default color.
 
 ## Run locally
 
@@ -61,4 +98,4 @@ Then open the local Vite URL shown in your terminal.
 - This MVP stores bundles by explicit Import/Export only (no File Picker API dependence).
 - Graph nodes include narrators and report nodes.
 - Repeated narrator-to-narrator edges are aggregated and shown with edge labels (for example, `x3`).
-- Existing bundles without `nodePositions` or `nodeWidths` are still supported and load with automatic defaults.
+- Existing bundles with older optional fields missing are still supported and load with automatic defaults.
