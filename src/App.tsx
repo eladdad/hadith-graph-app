@@ -174,7 +174,7 @@ function App() {
   );
 
   const handleGraphPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>): void => {
-    if (event.button !== 2 || isDragging || isResizing || isBoxSelecting) {
+    if ((event.button !== 1 && event.button !== 2) || isDragging || isResizing || isBoxSelecting) {
       return;
     }
 
@@ -192,15 +192,26 @@ function App() {
 
     setIsPanning(true);
     event.preventDefault();
+    event.stopPropagation();
   }, [isDragging, isResizing, isBoxSelecting]);
 
   const handleGraphWheel = useCallback((event: WheelEvent): void => {
-    if (!event.ctrlKey) {
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer) {
       return;
     }
 
-    const scrollContainer = graphScrollRef.current;
-    if (!scrollContainer) {
+    const deltaMultiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE
+      ? 16
+      : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+        ? scrollContainer.clientHeight
+        : 1;
+
+    if (!event.ctrlKey) {
+      event.preventDefault();
+      event.stopPropagation();
+      scrollContainer.scrollLeft += event.deltaX * deltaMultiplier;
+      scrollContainer.scrollTop += event.deltaY * deltaMultiplier;
       return;
     }
 

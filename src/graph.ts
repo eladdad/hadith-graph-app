@@ -10,6 +10,7 @@ const NARRATOR_MAX_CHARS_PER_LINE = 18;
 const REPORT_DEFAULT_WIDTH = 360;
 export const REPORT_MIN_WIDTH = 220;
 export const REPORT_MAX_WIDTH = 760;
+export const REPORT_SIDE_PADDING = 14;
 const REPORT_TITLE_HEIGHT = 18;
 const REPORT_TEXT_LINE_HEIGHT = 16;
 const REPORT_TOP_PADDING = 14;
@@ -18,10 +19,6 @@ const REPORT_GAP_AFTER_TITLE = 10;
 
 export function clampReportWidth(width: number): number {
   return Math.min(REPORT_MAX_WIDTH, Math.max(REPORT_MIN_WIDTH, Math.round(width)));
-}
-
-function maxCharsForReportWidth(width: number): number {
-  return Math.max(20, Math.floor((width - 36) / 7.2));
 }
 
 function narratorId(name: string): string {
@@ -77,6 +74,97 @@ function wrapText(text: string, maxCharsPerLine: number): string[] {
   if (current.length > 0) {
     lines.push(current);
   }
+
+  return lines.length > 0 ? lines : [''];
+}
+
+let textMeasureContext: CanvasRenderingContext2D | null | undefined;
+
+function getTextMeasureContext(): CanvasRenderingContext2D | null {
+  if (textMeasureContext !== undefined) {
+    return textMeasureContext;
+  }
+
+  if (typeof document === 'undefined') {
+    textMeasureContext = null;
+    return textMeasureContext;
+  }
+
+  const canvas = document.createElement('canvas');
+  textMeasureContext = canvas.getContext('2d');
+  if (textMeasureContext) {
+    textMeasureContext.font = "12px 'IBM Plex Sans', 'Noto Naskh Arabic', 'Trebuchet MS', sans-serif";
+  }
+
+  return textMeasureContext;
+}
+
+function measureTextWidth(text: string): number {
+  const context = getTextMeasureContext();
+  if (!context) {
+    return text.length * 7.2;
+  }
+
+  return context.measureText(text).width;
+}
+
+function wrapTextToWidth(text: string, maxWidth: number): string[] {
+  const words = text.split(/\s+/).filter((word) => word.length > 0);
+  if (words.length === 0) {
+    return [''];
+  }
+
+  const lines: string[] = [];
+  let current = '';
+
+  const pushCurrent = (): void => {
+    if (current.length > 0) {
+      lines.push(current);
+      current = '';
+    }
+  };
+
+  const splitWordToWidth = (word: string): string[] => {
+    const segments: string[] = [];
+    let segment = '';
+
+    for (const char of word) {
+      const candidate = `${segment}${char}`;
+      if (segment.length > 0 && measureTextWidth(candidate) > maxWidth) {
+        segments.push(segment);
+        segment = char;
+      } else {
+        segment = candidate;
+      }
+    }
+
+    if (segment.length > 0) {
+      segments.push(segment);
+    }
+
+    return segments;
+  };
+
+  for (const word of words) {
+    const candidate = current.length > 0 ? `${current} ${word}` : word;
+    if (measureTextWidth(candidate) <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+
+    pushCurrent();
+
+    if (measureTextWidth(word) <= maxWidth) {
+      current = word;
+      continue;
+    }
+
+    const segments = splitWordToWidth(word);
+    lines.push(...segments.slice(0, -1));
+    current = segments[segments.length - 1] ?? '';
+  }
+
+  pushCurrent();
 
   return lines.length > 0 ? lines : [''];
 }
@@ -283,7 +371,10 @@ export function buildRenderableGraph(
 
     if (type === 'report') {
       const reportWidth = clampReportWidth(nodeWidths[id] ?? REPORT_DEFAULT_WIDTH);
-      const matnLines = wrapText(reportMatnById.get(id) ?? '', maxCharsForReportWidth(reportWidth));
+      const matnLines = wrapTextToWidth(
+        reportMatnById.get(id) ?? '',
+        Math.max(80, reportWidth - REPORT_SIDE_PADDING * 2),
+      );
       const height = REPORT_TOP_PADDING
         + REPORT_TITLE_HEIGHT
         + REPORT_GAP_AFTER_TITLE
