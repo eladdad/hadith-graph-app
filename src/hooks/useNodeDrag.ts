@@ -160,9 +160,27 @@ export function useNodeDrag({
     }
 
     const nodeMap = new Map(graphNodes.map((node) => [node.id, node]));
+    const clickedNode = nodeMap.get(nodeId);
+    if (!clickedNode) {
+      return;
+    }
+
+    if (clickedNode.type === 'matn') {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    const draggableNodeIds = nextSelection.filter((selectedId) => nodeMap.get(selectedId)?.type === 'narrator');
+    if (draggableNodeIds.length === 0) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     const initialNodes: Record<string, DragNodeState> = {};
 
-    for (const selectedId of nextSelection) {
+    for (const selectedId of draggableNodeIds) {
       const node = nodeMap.get(selectedId);
       if (!node) {
         continue;
@@ -176,7 +194,7 @@ export function useNodeDrag({
     }
 
     dragStateRef.current = {
-      nodeIds: nextSelection,
+      nodeIds: draggableNodeIds,
       pointerStartX: point.x,
       pointerStartY: point.y,
       initialNodes,

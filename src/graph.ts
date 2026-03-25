@@ -228,6 +228,7 @@ export function buildRenderableGraph(
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
   const labels = new Map<string, string>();
   const matnByNodeId = new Map<string, string>();
+  const matnAnchorByNodeId = new Map<string, string>();
   const types = new Map<string, 'narrator' | 'matn'>();
 
   const adjacency = new Map<string, Set<string>>();
@@ -288,7 +289,7 @@ export function buildRenderableGraph(
 
     const lastNarrator = report.isnad[report.isnad.length - 1];
     if (lastNarrator) {
-      addEdge(narratorId(lastNarrator), matnId, false);
+      matnAnchorByNodeId.set(matnId, narratorId(lastNarrator));
     }
   });
 
@@ -302,7 +303,10 @@ export function buildRenderableGraph(
     };
   }
 
-  const queue: string[] = Array.from(labels.keys()).filter((id) => (indegree.get(id) ?? 0) === 0);
+  const narratorNodeIds = Array.from(labels.keys()).filter((id) => (types.get(id) ?? 'narrator') === 'narrator');
+  const matnNodeIds = Array.from(labels.keys()).filter((id) => (types.get(id) ?? 'narrator') === 'matn');
+
+  const queue: string[] = narratorNodeIds.filter((id) => (indegree.get(id) ?? 0) === 0);
   const indegreeCopy = new Map(indegree);
   const topoOrder: string[] = [];
 
@@ -323,9 +327,9 @@ export function buildRenderableGraph(
     }
   }
 
-  const hasCycle = topoOrder.length !== labels.size;
+  const hasCycle = topoOrder.length !== narratorNodeIds.length;
   if (hasCycle) {
-    const fallbackNodes = Array.from(labels.keys()).sort((a, b) => nodeLabelSort(a, b, labels));
+    const fallbackNodes = narratorNodeIds.sort((a, b) => nodeLabelSort(a, b, labels));
     fallbackNodes.forEach((id) => {
       if (!topoOrder.includes(id)) {
         topoOrder.push(id);
@@ -440,7 +444,7 @@ export function buildRenderableGraph(
     ? Math.max(420, yCursor - verticalGap + paddingY)
     : 420;
 
-  const nodes = Array.from(labels.keys()).map((id) => {
+  const narratorNodes = narratorNodeIds.map((id) => {
     const meta = nodeMeta.get(id);
     const rowIndex = depth.get(id) ?? 0;
 
@@ -461,6 +465,48 @@ export function buildRenderableGraph(
       y: typeof savedPosition?.y === 'number' && Number.isFinite(savedPosition.y) ? savedPosition.y : defaultY,
     };
   });
+
+  const narratorBottom = narratorNodes.length > 0
+    ? Math.max(...narratorNodes.map((node) => node.y + node.height / 2))
+    : paddingY;
+  const matnTopY = narratorBottom + verticalGap;
+  const narratorNodeById = new Map(narratorNodes.map((node) => [node.id, node]));
+
+  const matnNodes = matnNodeIds.map((id) => {
+    const meta = nodeMeta.get(id);
+    const anchorNode = narratorNodeById.get(matnAnchorByNodeId.get(id) ?? '');
+    const width = meta?.width ?? MATN_NODE_DEFAULT_WIDTH;
+    const height = meta?.height ?? NARRATOR_MIN_HEIGHT;
+    const anchorRight = anchorNode ? anchorNode.x + anchorNode.width / 2 : paddingX + width;
+
+    return {
+      id,
+      label: labels.get(id) ?? id,
+      labelLines: meta?.labelLines ?? [labels.get(id) ?? id],
+      matnLines: meta?.matnLines,
+      type: types.get(id) ?? 'matn',
+      width,
+      height,
+      x: anchorRight - width / 2,
+      y: matnTopY + height / 2,
+    };
+  });
+
+  const nodes = Array.from(labels.keys())
+    .map((id) => narratorNodeById.get(id) ?? matnNodes.find((node) => node.id === id))
+    .filter((node): node is NonNullable<typeof node> => node !== undefined);
+
+  const minX = Math.min(...nodes.map((node) => node.x - node.width / 2));
+  const minY = Math.min(...nodes.map((node) => node.y - node.height / 2));
+  const shiftX = minX < paddingX ? paddingX - minX : 0;
+  const shiftY = minY < paddingY ? paddingY - minY : 0;
+
+  if (shiftX > 0 || shiftY > 0) {
+    nodes.forEach((node) => {
+      node.x += shiftX;
+      node.y += shiftY;
+    });
+  }
 
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const edges = Array.from(edgeWeights.entries())

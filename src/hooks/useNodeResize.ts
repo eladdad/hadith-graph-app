@@ -13,7 +13,6 @@ interface ResizeState {
   nodeId: string;
   edge: 'left' | 'right';
   initialCenterX: number;
-  initialCenterY: number;
   initialWidth: number;
   moved: boolean;
 }
@@ -63,35 +62,21 @@ export function useNodeResize({
       const initialRight = resizeState.initialCenterX + resizeState.initialWidth / 2;
 
       let nextWidth = resizeState.initialWidth;
-      let nextX = resizeState.initialCenterX;
 
       if (resizeState.edge === 'right') {
         nextWidth = clampMatnNodeWidth(point.x - initialLeft);
-        nextX = initialLeft + nextWidth / 2;
       } else {
         nextWidth = clampMatnNodeWidth(initialRight - point.x);
-        nextX = initialRight - nextWidth / 2;
       }
-
-      const minCenterX = nextWidth / 2 + 8;
-      if (nextX < minCenterX) {
-        nextX = minCenterX;
-      }
-
-      const nextY = Math.max(16, Math.round(resizeState.initialCenterY));
 
       setBundle((previous) => {
         const currentWidth = previous.nodeWidths[resizeState.nodeId];
-        const currentPosition = previous.nodePositions[resizeState.nodeId];
-
-        if (
-          currentWidth === nextWidth
-          && currentPosition
-          && currentPosition.x === Math.round(nextX)
-          && currentPosition.y === nextY
-        ) {
+        if (currentWidth === nextWidth) {
           return previous;
         }
+
+        const nextNodePositions = { ...previous.nodePositions };
+        delete nextNodePositions[resizeState.nodeId];
 
         resizeState.moved = true;
         return {
@@ -100,10 +85,7 @@ export function useNodeResize({
             ...previous.nodeWidths,
             [resizeState.nodeId]: nextWidth,
           },
-          nodePositions: {
-            ...previous.nodePositions,
-            [resizeState.nodeId]: { x: Math.round(nextX), y: nextY },
-          },
+          nodePositions: nextNodePositions,
         };
       });
     };
@@ -146,7 +128,6 @@ export function useNodeResize({
       nodeId: node.id,
       edge,
       initialCenterX: node.x,
-      initialCenterY: node.y,
       initialWidth: node.width,
       moved: false,
     };
