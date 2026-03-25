@@ -11,10 +11,8 @@ const MATN_NODE_DEFAULT_WIDTH = 360;
 export const MATN_NODE_MIN_WIDTH = 220;
 export const MATN_NODE_MAX_WIDTH = 760;
 export const MATN_NODE_SIDE_PADDING = 14;
-const MATN_NODE_TITLE_HEIGHT = 18;
 const MATN_NODE_TOP_PADDING = 14;
 const MATN_NODE_BOTTOM_PADDING = 14;
-const MATN_NODE_GAP_AFTER_TITLE = 10;
 export const DEFAULT_NARRATOR_FONT_SIZE = 13;
 export const DEFAULT_MATN_FONT_SIZE = 12;
 export const MIN_FONT_SIZE = 10;
@@ -378,8 +376,6 @@ export function buildRenderableGraph(
         normalizedFontSizes.matn,
       );
       const height = MATN_NODE_TOP_PADDING
-        + MATN_NODE_TITLE_HEIGHT
-        + MATN_NODE_GAP_AFTER_TITLE
         + matnLines.length * matnLineHeight(normalizedFontSizes.matn)
         + MATN_NODE_BOTTOM_PADDING;
 

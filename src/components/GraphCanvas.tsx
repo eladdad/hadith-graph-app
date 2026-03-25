@@ -90,9 +90,7 @@ export function GraphCanvas({
         const narratorLineStep = narratorFontSize + 4;
         const matnLineStep = matnFontSize + 4;
         const labelStartDy = -((node.labelLines.length - 1) * narratorLineStep) / 2;
-        const matnNodeTitleY = -node.height / 2 + 18;
-        const matnNodeDividerY = -node.height / 2 + 28;
-        const matnNodeTextStartY = matnNodeDividerY + 15;
+        const matnNodeTextStartY = -node.height / 2 + matnFontSize + 6;
         const matnNodeTextX = node.width / 2 - MATN_NODE_SIDE_PADDING;
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
@@ -104,14 +102,25 @@ export function GraphCanvas({
             className={className}
             onPointerDown={(event) => onNodePointerDown(event, node.id)}
           >
-            <rect
-              x={-node.width / 2}
-              y={-node.height / 2}
-              width={node.width}
-              height={node.height}
-              rx={14}
-              className={node.type === 'narrator' ? 'node-narrator' : 'node-matn-card'}
-            />
+            {node.type === 'narrator' ? (
+              <rect
+                x={-node.width / 2}
+                y={-node.height / 2}
+                width={node.width}
+                height={node.height}
+                rx={14}
+                className="node-narrator"
+              />
+            ) : (
+              <rect
+                x={-node.width / 2}
+                y={-node.height / 2}
+                width={node.width}
+                height={node.height}
+                rx={14}
+                className="node-matn-hitbox"
+              />
+            )}
 
             {node.type === 'matn' ? (
               <>
@@ -135,16 +144,6 @@ export function GraphCanvas({
                     />
                   </>
                 ) : null}
-                <text textAnchor="end" className="node-label matn-node-title" x={matnNodeTextX} y={matnNodeTitleY}>
-                  {node.label}
-                </text>
-                <line
-                  x1={-node.width / 2 + 10}
-                  y1={matnNodeDividerY}
-                  x2={node.width / 2 - 10}
-                  y2={matnNodeDividerY}
-                  className="matn-node-divider"
-                />
                 <text
                   textAnchor="end"
                   className="matn-node-text"

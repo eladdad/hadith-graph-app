@@ -454,10 +454,10 @@ textarea:focus {
   stroke-width: 1.1;
 }
 
-.node-matn-card {
-  fill: var(--matn-node);
-  stroke: #87a5c7;
-  stroke-width: 1.1;
+.node-matn-hitbox {
+  fill: rgba(0, 0, 0, 0);
+  stroke: none;
+  pointer-events: all;
 }
 
 .node-label {
@@ -491,12 +491,6 @@ textarea:focus {
   fill: #fce8cf;
 }
 
-.node-group.selected .node-matn-card {
-  stroke: #2f6ea9;
-  stroke-width: 2.2;
-  fill: #dff0ff;
-}
-
 .node-group.dragging {
   opacity: 0.96;
 }
@@ -514,16 +508,6 @@ textarea:focus {
   stroke-width: 1.3;
   stroke-dasharray: 5 4;
 }
-.matn-node-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.matn-node-divider {
-  stroke: #86a8cb;
-  stroke-width: 1;
-}
-
 .matn-node-text {
   font-size: 0.75rem;
   fill: #244566;
