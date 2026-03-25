@@ -1,15 +1,119 @@
 :root {
   color-scheme: light;
   --bg: #f2ecdf;
+  --bg-glow-warm: #f7d9b3;
+  --bg-glow-cool: #d4e9ff;
   --panel: #fffdfa;
+  --panel-shadow: rgba(54, 39, 24, 0.07);
   --line: #d6c8b5;
   --text: #2e2a24;
   --muted: #6a5e4e;
   --accent: #9c4f35;
+  --accent-border: #7e3821;
+  --accent-hover: #b45838;
   --accent-soft: #f6d9c8;
+  --button-bg: #fff4e6;
+  --button-border: #a98a72;
+  --button-text: #4f392a;
+  --button-hover: #ffe8cf;
+  --danger-bg: #fff1ed;
+  --danger-border: #d7a08e;
+  --danger-text: #8d3f2a;
+  --danger-hover: #ffe2d9;
+  --field-bg: #ffffff;
+  --field-focus-outline: color-mix(in srgb, var(--accent) 45%, white 55%);
+  --field-focus-border: #af7f64;
+  --controls-bg: #fbf6ef;
+  --controls-text: #5c4a38;
+  --chain-index-bg: #f3e6d3;
+  --chain-index-text: #6d5138;
+  --chain-preview-bg: #f9f3eb;
+  --chain-preview-border: #d3b89c;
+  --chain-preview-text: #5b4b3c;
+  --status-text: #452f1f;
+  --status-border: #e3bca6;
+  --report-card-bg: #ffffff;
+  --report-card-selected-bg: #fff2e6;
+  --report-card-selected-border: #9c4f35;
+  --report-card-selected-shadow: rgba(156, 79, 53, 0.15);
+  --report-card-hover: #fff7ef;
+  --report-card-selected-hover: #ffe9d6;
+  --report-matn: #4a3f33;
+  --report-meta: #796b5a;
   --narrator: #f8efdf;
-  --matn-node: #e9f3ff;
+  --narrator-stroke: #baa17e;
+  --narrator-selected: #fce8cf;
+  --narrator-selected-stroke: #9c4f35;
   --edge: #4f6f98;
+  --graph-grid-x: rgba(156, 79, 53, 0.08);
+  --graph-grid-y: rgba(79, 111, 152, 0.07);
+  --graph-bg: #ffffff;
+  --edge-label: #2a4769;
+  --node-label: #2f2a22;
+  --node-subtitle: #2e4e73;
+  --selection-fill: rgba(47, 110, 169, 0.18);
+  --selection-stroke: #2f6ea9;
+  --matn-text: #244566;
+  --resize-handle-stroke: rgba(47, 110, 169, 0.9);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #11161c;
+  --bg-glow-warm: #7f4b24;
+  --bg-glow-cool: #163a56;
+  --panel: #19222b;
+  --panel-shadow: rgba(0, 0, 0, 0.35);
+  --line: #34424f;
+  --text: #edf3f8;
+  --muted: #aebbc8;
+  --accent: #d97a52;
+  --accent-border: #b65f3a;
+  --accent-hover: #e58b64;
+  --accent-soft: #33251f;
+  --button-bg: #24313c;
+  --button-border: #46586a;
+  --button-text: #edf3f8;
+  --button-hover: #2f3f4d;
+  --danger-bg: #372325;
+  --danger-border: #815457;
+  --danger-text: #ffd2cc;
+  --danger-hover: #492b2e;
+  --field-bg: #121920;
+  --field-focus-outline: color-mix(in srgb, var(--accent) 55%, white 15%);
+  --field-focus-border: #d08b6e;
+  --controls-bg: #141d24;
+  --controls-text: #d2dce5;
+  --chain-index-bg: #2a3641;
+  --chain-index-text: #f3e1cf;
+  --chain-preview-bg: #151d24;
+  --chain-preview-border: #596774;
+  --chain-preview-text: #dbe4ec;
+  --status-text: #f4dfd1;
+  --status-border: #5b4034;
+  --report-card-bg: #111922;
+  --report-card-selected-bg: #2a1f1a;
+  --report-card-selected-border: #d97a52;
+  --report-card-selected-shadow: rgba(217, 122, 82, 0.22);
+  --report-card-hover: #1a2430;
+  --report-card-selected-hover: #342720;
+  --report-matn: #d7e0e8;
+  --report-meta: #9aaab7;
+  --narrator: #243039;
+  --narrator-stroke: #71879a;
+  --narrator-selected: #33424d;
+  --narrator-selected-stroke: #e18a60;
+  --edge: #8db7de;
+  --graph-grid-x: rgba(217, 122, 82, 0.12);
+  --graph-grid-y: rgba(141, 183, 222, 0.11);
+  --graph-bg: #0d141a;
+  --edge-label: #c7def3;
+  --node-label: #f1f6fb;
+  --node-subtitle: #b8d4ee;
+  --selection-fill: rgba(141, 183, 222, 0.2);
+  --selection-stroke: #8db7de;
+  --matn-text: #d2e8fa;
+  --resize-handle-stroke: rgba(141, 183, 222, 0.95);
 }
 
 * {
@@ -21,8 +125,8 @@ body {
   font-family: 'IBM Plex Sans', 'Noto Naskh Arabic', 'Trebuchet MS', sans-serif;
   color: var(--text);
   background:
-    radial-gradient(circle at 20% -10%, #f7d9b3 0%, transparent 38%),
-    radial-gradient(circle at 95% 0%, #d4e9ff 0%, transparent 28%),
+    radial-gradient(circle at 20% -10%, var(--bg-glow-warm) 0%, transparent 38%),
+    radial-gradient(circle at 95% 0%, var(--bg-glow-cool) 0%, transparent 28%),
     var(--bg);
 }
 
@@ -59,7 +163,7 @@ h3 {
   padding: 0.7rem 0.8rem;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: #fbf6ef;
+  background: var(--controls-bg);
 }
 
 .font-control {
@@ -69,7 +173,7 @@ h3 {
 }
 
 .font-control span {
-  color: #5c4a38;
+  color: var(--controls-text);
   font-weight: 600;
 }
 
@@ -79,9 +183,9 @@ h3 {
 }
 
 button {
-  border: 1px solid #a98a72;
-  background: #fff4e6;
-  color: #4f392a;
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  color: var(--button-text);
   border-radius: 10px;
   padding: 0.55rem 0.8rem;
   font: inherit;
@@ -90,18 +194,18 @@ button {
 }
 
 button:hover {
-  background: #ffe8cf;
+  background: var(--button-hover);
   transform: translateY(-1px);
 }
 
 button.primary {
   background: var(--accent);
   color: #fff;
-  border-color: #7e3821;
+  border-color: var(--accent-border);
 }
 
 button.primary:hover {
-  background: #b45838;
+  background: var(--accent-hover);
 }
 
 button:disabled {
@@ -111,13 +215,13 @@ button:disabled {
 }
 
 .danger-button {
-  background: #fff1ed;
-  border-color: #d7a08e;
-  color: #8d3f2a;
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
 }
 
 .danger-button:hover {
-  background: #ffe2d9;
+  background: var(--danger-hover);
 }
 
 .layout {
@@ -132,7 +236,7 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 14px;
   background: var(--panel);
-  box-shadow: 0 7px 24px rgba(54, 39, 24, 0.07);
+  box-shadow: 0 7px 24px var(--panel-shadow);
 }
 
 .panel {
@@ -194,7 +298,8 @@ textarea {
   border-radius: 10px;
   padding: 0.65rem;
   font: inherit;
-  background: #fff;
+  background: var(--field-bg);
+  color: var(--text);
 }
 
 textarea {
@@ -203,8 +308,8 @@ textarea {
 
 input[type="text"]:focus,
 textarea:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 45%, white 55%);
-  border-color: #af7f64;
+  outline: 2px solid var(--field-focus-outline);
+  border-color: var(--field-focus-border);
 }
 
 .chain-editor {
@@ -225,8 +330,8 @@ textarea:focus {
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #f3e6d3;
-  color: #6d5138;
+  background: var(--chain-index-bg);
+  color: var(--chain-index-text);
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -234,17 +339,17 @@ textarea:focus {
 .chain-preview {
   padding: 0.65rem 0.75rem;
   border-radius: 10px;
-  background: #f9f3eb;
-  border: 1px dashed #d3b89c;
-  color: #5b4b3c;
+  background: var(--chain-preview-bg);
+  border: 1px dashed var(--chain-preview-border);
+  color: var(--chain-preview-text);
   font-size: 0.9rem;
 }
 
 .status {
   font-size: 0.9rem;
-  color: #452f1f;
+  color: var(--status-text);
   background: var(--accent-soft);
-  border: 1px solid #e3bca6;
+  border: 1px solid var(--status-border);
   padding: 0.65rem;
   border-radius: 10px;
 }
@@ -271,14 +376,14 @@ textarea:focus {
 .report-card {
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: #fff;
+  background: var(--report-card-bg);
   overflow: hidden;
 }
 
 .report-card.selected {
-  border-color: #9c4f35;
-  background: #fff2e6;
-  box-shadow: inset 0 0 0 1px rgba(156, 79, 53, 0.15);
+  border-color: var(--report-card-selected-border);
+  background: var(--report-card-selected-bg);
+  box-shadow: inset 0 0 0 1px var(--report-card-selected-shadow);
 }
 
 .report-card-main {
@@ -291,11 +396,11 @@ textarea:focus {
 }
 
 .report-card-main:hover {
-  background: #fff7ef;
+  background: var(--report-card-hover);
 }
 
 .report-card.selected .report-card-main:hover {
-  background: #ffe9d6;
+  background: var(--report-card-selected-hover);
 }
 
 .report-card-actions {
@@ -318,13 +423,13 @@ textarea:focus {
 .report-matn {
   margin-top: 0.25rem;
   font-size: 0.9rem;
-  color: #4a3f33;
+  color: var(--report-matn);
   white-space: pre-wrap;
 }
 
 .report-meta {
   margin-top: 0.2rem;
-  color: #796b5a;
+  color: var(--report-meta);
   font-size: 0.8rem;
 }
 
@@ -339,9 +444,9 @@ textarea:focus {
   min-height: 100%;
   border-radius: 14px;
   background:
-    linear-gradient(to right, rgba(156, 79, 53, 0.08) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(to bottom, rgba(79, 111, 152, 0.07) 1px, transparent 1px) 0 0 / 28px 28px,
-    #fff;
+    linear-gradient(to right, var(--graph-grid-x) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(to bottom, var(--graph-grid-y) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--graph-bg);
 }
 
 .graph-svg {
@@ -443,14 +548,14 @@ textarea:focus {
 
 .edge-label {
   font-size: 0.78rem;
-  fill: #2a4769;
+  fill: var(--edge-label);
   font-weight: 700;
   text-anchor: middle;
 }
 
 .node-narrator {
   fill: var(--narrator);
-  stroke: #baa17e;
+  stroke: var(--narrator-stroke);
   stroke-width: 1.1;
 }
 
@@ -463,12 +568,12 @@ textarea:focus {
 .node-label {
   font-size: 0.84rem;
   font-weight: 700;
-  fill: #2f2a22;
+  fill: var(--node-label);
 }
 
 .node-subtitle {
   font-size: 0.67rem;
-  fill: #2e4e73;
+  fill: var(--node-subtitle);
 }
 
 .node-group {
@@ -486,9 +591,9 @@ textarea:focus {
   touch-action: none;
 }
 .node-group.selected .node-narrator {
-  stroke: #9c4f35;
+  stroke: var(--narrator-selected-stroke);
   stroke-width: 2.2;
-  fill: #fce8cf;
+  fill: var(--narrator-selected);
 }
 
 .node-group.dragging {
@@ -503,14 +608,14 @@ textarea:focus {
 }
 
 .selection-box {
-  fill: rgba(47, 110, 169, 0.18);
-  stroke: #2f6ea9;
+  fill: var(--selection-fill);
+  stroke: var(--selection-stroke);
   stroke-width: 1.3;
   stroke-dasharray: 5 4;
 }
 .matn-node-text {
   font-size: 0.75rem;
-  fill: #244566;
+  fill: var(--matn-text);
 }
 .node-group.resizing {
   cursor: ew-resize;
@@ -518,7 +623,7 @@ textarea:focus {
 
 .resize-handle {
   fill: rgba(47, 110, 169, 0.001);
-  stroke: rgba(47, 110, 169, 0.9);
+  stroke: var(--resize-handle-stroke);
   stroke-width: 1.1;
   stroke-linecap: round;
   cursor: ew-resize;

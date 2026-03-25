@@ -29,6 +29,9 @@ import type { GraphNode, HadithBundle, HadithReport } from './types';
 
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 2.8;
+const THEME_STORAGE_KEY = 'hadith-graph-theme';
+
+type ThemeMode = 'light' | 'dark';
 
 interface PanState {
   startClientX: number;
@@ -76,6 +79,19 @@ function downloadJson(filename: string, contents: string): void {
   URL.revokeObjectURL(url);
 }
 
+function getInitialTheme(): ThemeMode {
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
+
+  const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    return savedTheme;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
 function App() {
   const [bundle, setBundle] = useState<HadithBundle>(() => createEmptyBundle('My Hadith Bundle'));
   const [editorNarrators, setEditorNarrators] = useState<string[]>(() => emptyNarratorDraft());
@@ -85,6 +101,7 @@ function App() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
+  const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -196,6 +213,11 @@ function App() {
       window.removeEventListener('pointercancel', finishPan);
     };
   }, [isPanning]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   const clientPointToSvg = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
     const svg = svgRef.current;
@@ -549,7 +571,7 @@ function App() {
     : 'Add narrators to build the chain.';
 
   return (
-    <div className="app-shell">
+    <div className="app-shell" data-theme={theme}>
       <main className="layout">
         <section className="panel">
           <div className="editor-header">
@@ -668,6 +690,9 @@ function App() {
               <button type="button" onClick={handleNewBundle}>New Bundle</button>
               <button type="button" onClick={handleOpenImport}>Import JSON</button>
               <button type="button" onClick={handleExport}>Export JSON</button>
+              <button type="button" onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}>
+                {theme === 'light' ? 'Dark Theme' : 'Light Theme'}
+              </button>
             </div>
             <div className="font-controls">
               <label className="font-control">

@@ -53,7 +53,7 @@ export function GraphCanvas({
           orient="auto"
           markerUnits="strokeWidth"
         >
-          <path d="M 0 0 L 10 4 L 0 8 z" fill="#4f6f98" />
+          <path d="M 0 0 L 10 4 L 0 8 z" fill="var(--edge)" />
         </marker>
       </defs>
 
