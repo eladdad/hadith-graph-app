@@ -397,13 +397,18 @@ function App() {
   }, []);
 
   const { isDragging, handleNodePointerDown: onNodePointerDownRaw } = useNodeDrag({
+    graphEdges: graph.edges,
     graphNodes: graph.nodes,
     selectedNodeIds,
     setSelectedNodeIds,
     clientPointToSvg,
     setBundle,
-    onDragCommitted: (movedCount) => {
-      setMessage(`Moved ${movedCount} selected node(s). Export JSON to save this layout.`);
+    onDragCommitted: (movedCount, snapped) => {
+      setMessage(
+        snapped
+          ? `Moved ${movedCount} selected node(s) and snapped the node under its parent. Export JSON to save this layout.`
+          : `Moved ${movedCount} selected node(s). Export JSON to save this layout.`,
+      );
     },
   });
 

@@ -740,7 +740,7 @@ export function buildRenderableGraph(
         source: edge.source,
         target: edge.target,
         path,
-        label: edge.showWeight && edge.weight > 1 ? `x${edge.weight}` : undefined,
+        label: undefined,
         labelX: source.x + (target.x - source.x) / 2,
         labelY: source.y + dy / 2 - verticalDirection * 10,
       };

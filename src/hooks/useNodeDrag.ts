@@ -6,7 +6,7 @@
   useRef,
   useState,
 } from 'react';
-import type { GraphNode, HadithBundle } from '../types';
+import type { GraphEdge, GraphNode, HadithBundle } from '../types';
 
 interface DragNodeState {
   x: number;
@@ -20,16 +20,18 @@ interface DragState {
   pointerStartX: number;
   pointerStartY: number;
   initialNodes: Record<string, DragNodeState>;
+  currentNodes: Record<string, DragNodeState>;
   moved: boolean;
 }
 
 interface UseNodeDragParams {
+  graphEdges: GraphEdge[];
   graphNodes: GraphNode[];
   selectedNodeIds: string[];
   setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
   clientPointToSvg: (clientX: number, clientY: number) => { x: number; y: number } | null;
   setBundle: Dispatch<SetStateAction<HadithBundle>>;
-  onDragCommitted: (movedCount: number) => void;
+  onDragCommitted: (movedCount: number, snapped: boolean) => void;
 }
 
 interface UseNodeDragResult {
@@ -38,6 +40,7 @@ interface UseNodeDragResult {
 }
 
 export function useNodeDrag({
+  graphEdges,
   graphNodes,
   selectedNodeIds,
   setSelectedNodeIds,
@@ -83,6 +86,11 @@ export function useNodeDrag({
 
           if (!current || current.x !== nextX || current.y !== nextY) {
             nextNodePositions[nodeId] = { x: nextX, y: nextY };
+            dragState.currentNodes[nodeId] = {
+              ...start,
+              x: nextX,
+              y: nextY,
+            };
             changed = true;
           }
         }
@@ -105,11 +113,56 @@ export function useNodeDrag({
       setIsDragging(false);
 
       if (dragState?.moved) {
+        const nodeById = new Map(graphNodes.map((node) => [node.id, node]));
+        let snapped = false;
+        let snappedNodeId: string | null = null;
+        let snappedParentId: string | null = null;
+        let snappedY = 0;
+
+        if (dragState.nodeIds.length === 1) {
+          const nodeId = dragState.nodeIds[0];
+          const node = nodeById.get(nodeId);
+
+          if (node?.type === 'narrator') {
+            const parentIds = graphEdges
+              .filter((edge) => edge.target === nodeId)
+              .map((edge) => edge.source);
+
+            if (parentIds.length === 1) {
+              const parent = nodeById.get(parentIds[0]);
+              const currentPosition = dragState.currentNodes[nodeId] ?? dragState.initialNodes[nodeId];
+
+              if (parent && currentPosition) {
+                const parentLeft = parent.x - parent.width / 2;
+                const parentRight = parent.x + parent.width / 2;
+
+                if (currentPosition.x >= parentLeft && currentPosition.x <= parentRight && currentPosition.x !== parent.x) {
+                  snapped = true;
+                  snappedNodeId = nodeId;
+                  snappedParentId = parent.id;
+                  snappedY = currentPosition.y;
+                }
+              }
+            }
+          }
+        }
+
         setBundle((previous) => ({
           ...previous,
+          nodePositions: snapped && snappedNodeId
+            ? {
+              ...previous.nodePositions,
+              [snappedNodeId]: {
+                x: Math.round(snappedParentId
+                  ? previous.nodePositions[snappedParentId]?.x ?? nodeById.get(snappedParentId)?.x ?? 0
+                  : 0),
+                y: snappedY,
+              },
+            }
+            : previous.nodePositions,
           updatedAt: new Date().toISOString(),
         }));
-        onDragCommitted(dragState.nodeIds.length);
+        onDragCommitted(dragState.nodeIds.length, snapped);
       }
     };
 
@@ -122,7 +175,7 @@ export function useNodeDrag({
       window.removeEventListener('pointerup', finishDragging);
       window.removeEventListener('pointercancel', finishDragging);
     };
-  }, [isDragging, clientPointToSvg, setBundle, onDragCommitted]);
+  }, [graphEdges, graphNodes, isDragging, clientPointToSvg, setBundle, onDragCommitted]);
 
   const handleNodePointerDown = (
     event: ReactPointerEvent<SVGGElement>,
@@ -198,6 +251,7 @@ export function useNodeDrag({
       pointerStartX: point.x,
       pointerStartY: point.y,
       initialNodes,
+      currentNodes: { ...initialNodes },
       moved: false,
     };
 
