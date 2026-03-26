@@ -1,0 +1,548 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36" version="29.6.6">
+  <diagram name="Page-1" id="7liv2HLObzcuOuc53Kna">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-5" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ym6ihDd1PUeay4UFRrKM-1" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-115">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-1" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="رسول الله" vertex="1">
+          <mxGeometry height="40" width="120" x="400" y="-840" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-6" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-2" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-45" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-2" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-37">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-65" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-2" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=5;strokeColor=light-dark(#000000,#FF66B3);" target="lOqWJcGC6gH-27NqQ_Zj-64">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-84" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-2" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-83">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-107" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-2" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-102">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-2" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="نفيع بن مسروح" vertex="1">
+          <mxGeometry height="40" width="130" x="395" y="-600" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-7" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-3" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-29" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-3" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-3" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عبد الرحمن بن جوشن" vertex="1">
+          <mxGeometry height="40" width="185" x="-760" y="-20" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-9" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-4" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-12" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-4" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-19" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-4" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-24" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-4" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-4" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;عيينة بن عبد الرحمن الغطفاني&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="262.5" x="-2580.63" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-8" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أبو داود الطياليسي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="161.25" x="-2318.13" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-10" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا عُيَيْنَةُ بْنُ عَبْدِ الرَّحْمَنِ بْنِ جَوْشَنٍ ، عَنْ أَبِيهِ ، عَنْ أَبِي بَكْرَةَ ، قَالَ : سَمِعْتُ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، يَقُولُ :&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;&quot; لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 51, 255));&quot;&gt;أَسْنَدُوا&lt;/font&gt; أَمْرَهُمْ إِلَى امْرَأَةٍ &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-2416.88" y="1700" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-14" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-11" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="يحيي بن سعيد القطان" vertex="1">
+          <mxGeometry height="40" width="185" x="-2668.76" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-13" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أحمد بن حنبل&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-2643.13" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-15" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا يَحْيَى ، عَنْ عُيَيْنَةَ ، أَخْبَرَنِي أَبِي ، عَنْ أَبِي بَكْرَةَ ، عَنِ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ :&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;&quot; لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 51, 255));&quot;&gt;أَسْنَدُوا&lt;/font&gt; أَمْرَهُمْ إِلَى امْرَأَةٍ &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-2769.38" y="1700" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-16" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-18">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-17" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;محمد بن بكر البرساني&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="185" x="-2969.38" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-18" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أحمد بن حنبل&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-2943.75" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-20" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا مُحَمَّدُ بْنُ بَكْرٍ ، حَدَّثَنَا عُيَيْنَةُ ، عَنْ أَبِيهِ ، عَنْ أَبِي بَكْرَةَ ، قَالَ : سَمِعْتُ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ يَقُولُ : &quot;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 51, 255));&quot;&gt;أَسْنَدُوا&lt;/font&gt; أَمْرَهُمْ إِلَى امْرَأَةٍ &quot;&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-3070" y="1700" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-21" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-22" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-22" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="يزيد بن هارون الواسطي" vertex="1">
+          <mxGeometry height="40" width="205" x="-3279.37" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-23" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أحمد بن حنبل&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-3243.75" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-25" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا يَزِيدُ بْنُ هَارُونَ ، أَخْبَرَنَا عُيَيْنَةُ ، عَنْ أَبِيهِ ، عَنْ أَبِي بَكْرَةَ ، عَنِ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ :&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;&quot; لَا يُفْلِحُ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 51, 255));&quot;&gt;أَسْنَدُوا&lt;/font&gt; أَمْرَهُمْ إِلَى امْرَأَةٍ &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-3370" y="1700" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-26" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أحمد بن حنبل&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-1819.38" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-32" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-30">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-28" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;علي بن زيد القرشي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="161.88" x="-1833.44" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-33" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-30" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;حماد بن سلمة البصري&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="183.75" x="-1844.38" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-34" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-31" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-26">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-31" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="هوذة بن خليفة الثقفي" vertex="1">
+          <mxGeometry height="40" width="171.88" x="-1838.44" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-35" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="وَقَالَ أَبُو بَكْرَةَ : قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; مَنْ يَلِي أَمْرَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;فَارِسَ&lt;/font&gt; ؟ &quot; قَالُوا : امْرَأَةٌ ، قَالَ : &quot; مَا أَفْلَحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;يَلِي&lt;/font&gt; أَمْرَهُمْ امْرَأَةٌ &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-1945.63" y="1700" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-36" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-37" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-39">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-51" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-37" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-47">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-60" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-37" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=5;strokeColor=light-dark(#000000,#FF66B3);" target="lOqWJcGC6gH-27NqQ_Zj-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-37" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="الحسن البصري" vertex="1">
+          <mxGeometry height="40" width="161.88" x="1940.93" y="-20" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-38" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-76" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-39" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-74">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-39" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عوف بن أبي جميلة" vertex="1">
+          <mxGeometry height="40" width="183.75" x="2791.24" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-42" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-5" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-40" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-40" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عثمان بن عمر العبدي" vertex="1">
+          <mxGeometry height="40" width="187.82" x="2789.2" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-41" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;البخاري&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="2816.25" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-43" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا عُثْمَانُ بْنُ الْهَيْثَمِ ، حَدَّثَنَا عَوْفٌ ، عَنْ الْحَسَنِ ، عَنْ أَبِي بَكْرَةَ ، قَالَ&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;: لَقَدْ نَفَعَنِي اللَّهُ بِكَلِمَةٍ سَمِعْتُهَا مِنْ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;أَيَّامَ الْجَمَلِ بَعْدَ مَا كِدْتُ أَنْ أَلْحَقَ بِأَصْحَابِ الْجَمَلِ فَأُقَاتِلَ مَعَهُمْ&lt;/font&gt; ، قَالَ :&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;لَمَّا بَلَغَ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ أَنَّ أَهْلَ &lt;/span&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font style=&quot;&quot;&gt;فَارِسَ&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt; قَدْ مَلَّكُوا عَلَيْهِمْ بِنْتَ كِسْرَى&lt;/span&gt;&lt;/font&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt; ، قَالَ : &quot; لَنْ يُفْلِحَ قَوْمٌ &lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلَّوْا&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt; أَمْرَهُمُ امْرَأَةً &quot;&lt;/span&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="2690" y="1770" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-46" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-49">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-47" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="حميد بن أبي حميد الطويل" vertex="1">
+          <mxGeometry height="40" width="212.82" x="3156.71" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-48" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-49" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-50">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-18" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-49" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-49" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="خالد بن الحارث الهجيمي" vertex="1">
+          <mxGeometry height="40" width="213.75" x="3156.24" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-54" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-50" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-52">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-71" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-50" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;edgeStyle=orthogonalEdgeStyle;curved=1;" target="lOqWJcGC6gH-27NqQ_Zj-69">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="2833" y="1080" />
+              <mxPoint x="2420" y="1080" />
+              <mxPoint x="2420" y="1295" />
+              <mxPoint x="1923" y="1295" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-91" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-50" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-90">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-95" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-50" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-93">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-122" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-50" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-121">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-50" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="محمد بن المثنى العنزي" vertex="1">
+          <mxGeometry height="40" width="187.82" x="3169.21" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-52" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الترمذي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="3496.24" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-53" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا مُحَمَّدُ بْنُ الْمُثَنَّى ، حَدَّثَنَا خَالِدُ بْنُ الْحَارِثِ ، حَدَّثَنَا حُمَيْدٌ الطَّوِيلُ ، عَنِ الْحَسَنِ ، عَنْ أَبِي بَكْرَةَ ، قَالَ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;عَصَمَنِي اللَّهُ بِشَيْءٍ سَمِعْتُهُ&lt;/font&gt; مِنْ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، لَمَّا هَلَكَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;كِسْرَى &lt;/font&gt;قَالَ : مَنِ اسْتَخْلَفُوا ؟ قَالُوا : ابْنَتَهُ ، فَقَالَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ :&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلَّوْا&lt;/font&gt; أَمْرَهُمُ امْرَأَةً &quot; ، قَالَ :&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;فَلَمَّا &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;قَدِمَتْ عَائِشَةُ&lt;/font&gt; ، يَعْنِي الْبَصْرَةَ ، ذَكَرْتُ قَوْلَ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ فَعَصَمَنِي اللَّهُ بِهِ ،&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;قَالَ أَبُو عِيسَى : هَذَا حَدِيثٌ حَسَنٌ صَحِيحٌ&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="3369.99" y="1840" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-57" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-59">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-58" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;سليمان بن سليم الكناني&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="205.79" x="4970.2300000000005" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-62" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-61">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-59" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;بقية بن الوليد الكلاعي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="187.82" x="4979.22" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-61" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="نعيم بن حماد" vertex="1">
+          <mxGeometry height="40" width="133.75" x="5006.25" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-63" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا بَقِيَّةُ بْنُ الْوَلِيدِ ، عَنْ سُلَيْمَانَ الأَنْصَارِيِّ ، عَنِ الْحَسَنِ ، عَنِ الأَحْنَفِ بْنِ قَيْسٍ ، قَالَ : &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;بَايَعْتُ عَلِيَّ بْنَ أَبِي طَالِبٍ&lt;/font&gt; رَضِيَ اللَّهُ عَنْهُ ، قَالَ : فَرَآنِي أَبُو بَكْرَةَ وَأَنَا مُتَقَلِّدٌ سَيْفًا ، فَقَالَ : مَا هَذَا يَا ابْنَ أَخِي ؟ قُلْتُ : بَايَعْتُ عَلِيًّا ، قَالَ : لا تَفْعَلْ يَا ابْنَ أَخِي ، فَإِنَّ الْقَوْمَ يَقْتَتِلُونَ عَلَى الدُّنْيَا ، وَإِنَّمَا أَخَذُوهَا بِغَيْرِ مَشُورَةٍ ، قُلْتُ : &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;فَأُمُّ الْمُؤْمِنِينَ&lt;/font&gt; ؟ قَالَ : امْرَأَةٌ ضَعِيفَةٌ ، سَمِعْتُ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، يَقُولُ :&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;&quot; لا يُفْلِحُ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;يَلِي&lt;/font&gt; أَمْرَهُمُ امْرَأَةٌ &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="4880" y="1780" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-66" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-64" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=5;strokeColor=light-dark(#000000,#FF66B3);" target="lOqWJcGC6gH-27NqQ_Zj-37">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-64" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="الأحنف بن قيس" vertex="1">
+          <mxGeometry height="40" width="185" x="1700" y="-320" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-69" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أبو بكر البزار&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="1856.25" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-72" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا مُحَمَّدُ بْنُ الْمُثَنَّى ، قَالَ : نَا خَالِدُ بْنُ الْحَارِثِ ، قَالَ : نَا حُمَيْدٌ ، عَنِ الْحَسَنِ ، عَنْ أَبِي بَكْرَةَ رَضِيَ اللَّهُ عَنْهُ ، قَالَ : &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;عَصَمَنِي اللَّهُ بِشَيْءٍ سَمِعْتُهُ&lt;/font&gt; مِنْ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، سَمِعْتُ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، يَقُولُ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; لا يُفْلِحُ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 51, 255));&quot;&gt;أَسْنَدُوا&lt;/font&gt; أَمَرَهُمْ إِلَى امْرَأَةٍ &quot; .&amp;nbsp;&lt;/div&gt;&lt;div&gt;قَالَ أَبُو بَكْرٍ : وَهَذَا الْحَدِيثُ قَدْ رَوَاهُ أَبُو بَكْرَةَ ، وَرَوَاهُ عَنْ أَبِي بَكْرَةَ جَمَاعَةٌ وَهَذَا الإِسْنَادُ أَحْسَنُ إِسْنَادٍ يُرْوَى فِي ذَلِكَ مِنْ حَدِيثِ حُمَيْدٍ الطَّوِيلِ وَهَذَا الإِسْنَادُ أحسن إسناد يروى في ذلك من حديث حميد الطويل . حَدَّثَنَا أَحْمَدُ بْنُ عَبْدَةَ ، قَالَ : أَنَا صَفْوَانُ بْنُ عِيسَى ، قَالَ : نَا عَوْفٌ ، عَنِ الْحَسَنِ ، عَنْ أَبِي بَكْرَةَ ، عَنِ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ بِنَحْوِهِ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="1730" y="1850" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-73" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-74" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-75">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-74" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="صفوان بن عيسى القرشي" vertex="1">
+          <mxGeometry height="40" width="213.75" x="1816.25" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-77" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-75" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-69">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-75" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="أحمد بن عبدة الضبي" vertex="1">
+          <mxGeometry height="40" width="187.82" x="1829.2200000000003" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-78" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-79" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-81">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-79" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;عبد الرحمن بن معاوية البكراوي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="262.82" x="1290" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-80" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-81" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-82">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-81" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="سلم بن قتيبة الشعيري" vertex="1">
+          <mxGeometry height="40" width="183.75" x="1329.53" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-89" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-82" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-88">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-82" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;زيد بن أخزم الطائي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="171.88" x="1335.47" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-85" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-83" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-79">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-27" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-83" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;strokeWidth=3;" target="eEYxFlhBp-DMziQTyEQt-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-83" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;عبد العزيز بن أبي بكرة&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="205" x="1318.91" y="-20" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-86" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا زَيْدُ بْنُ أَخْزَمَ ، قَالَ : نَا أَبُو قُتَيْبَةَ ، قَالَ : نَا أَبُو الْمِنْهَالِ الْبَكْرَاوِيُّ ، عَنْ عَبْدِ الْعَزِيزِ بْنِ أَبِي بَكْرَةَ ، عَنْ أَبِيهِ رَضِيَ اللَّهُ عَنْهُ ، قَالَ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;لَمَّا مَاتَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;كِسْرَى&lt;/font&gt; ، قَالَ : مَنْ وَلَّوْا بَعْدَهُ ؟ قَالَ : ابْنَتُهُ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 153));&quot;&gt;بُورَنُ&lt;/font&gt; ، فَقَالَ رَسُولُ اللَّهِ صلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ : &quot; لَنْ يُفْلِحَ قَوْمٌ ، &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 51, 255));&quot;&gt;أَسْنَدُوا &lt;/font&gt;أَمْرَهُمْ إِلَى امْرَأَةٍ &quot;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;. وَهَذَا الْحَدِيثُ قَدْ رُوِيَ عَنْ أَبِي بَكْرَةَ مِنْ وجُوهٍ ، وَلا نَعْلَمُ رَوَاهُ غَيْرُ أَبِي بَكْرَةَ ، عَنِ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، وَإِنَّمَا ذَكَرْنَاهُ عَنْ أَبِي الْمِنْهَالِ ؛ لأَنَّ أَبَا الْمِنْهَالِ لَمْ يُحَدِّثْ بِغَيْرِ هَذَيْنِ الْحَدِيثَيْنِ ؛ فَلِذَلِكَ ذَكَرْنَاهُمَا لِيَجْتَمِعَا فِي مَوْضِعٍ وَاحِدٍ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="1228.2799999999997" y="1830" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-88" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أبو بكر البزار&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="1354.53" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-90" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;النسائي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="3790" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-92" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="أَخْبَرَنَا مُحَمَّدُ بْنُ الْمُثَنَّى ، قَال : حَدَّثَنَا خَالِدُ بْنُ الْحَارِثِ ، قَال : حَدَّثَنَا حُمَيْدٌ ، عَنِ الْحَسَنِ ، عَنْ أَبِي بَكْرَةَ ، قَالَ :&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;عَصَمَنِي اللَّهُ بِشَيْءٍ سَمِعْتُهُ&lt;/font&gt; مِنْ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ لَمَّا هَلَكَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;كِسْرَى&lt;/font&gt; ، قَالَ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; مَنِ اسْتَخْلَفُوا ؟ قَالَ : ابِنْتُهُ ، قَالَ : لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلَّوْا&lt;/font&gt; أَمْرَهُمُ امْرَأَةً &quot;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="3669.5299999999997" y="1760" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-93" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الدولابي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="4096.25" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-94" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا مُحَمَّدُ بْنُ الْمُثَنَّى قَالَ : ثَنَا خَالِدُ بْنُ الْحَارِثِ قَالَ : ثَنَا حُمَيْدٌ ، عَنِ الْحَسَنِ ، عَنْ أَبِي بَكْرَةَ ، قَالَ :&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp; &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;عَصَمَنِي اللَّهُ بِشَيْءٍ سَمِعْتُهُ&lt;/font&gt; مِنْ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ قَالَ :&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;لَمَّا هَلَكَ &lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;كِسْرَى&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt; قَالَ :&amp;nbsp;&lt;/span&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&lt;br&gt;&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;&quot; مَنِ اسْتَخْلَفُوا &quot; ؟ قَالُوا : ابْنَتَهُ . قَالَ : &quot; لَنْ يُفْلِحَ قَوْمٌ &lt;/span&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلَّوْا&lt;/font&gt;&lt;/span&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt; أَمْرَهُمُ امْرَأَةً &quot;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="3969.999999999999" y="1760" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-96" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-97" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-99">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-97" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عتيبة بن عبد الرحمن الثقفي" vertex="1">
+          <mxGeometry height="40" width="222.82" x="-3830" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-98" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-99" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-100">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-99" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الضحاك بن مخلد النبيل&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="203.28" x="-3820.2299999999996" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-106" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-103">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-100" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الحسن بن سهل المجوز&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="197.35" x="-3817.2700000000004" y="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-101" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-102" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-97">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-102" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عبد الرحمن بن أبي بكرة" vertex="1">
+          <mxGeometry height="40" width="205" x="-3821.09" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-103" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;ابن قانع&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-3785.4700000000003" y="1570" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-104" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا الْحُسَيْنُ بْنُ سَهْلِ بْنِ عَبْدِ الْعَزِيزِ ، نا أَبُو عَاصِمٍ ، نا عُتَيْبَةُ بْنُ عَبْدِ الرَّحْمَنِ بْنِ أَبِي بَكْرَةَ ، عَنْ أَبِيهِ ، عَنْ أَبِي بَكْرَةَ ، قَالَ : قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; لا يُفْلِحُ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 51));&quot;&gt;تَمْلِكُ&lt;/font&gt; - أَوْ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;تَلِي&lt;/font&gt; - أَمْرَهُمُ امْرَأَةٌ &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-3911.7200000000003" y="1760" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-108" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-109" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-111">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-109" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="الوضاح بن عبد الله اليشكري" vertex="1">
+          <mxGeometry height="40" width="239.82" x="-4301.51" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-110" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-111" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-112">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-111" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عبد الرحمن بن عمرو الباهلي" vertex="1">
+          <mxGeometry height="40" width="240.05" x="-4301.74" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-118" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-112" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-116">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-112" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عبد الوارث بن إبراهيم العسكري" vertex="1">
+          <mxGeometry height="40" width="267.08" x="-4315.25" y="1020" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-113" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-114" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-109">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-114" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="سماك بن حرب الذهلي" vertex="1">
+          <mxGeometry height="40" width="205" x="-4284.09" as="geometry" />
+        </mxCell>
+        <mxCell id="Ym6ihDd1PUeay4UFRrKM-2" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-115" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-114">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-115" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;جابر بن سمرة العامري&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="193.41" x="-4278.42" y="-580" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-116" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الطبراني&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-4253.75" y="1570" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-117" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا عَبْدُ الْوَارِثِ بْنُ إِبْرَاهِيمَ أَبُو عُبَيْدَةَ ، قَالَ : نَا عَبْدُ الرَّحْمَنِ بْنُ عَمْرِو بْنِ جَبَلَةَ ، قَالَ : نَا أَبُو عَوَانَةَ ، قَالَ : نَا سِمَاكُ بْنُ حَرْبٍ ، عَنْ جَابِرِ بْنِ سَمُرَةَ ، قَالَ : سَمِعْتُ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، يَقُولُ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 51));&quot;&gt;يَمْلِكُ&lt;/font&gt; أَمْرَهُمُ امْرَأَةٌ &quot; .&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;لا يُرْوَى هَذَا الْحَدِيثُ عَنْ جَابِرِ بْنِ سَمُرَةَ إِلا بِهَذَا الإِسْنَادِ ، تَفَرَّدَ بِهِ : عَبْدُ الرَّحْمَنِ بْنُ عَمْرِو بْنِ جَبَلَةَ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-4380" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-126" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-121" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-123">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-121" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="الهيثم بن خلف الدوري" vertex="1">
+          <mxGeometry height="40" width="187.82" x="3139.22" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-127" edge="1" parent="1" source="lOqWJcGC6gH-27NqQ_Zj-123" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="lOqWJcGC6gH-27NqQ_Zj-125">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-123" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الحسين بن علي النيسابوري&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="227.82" x="3119.22" y="1240" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-124" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="فَحَدَّثَنِي أَبُو عَلِيٍّ الْحَافِظُ ، ثنا الْهَيْثَمُ بْنُ خَلَفٍ الدُّورِيُّ ، ثنا مُحَمَّدُ بْنُ الْمُثَنَّى ، حَدَّثَنِي خَالِدُ بْنُ الْحَارِثِ ، ثنا حُمَيْدٌ الطَّوِيلُ ، عَنِ الْحَسَنِ ، عَنْ أَبِي بَكْرَةَ رَضِيَ اللَّهُ عَنْهُ ، قَالَ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;عَصَمَنِي اللَّهُ بِشَيْءٍ سَمِعْتُهُ&lt;/font&gt; مِنْ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَآلِهِ وَسَلَّمَ لَمَّا هَلَكَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;كِسْرَى &lt;/font&gt;، قَالَ : &quot; مَنِ اسْتَخْلَفُوا ؟ &quot; قَالُوا : ابْنَتَهُ ، قَالَ : فَقَالَ :&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلَّوْا&lt;/font&gt; أَمْرَهُمُ امْرَأَةً &quot; ، قَالَ :&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;فَلَمَّا &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;قَدِمَتْ عَائِشَةُ&lt;/font&gt; ذَكَرْتُ قَوْلَ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَآلِهِ وَسَلَّمَ فَعَصَمَنِي اللَّهُ بِهِ&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="3040" y="1820" as="geometry" />
+        </mxCell>
+        <mxCell id="lOqWJcGC6gH-27NqQ_Zj-125" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الحاكم&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="3166.2499999999995" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="Ym6ihDd1PUeay4UFRrKM-3" parent="1" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;" value="أبو بكرة نفيع بن مسروح" vertex="1">
+          <mxGeometry height="30" width="120" x="570" y="2548" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-1" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-2" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;div&gt;إسحاق بن الحسن الحربي&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="217.82" x="2560" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-7" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-3" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;div&gt;أحمد بن عبيد الصفار&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="227.82" x="2555" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-8" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-4" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-4" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="علي بن أحمد الشيرازي" vertex="1">
+          <mxGeometry height="40" width="187.82" x="2575" y="1240" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-6" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="البيهقي" vertex="1">
+          <mxGeometry height="40" width="133.75" x="2426.25" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-9" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="أَخْبَرَنَا أَبُو الْحَسَنِ عَلِيُّ بْنُ أَحْمَدَ بْنِ عَبْدَانَ ، أنبأ أَحْمَدُ بْنُ عُبَيْدٍ الصَّفَّارُ ، ثنا إِسْحَاقُ بْنُ الْحَسَنِ الْحَرْبِيُّ ، ثنا عُثْمَانُ بْنُ الْهَيْثَمِ ، ثنا عَوْفٌ ، عَنِ الْحَسَنِ ، عَنْ أَبِي بَكَرَةَ ، قَالَ : قَالَ&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&quot; قَدْ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;نَفَعَنِي اللَّهُ بِكَلِمَةٍ سَمِعْتُهَا&lt;/font&gt; مِنْ رَسُولِ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ بَعْدَ مَا كِدْتُ أَنْ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;أَلْحَقَ بِأَصْحَابِ الْجَمَلِ فَأُقَاتِلَهُ مَعَهُمْ&lt;/font&gt; ،&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;بَلَغَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ أَنَّ أَهْلَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;فَارِسَ مَلَّكُوا عَلَيْهِمُ ابْنَةَ كِسْرَى&lt;/font&gt; ، فَقَالَ : &quot; لَنْ يُفْلِحَ قَوْمٌ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلَّوْا&lt;/font&gt; أَمْرَهُمُ امْرَأَةً &quot;&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;. رَوَاهُ الْبُخَارِيُّ فِي الصَّحِيحِ ، عَنْ عُثْمَانَ بْنِ الْهَيْثَمِ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="2300" y="1830" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-11" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-12" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-12" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="مسدد بن مسرهد" vertex="1">
+          <mxGeometry height="40" width="187.82" x="4389.219999999999" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-13" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-14" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="يحيى بن محمد بن يحيى" vertex="1">
+          <mxGeometry height="40" width="197.81" x="4384.219999999999" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-19" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-15" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="محمد بن يعقوب الشيباني" vertex="1">
+          <mxGeometry height="40" width="227.82" x="4369.219999999999" y="1240" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-16" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="أخبرنا أبو عبد الله محمد بن يعقوب، ثنا يحيى بن محمد بن يحيى، ثنا مسدد، ثنا خالد بن الحارث، عن حميد، عن الحسن، عن أبي بكرة، رضي الله عنه قال:&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;&lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 51));&quot;&gt;عصمني الله بشيء سمعته من النبي&lt;/font&gt; صلى الله عليه وسلم لما بلغه أن &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 51, 51));&quot;&gt;ملك ذي يزن&lt;/font&gt; توفي &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;فولوا&lt;/font&gt; أمرهم امرأة فقال النبي صلى الله عليه وسلم:&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;«لن يفلح قوم &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 255, 51));&quot;&gt;تملكهم&lt;/font&gt; امرأة»&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;هذا حديث صحيح على شرط الشيخين ولم يخرجاه&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="4290" y="1810" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-17" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الحاكم&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="4416.25" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-22" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-23" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-34" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-23" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-43" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-23" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-39">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-48" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-23" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-46">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-23" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="بكار بن عبد العزيز الثقفي" vertex="1">
+          <mxGeometry height="40" width="222.82" x="-20" y="560" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-30" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-25" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="أحمد بن عبد الملك الحراني" vertex="1">
+          <mxGeometry height="40" width="223.05" x="221.48999999999978" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-28" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;أحمد بن حنبل&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="133.75" x="266.25" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-29" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا أَحْمَدُ بْنُ عَبْدِ الْمَلِكِ الْحَرَّانِيُّ ، حَدَّثَنَا أَبُو بَكْرَةَ بَكَّارُ بْنُ عَبْدِ الْعَزِيزِ بْنِ أَبِي بَكْرَةَ ، قَالَ : سَمِعْتُ أَبِي يُحَدِّثُ ، عَنْ أَبِي بَكْرَةَ ، أَنَّهُ&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;شَهِدَ النَّبِيَّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ أَتَاهُ بَشِيرٌ يُبَشِّرُهُ بِظَفَرِ جُنْدٍ لَهُ عَلَى عَدُوِّهِمْ ، وَرَأْسُهُ فِي حِجْرِ عَائِشَةَ ، فَقَامَ فَخَرَّ سَاجِدًا ، ثُمَّ أَنْشَأَ يُسَائِلُ الْبَشِيرَ ، فَأَخْبَرَهُ فِيمَا أَخْبَرَهُ أَنَّهُ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلِيَ&lt;/font&gt; أَمْرَهُمِ امْرَأَةٌ ،&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;فَقَالَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ : &quot; الْآنَ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 255));&quot;&gt;هَلَكَتِ الرِّجَالُ إِذَا أَطَاعَتِ النِّسَاءَ&lt;/font&gt; ، هَلَكَتِ الرِّجَالُ إِذَا أَطَاعَتِ النِّسَاءَ &quot; ثَلَاثًا&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="140" y="1820" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-31" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-33">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-32" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="حامد بن عمر الثقفي" vertex="1">
+          <mxGeometry height="40" width="173.56" x="598.48" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-36" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-35">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-33" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عمرو بن علي الفلاس" vertex="1">
+          <mxGeometry height="40" width="187.08" x="591.7199999999998" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-35" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="أبو بكر البزار" vertex="1">
+          <mxGeometry height="40" width="133.75" x="618.3800000000001" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-37" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا عَمْرُو بْنُ عَلِيٍّ ، قَالَ : نَا حَامِدُ بْنُ عُمَرَ الْبَكْرَاوِيُّ ، قَالَ : نَا بَكَّارُ بْنُ عَبْدِ الْعَزِيزِ ، عَنْ أَبِيهِ ، عَنْ أَبِي بَكْرَةَ رَضِيَ اللَّهُ عَنْهُ ، أَنَّ&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;النَّبِيَّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، أَتَاهُ فَتْحٌ فَسَجَدَ فَجَعَلَ يَسْأَلُ الرَّسُولَ ، وَعِنْدَهُ خَبَرُهُمْ مَنْ أَمَّرُوا ؟ أَوْ مَنْ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلَّوْا&lt;/font&gt; أَمْرَهُمْ ؟ فَقَالَ : امْرَأَةً ،&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;فَقَالَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ : &quot; &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 255));&quot;&gt;هَلَكَتِ الرِّجَالُ حِينَ مَلَكَتِ النِّسَاءُ&lt;/font&gt; &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="492.1300000000001" y="1790" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-38" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-40">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-59" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-39" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-57">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-39" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="محمد بن عيسى البغدادي" vertex="1">
+          <mxGeometry height="40" width="210.32" x="-422.03999999999996" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-44" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-40" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="أحمد بن خليد الكندي" vertex="1">
+          <mxGeometry height="40" width="187.08" x="-410" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-41" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="الطبراني" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-383.74999999999955" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-42" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="حَدَّثَنَا أَحْمَدُ ، قَالَ : نا مُحَمَّدُ بْنُ عِيسَى الطَّبَّاعُ ، قَالَ : نا بَكَّارُ بْنُ عَبْدِ الْعَزِيزِ بْنِ أَبِي بَكَرَةَ ، عَنْ أَبِيهِ ، عَنْ أَبِي بَكَرَةَ ، قَالَ&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;: كُنَّا عِنْدَ النَّبِيِّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ ، فَوَجَّهَ سَرِيَّةً فِي بَعْضِ الْوُجُوهِ ، فَجَاءَهُ الْبَشِيرُ يُبَشِّرُهُ ، بِأَنَّ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;وَلِيَ&lt;/font&gt; أَمْرِ الْعَدُوِّ امْرَأَةٌ ، فَخَرَّ سَاجِدًا ، ثُمَّ رَفَعَ رَأْسَهُ ، وَهُوَ يَقُولُ&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;&amp;nbsp;: &quot; &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 255));&quot;&gt;هَلَكَتِ الرِّجَالُ حِينَ أَطَاعَتِ النِّسَاءَ&lt;/font&gt; &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-509.99999999999955" y="1770" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-45" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-46" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-47">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-53" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-46" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-52">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-46" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;div&gt;خالد بن خداش المهلبي&lt;/div&gt;" vertex="1">
+          <mxGeometry height="40" width="190.32" x="-800.1599999999999" y="880" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-51" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-47" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-49">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-47" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="محمد بن يحيى الوراق" vertex="1">
+          <mxGeometry height="40" width="187.08" x="-798.54" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-49" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="أبو أحمد بن عدي الجرجاني" vertex="1">
+          <mxGeometry height="40" width="230" x="-820" y="1560" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-50" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="ثنا مُحَمَّدُ بْنُ يَحْيَى ، ثنا أَبُو الْهَيْثَمِ خَالِدُ بْنُ خِدَاشٍ ، ثنا بَكَّارُ بْنُ عَبْدِ الْعَزِيزِ ، حَدَّثَنِي أَبِي ، عَنْ أَبِيهِ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;أَنّ رَسُولَ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ كَانَ عِنْدَهُ بَعْضُ نِسَائِهِ ، فَأَتَاهُ بَشِيرٌ يُبَشِّرُهُ بِظَفَرِ أَصْحَابٍ لَهُ ، فَقَامَ وَخَرَّ سَاجِدًا ، ثُمَّ قَالَ لِلرَّسُولِ : حَدِّثْنِي ، قَالَ : كَانَ الَّذِي &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;يَلِي&lt;/font&gt; أَمْرَهُمُ امْرَأَةٌ ،&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;فَقَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ : &quot; &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 255));&quot;&gt;هَلَكَتِ الرِّجَالُ حِينَ أَطَاعَتِ النِّسَاءَ&lt;/font&gt; &quot;&amp;nbsp;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-850" y="1790" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-56" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-52" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-54">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-52" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="محمد بن علي بن شعيب السمسار" vertex="1">
+          <mxGeometry height="40" width="267.08" x="-1230" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-54" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="ابن ماسي" vertex="1">
+          <mxGeometry height="40" width="230" x="-1210" y="1560" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-55" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="أَخْبَرَنَا عَبْدُ اللَّهِ ، ثنا مُحَمَّدُ بْنُ عَلِيِّ بْنِ شُعَيْبٍ السِّمْسَارُ ، ثنا خَالِدُ بْنُ خِدَاشٍ ، ثنا بَكَّارُ بْنُ عَبْدِ الْعَزِيزِ بْنِ أَبِي بَكْرَةَ ، ثنا أَبِي ، عَنْ أَبِيهِ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;أَنّ النَّبِيَّ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ كَانَ عِنْدَ بَعْضِ نِسَائِهِ فَأَتَاهُ بَشِيرٌ يُبَشِّرُهُ بِظَفَرِ أَصْحَابِهِ ، قَالَ : فَخَرَّ سَاجِدًا , ثُمَّ قَالَ لِلرَّسُولِ : &quot; حَدِّثْنِي &quot; ، قَالَ : الَّذِي &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;يَلِي &lt;/font&gt;أَحَدَهُمُ امْرَأَةٌ ،&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;قَالَ رَسُولُ اللَّهِ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ : &quot; &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 255));&quot;&gt;هَلَكَتِ الرِّجَالُ حِينَ أَطَاعَتِ النِّسَاءَ&lt;/font&gt; &quot;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-1240" y="1800" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-60" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-57" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-57" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="&lt;span style=&quot;white-space: normal;&quot;&gt;الحارث بن أبي أسامة التميمي&lt;/span&gt;" vertex="1">
+          <mxGeometry height="40" width="267.08" x="-127.07999999999993" y="1000" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-63" edge="1" parent="1" source="eEYxFlhBp-DMziQTyEQt-58" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="eEYxFlhBp-DMziQTyEQt-61">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-58" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;" value="عبد الله بن الحسين النضري" vertex="1">
+          <mxGeometry height="40" width="227.08" x="-107.07999999999993" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-61" parent="1" style="whiteSpace=wrap;html=1;fontSize=25;fillColor=#0050ef;fontColor=#ffffff;strokeColor=#001DBC;" value="الحاكم" vertex="1">
+          <mxGeometry height="40" width="133.75" x="-60.41999999999962" y="1550" as="geometry" />
+        </mxCell>
+        <mxCell id="eEYxFlhBp-DMziQTyEQt-62" parent="1" style="whiteSpace=wrap;html=1;fontSize=20;strokeColor=none;align=right;fillColor=none;" value="أَخْبَرَنَا عَبْدُ اللَّهِ بْنُ الْحُسَيْنِ الْقَاضِي بِمَرْوَ ، ثَنَا الْحَارِثُ بْنُ أَبِي أُسَامَةَ ، ثَنَا مُحَمَّدُ بْنُ عِيسَى بْنِ الطَّبَّاعِ ، ثَنَا بَكَّارُ بْنُ عَبْدِ الْعَزِيزِ بْنِ أَبِي بَكْرَةَ ، قَالَ : سَمِعْتُ أَبِي ، يُحَدِّثُ عَنْ أَبِي بَكْرَةَ رَضِيَ اللَّهُ عَنْهُ :&amp;nbsp;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;أَنَّ النَّبِيَّ صَلَّى اللَّهُ عَلَيْهِ وَآَلِهِ وَسَلَّمَ أَتَاهُ بَشِيرٌ يُبَشِّرُهُ بِظَفَرِ خَيْلٍ لَهُ ، وَرَأْسُهُ فِي حِجْرِ عَائِشَةَ رَضِيَ اللَّهُ عَنْهَا ، فَقَامَ ، فَخَرَّ لِلَّهِ تَعَالَى سَاجِدًا ، فَلَمَّا انْصَرَفَ أَنْشَأَ يَسْأَلُ الرَّسُولَ ، فَحَدَّثَهُ ، فَكَانَ فِيمَا حَدَّثَهُ مِنْ أَمْرِ الْعَدُوِّ ، وَكَانَتْ &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(255, 153, 51));&quot;&gt;تَلِيهُمُ&lt;/font&gt; امْرَأَةٌ ،&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;فَقَالَ النَّبِيُّ صَلَّى اللَّهُ عَلَيْهِ وَآَلِهِ وَسَلَّمَ : &quot; &lt;font style=&quot;color: light-dark(rgb(0, 0, 0), rgb(51, 255, 255));&quot;&gt;هَلَكَتِ الرِّجَالُ حِينَ أَطَاعَتِ النِّسَاءَ&lt;/font&gt; &quot;&amp;nbsp;&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;. هَذَا حَدِيثٌ صَحِيحُ الإِسْنَادِ وَلَمْ يُخَرِّجَاهُ . وَشَاهِدُهُ صَحِيحٌ عَلَى شَرْطِ الشَّيْخَيْنِ&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="260" x="-186.66999999999962" y="1860" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
