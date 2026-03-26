@@ -855,6 +855,23 @@ textarea:focus {
   font-size: 0.75rem;
   fill: var(--matn-text);
 }
+
+.matn-highlight-band {
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.matn-highlight-marker {
+  stroke: color-mix(in srgb, var(--text) 18%, transparent 82%);
+  stroke-width: 0.8;
+  opacity: 0.95;
+  pointer-events: none;
+}
+
+.matn-highlight-markers {
+  pointer-events: none;
+}
+
 .node-group.resizing {
   cursor: ew-resize;
 }

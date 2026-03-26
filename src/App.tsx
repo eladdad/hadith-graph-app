@@ -5,6 +5,7 @@ import {
   PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -35,7 +36,7 @@ import {
 import type { GraphNode, HadithBundle, HadithReport, HighlightLegendItem, MatnHighlight } from './types';
 import khosrowDaughterExample from '../drawio_graph_conversion/khosrow_daughter.hadith-graph.json';
 
-const MIN_ZOOM = 0.4;
+const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2.8;
 const THEME_STORAGE_KEY = 'hadith-graph-theme';
 
@@ -51,6 +52,12 @@ interface PanState {
   startClientY: number;
   startScrollLeft: number;
   startScrollTop: number;
+}
+
+interface ViewportState {
+  zoom: number;
+  scrollLeft: number;
+  scrollTop: number;
 }
 
 function emptyNarratorDraft(): string[] {
@@ -172,6 +179,8 @@ function App() {
   const svgRef = useRef<SVGSVGElement>(null);
   const graphScrollRef = useRef<HTMLDivElement>(null);
   const panStateRef = useRef<PanState | null>(null);
+  const viewportRef = useRef<ViewportState>({ zoom: 1, scrollLeft: 0, scrollTop: 0 });
+  const pendingZoomViewportRef = useRef<ViewportState | null>(null);
 
   const graph = useMemo(
     () => buildRenderableGraph(
@@ -319,6 +328,11 @@ function App() {
 
       scrollContainer.scrollLeft = panState.startScrollLeft - deltaX;
       scrollContainer.scrollTop = panState.startScrollTop - deltaY;
+      viewportRef.current = {
+        zoom: viewportRef.current.zoom,
+        scrollLeft: scrollContainer.scrollLeft,
+        scrollTop: scrollContainer.scrollTop,
+      };
     };
 
     const finishPan = (): void => {
@@ -336,6 +350,28 @@ function App() {
       window.removeEventListener('pointercancel', finishPan);
     };
   }, [isPanning]);
+
+  useLayoutEffect(() => {
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    const pendingViewport = pendingZoomViewportRef.current;
+    if (pendingViewport && Math.abs(pendingViewport.zoom - zoom) < 0.0001) {
+      scrollContainer.scrollLeft = pendingViewport.scrollLeft;
+      scrollContainer.scrollTop = pendingViewport.scrollTop;
+      viewportRef.current = pendingViewport;
+      pendingZoomViewportRef.current = null;
+      return;
+    }
+
+    viewportRef.current = {
+      zoom,
+      scrollLeft: scrollContainer.scrollLeft,
+      scrollTop: scrollContainer.scrollTop,
+    };
+  }, [graph.height, graph.width, zoom]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -450,6 +486,11 @@ function App() {
       event.stopPropagation();
       scrollContainer.scrollLeft += event.deltaX * deltaMultiplier;
       scrollContainer.scrollTop += event.deltaY * deltaMultiplier;
+      viewportRef.current = {
+        zoom: viewportRef.current.zoom,
+        scrollLeft: scrollContainer.scrollLeft,
+        scrollTop: scrollContainer.scrollTop,
+      };
       return;
     }
 
@@ -459,28 +500,23 @@ function App() {
     const rect = scrollContainer.getBoundingClientRect();
     const pointerX = event.clientX - rect.left;
     const pointerY = event.clientY - rect.top;
+    const currentViewport = pendingZoomViewportRef.current ?? viewportRef.current;
+    const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, currentViewport.zoom * Math.exp(-event.deltaY * 0.0015)));
+    if (Math.abs(nextZoom - currentViewport.zoom) < 0.0001) {
+      return;
+    }
 
-    setZoom((previousZoom) => {
-      const nextZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, previousZoom * Math.exp(-event.deltaY * 0.0015)));
-      if (Math.abs(nextZoom - previousZoom) < 0.0001) {
-        return previousZoom;
-      }
+    const graphX = (currentViewport.scrollLeft + pointerX) / currentViewport.zoom;
+    const graphY = (currentViewport.scrollTop + pointerY) / currentViewport.zoom;
+    const nextViewport: ViewportState = {
+      zoom: nextZoom,
+      scrollLeft: graphX * nextZoom - pointerX,
+      scrollTop: graphY * nextZoom - pointerY,
+    };
 
-      const graphX = (scrollContainer.scrollLeft + pointerX) / previousZoom;
-      const graphY = (scrollContainer.scrollTop + pointerY) / previousZoom;
-
-      requestAnimationFrame(() => {
-        const nextScrollContainer = graphScrollRef.current;
-        if (!nextScrollContainer) {
-          return;
-        }
-
-        nextScrollContainer.scrollLeft = graphX * nextZoom - pointerX;
-        nextScrollContainer.scrollTop = graphY * nextZoom - pointerY;
-      });
-
-      return nextZoom;
-    });
+    pendingZoomViewportRef.current = nextViewport;
+    viewportRef.current = nextViewport;
+    setZoom(nextZoom);
   }, []);
 
   useEffect(() => {

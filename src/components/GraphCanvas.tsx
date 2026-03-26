@@ -1,7 +1,9 @@
-import { PointerEvent as ReactPointerEvent, RefObject } from 'react';
+import { PointerEvent as ReactPointerEvent, RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { MATN_NODE_SIDE_PADDING } from '../graph';
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
+
+const MARKER_HIGHLIGHT_ZOOM_THRESHOLD = 0.3;
 
 interface GraphCanvasProps {
   graph: RenderableGraph;
@@ -19,6 +21,60 @@ interface GraphCanvasProps {
   onResizePointerDown: (event: ReactPointerEvent<SVGRectElement>, node: GraphNode, edge: 'left' | 'right') => void;
 }
 
+interface MeasuredMatnHighlightOverlay {
+  key: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
+interface MatnHighlightMarker {
+  key: string;
+  color: string;
+  label: string;
+}
+
+function getMatnHighlightMarkers(node: GraphNode): MatnHighlightMarker[] {
+  const markers = new Map<string, MatnHighlightMarker>();
+
+  (node.matnLineSegments ?? []).forEach((line) => {
+    line.segments.forEach((segment) => {
+      if (!segment.highlightId || !segment.color) {
+        return;
+      }
+
+      const label = segment.label ?? 'Highlight';
+      const markerKey = `${label}:${segment.color}`;
+      if (!markers.has(markerKey)) {
+        markers.set(markerKey, {
+          key: markerKey,
+          color: segment.color,
+          label,
+        });
+      }
+    });
+  });
+
+  return Array.from(markers.values());
+}
+
+function overlaysEqual(
+  left: MeasuredMatnHighlightOverlay[],
+  right: MeasuredMatnHighlightOverlay[],
+): boolean {
+  return left.length === right.length
+    && left.every((overlay, index) => (
+      overlay.key === right[index]?.key
+      && overlay.x === right[index]?.x
+      && overlay.y === right[index]?.y
+      && overlay.width === right[index]?.width
+      && overlay.height === right[index]?.height
+      && overlay.color === right[index]?.color
+    ));
+}
+
 export function GraphCanvas({
   graph,
   zoom,
@@ -34,6 +90,61 @@ export function GraphCanvas({
   onNodePointerDown,
   onResizePointerDown,
 }: GraphCanvasProps) {
+  const showHighlightMarkers = zoom <= MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
+  const highlightSegmentRefs = useRef(new Map<string, SVGTSpanElement>());
+  const [measuredHighlightOverlays, setMeasuredHighlightOverlays] = useState<MeasuredMatnHighlightOverlay[]>([]);
+
+  const setHighlightSegmentRef = useCallback((key: string, element: SVGTSpanElement | null): void => {
+    if (element) {
+      highlightSegmentRefs.current.set(key, element);
+      return;
+    }
+
+    highlightSegmentRefs.current.delete(key);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (showHighlightMarkers) {
+      setMeasuredHighlightOverlays((previous) => (previous.length === 0 ? previous : []));
+      return;
+    }
+
+    const nextOverlays: MeasuredMatnHighlightOverlay[] = [];
+    graph.nodes.forEach((node) => {
+      (node.matnLineSegments ?? []).forEach((line, lineIndex) => {
+        line.segments.forEach((segment, segmentIndex) => {
+          if (!segment.highlightId || !segment.color || segment.text.length === 0) {
+            return;
+          }
+
+          const key = `${node.id}-matn-${lineIndex}-${segmentIndex}`;
+          const segmentElement = highlightSegmentRefs.current.get(key);
+          if (!segmentElement) {
+            return;
+          }
+
+          const { x, y, width, height } = segmentElement.getBBox();
+          nextOverlays.push({
+            key,
+            x,
+            y,
+            width,
+            height,
+            color: segment.color,
+          });
+        });
+      });
+    });
+
+    nextOverlays.sort((left, right) => left.key.localeCompare(right.key));
+    setMeasuredHighlightOverlays((previous) => (overlaysEqual(previous, nextOverlays) ? previous : nextOverlays));
+  }, [graph.nodes, showHighlightMarkers, zoom]);
+
+  const highlightOverlayByKey = useMemo(
+    () => new Map(measuredHighlightOverlays.map((overlay) => [overlay.key, overlay])),
+    [measuredHighlightOverlays],
+  );
+
   return (
     <svg
       ref={svgRef}
@@ -94,6 +205,7 @@ export function GraphCanvas({
         const matnNodeTextX = node.width / 2 - MATN_NODE_SIDE_PADDING;
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
+        const highlightMarkers = node.type === 'matn' ? getMatnHighlightMarkers(node) : [];
 
         return (
           <g
@@ -146,31 +258,90 @@ export function GraphCanvas({
                 ) : null}
                 {(node.matnLineSegments ?? []).map((line, index) => {
                   const lineY = matnNodeTextStartY + index * matnLineStep;
-                  const lineStartX = matnNodeTextX - line.width;
 
                   return (
-                    <text
-                      key={`${node.id}-matn-line-${index}`}
-                      x={lineStartX}
-                      y={lineY}
-                      textAnchor="start"
-                      xmlSpace="preserve"
-                      className="matn-node-text"
-                      style={{
-                        fontSize: `${matnFontSize}px`,
-                      }}
-                    >
-                      {line.segments.map((segment, segmentIndex) => (
-                        <tspan
-                          key={`${node.id}-matn-${index}-${segmentIndex}`}
-                          fill={segment.color ?? undefined}
-                        >
-                          {segment.text.length > 0 ? segment.text : '\u00a0'}
-                        </tspan>
-                      ))}
-                    </text>
+                    <g key={`${node.id}-matn-line-${index}`}>
+                      {!showHighlightMarkers ? (
+                        <>
+                          {line.segments.map((segment, segmentIndex) => {
+                            const segmentKey = `${node.id}-matn-${index}-${segmentIndex}`;
+                            const overlay = highlightOverlayByKey.get(segmentKey);
+                            if (!overlay) {
+                              return null;
+                            }
+
+                            return (
+                              <g key={`${segmentKey}-overlay`}>
+                                <rect
+                                  x={overlay.x - 3}
+                                  y={overlay.y - 1}
+                                  width={overlay.width + 6}
+                                  height={overlay.height + 4}
+                                  rx={5}
+                                  className="matn-highlight-band"
+                                  fill={overlay.color}
+                                />
+                              </g>
+                            );
+                          })}
+                          <text
+                            x={matnNodeTextX}
+                            y={lineY}
+                            textAnchor="end"
+                            xmlSpace="preserve"
+                            className="matn-node-text"
+                            style={{
+                              fontSize: `${matnFontSize}px`,
+                            }}
+                          >
+                            {line.segments.map((segment, segmentIndex) => (
+                              <tspan
+                                key={`${node.id}-matn-${index}-${segmentIndex}`}
+                                ref={segment.highlightId && segment.color
+                                  ? (element) => setHighlightSegmentRef(`${node.id}-matn-${index}-${segmentIndex}`, element)
+                                  : undefined}
+                                fill={segment.color ?? undefined}
+                              >
+                                {segment.text.length > 0 ? segment.text : '\u00a0'}
+                              </tspan>
+                            ))}
+                          </text>
+                        </>
+                      ) : null}
+                    </g>
                   );
                 })}
+                {showHighlightMarkers && highlightMarkers.length > 0 ? (
+                  <g className="matn-highlight-markers">
+                    {highlightMarkers.map((marker, markerIndex) => {
+                      const markerWidth = 30;
+                      const markerGap = 10;
+                      const availableHeight = Math.max(72, node.height - 32);
+                      const markerHeight = Math.max(
+                        18,
+                        Math.min(42, (availableHeight - markerGap * (highlightMarkers.length - 1)) / highlightMarkers.length),
+                      );
+                      const markersBlockHeight =
+                        highlightMarkers.length * markerHeight + (highlightMarkers.length - 1) * markerGap;
+                      const startY = -markersBlockHeight / 2;
+
+                      return (
+                        <g key={`${node.id}-${marker.key}`}>
+                          <title>{marker.label}</title>
+                          <rect
+                            x={-markerWidth / 2}
+                            y={startY + markerIndex * (markerHeight + markerGap)}
+                            width={markerWidth}
+                            height={markerHeight}
+                            rx={8}
+                            className="matn-highlight-marker"
+                            fill={marker.color}
+                          />
+                        </g>
+                      );
+                    })}
+                  </g>
+                ) : null}
               </>
             ) : (
               <text textAnchor="middle" className="node-label" style={{ fontSize: `${narratorFontSize}px` }}>
