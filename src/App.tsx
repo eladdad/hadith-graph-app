@@ -33,6 +33,7 @@ import {
   sanitizeMatnHighlights,
 } from './matnHighlights';
 import type { GraphNode, HadithBundle, HadithReport, HighlightLegendItem, MatnHighlight } from './types';
+import khosrowDaughterExample from '../drawio_graph_conversion/khosrow_daughter.hadith-graph.json';
 
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 2.8;
@@ -143,6 +144,10 @@ function getInitialTheme(): ThemeMode {
   }
 
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function getValidatedExampleBundle(): { bundle?: HadithBundle; error?: string } {
+  return parseBundleJson(JSON.stringify(khosrowDaughterExample));
 }
 
 function App() {
@@ -552,6 +557,14 @@ function App() {
     fileInputRef.current?.click();
   };
 
+  const loadBundleIntoApp = useCallback((nextBundle: HadithBundle, successMessage: string): void => {
+    setBundle(nextBundle);
+    resetEditor();
+    setSelectedNodeIds([]);
+    resetBoxSelection();
+    setMessage(successMessage);
+  }, [resetBoxSelection, resetEditor]);
+
   const handleFontSizeChange = (key: 'narrator' | 'matn', rawValue: string): void => {
     const numericValue = Number(rawValue);
     const nextValue = clampFontSize(
@@ -594,12 +607,25 @@ function App() {
       return;
     }
 
-    setBundle(parsed.bundle);
-    resetEditor();
-    setSelectedNodeIds([]);
-    resetBoxSelection();
-    setMessage(`Imported ${file.name} with ${parsed.bundle.reports.length} report(s).`);
+    loadBundleIntoApp(parsed.bundle, `Imported ${file.name} with ${parsed.bundle.reports.length} report(s).`);
   };
+
+  const handleLoadExample = useCallback((): void => {
+    const parsed = getValidatedExampleBundle();
+    if (!parsed.bundle) {
+      setMessage(parsed.error ?? 'Could not load the bundled example graph.');
+      return;
+    }
+
+    if (!confirmDiscardEditorChanges()) {
+      return;
+    }
+
+    loadBundleIntoApp(
+      parsed.bundle,
+      `Loaded example graph: ${parsed.bundle.title} (${parsed.bundle.reports.length} report(s)).`,
+    );
+  }, [confirmDiscardEditorChanges, loadBundleIntoApp]);
 
   const handleNarratorChange = (index: number, value: string): void => {
     setEditorNarrators((previous) => previous.map((item, itemIndex) => (itemIndex === index ? value : item)));
@@ -1011,6 +1037,7 @@ function App() {
             </div>
             <div className="actions">
               <button type="button" onClick={handleNewBundle}>New Bundle</button>
+              <button type="button" onClick={handleLoadExample}>Load Example Graph</button>
               <button type="button" onClick={handleOpenImport}>Import JSON</button>
               <button type="button" onClick={handleExport}>Export JSON</button>
               <button type="button" onClick={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}>
