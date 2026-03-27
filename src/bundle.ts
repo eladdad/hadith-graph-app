@@ -17,7 +17,8 @@ import type {
 } from './types';
 
 const BUNDLE_FORMAT = 'hadith-graph-bundle';
-const MATN_NODE_PREFIX = 'r:';
+const MATN_NODE_PREFIX = 'm:';
+const LEGACY_MATN_NODE_PREFIX = 'r:';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -98,6 +99,21 @@ function parseNodeWidths(raw: unknown): { widths?: NodeWidthMap; error?: string 
   }
 
   return { widths };
+}
+
+function normalizeLegacyMatnNodeIds<T>(input: Record<string, T>): Record<string, T> {
+  const normalized: Record<string, T> = {};
+
+  for (const [nodeId, value] of Object.entries(input)) {
+    if (nodeId.startsWith(LEGACY_MATN_NODE_PREFIX)) {
+      normalized[`${MATN_NODE_PREFIX}${nodeId.slice(LEGACY_MATN_NODE_PREFIX.length)}`] = value;
+      continue;
+    }
+
+    normalized[nodeId] = value;
+  }
+
+  return normalized;
 }
 
 function parseFontSizes(raw: unknown): { fontSizes?: HadithFontSizes; error?: string } {
@@ -462,8 +478,8 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       updatedAt,
       reports,
       highlightLegend: parsedHighlightLegend.legend,
-      nodePositions: parsedNodePositions.positions,
-      nodeWidths: parsedNodeWidths.widths,
+      nodePositions: normalizeLegacyMatnNodeIds(parsedNodePositions.positions) as NodePositionMap,
+      nodeWidths: normalizeLegacyMatnNodeIds(parsedNodeWidths.widths) as NodeWidthMap,
       fontSizes: parsedFontSizes.fontSizes,
     },
   };

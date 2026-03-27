@@ -12,7 +12,7 @@ import type {
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
-const MATN_NODE_PREFIX = 'r:';
+const MATN_NODE_PREFIX = 'm:';
 
 const NARRATOR_NODE_WIDTH = 190;
 const NARRATOR_MIN_HEIGHT = 56;

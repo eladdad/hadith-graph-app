@@ -12,8 +12,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_PATH = ROOT / "khosrow_daughter.drawio"
-OUTPUT_PATH = ROOT / "khosrow_daughter.hadith-graph.json"
+BASE_DIR = Path(__file__).resolve().parent
+SOURCE_PATH = BASE_DIR / "khosrow_daughter.drawio"
+OUTPUT_PATH = BASE_DIR / "khosrow_daughter.hadith-graph.json"
 
 
 @dataclass(frozen=True)
@@ -547,6 +548,16 @@ def infer_missing_positions(cells: dict[str, dict[str, object]]) -> None:
             cells[cell_id]["y"] = y
 
 
+def normalize_legacy_matn_node_ids[T](input_map: dict[str, T]) -> dict[str, T]:
+    normalized: dict[str, T] = {}
+    for node_id, value in input_map.items():
+        if node_id.startswith("r:"):
+            normalized[f"m:{node_id[2:]}"] = value
+        else:
+            normalized[node_id] = value
+    return normalized
+
+
 def build_bundle() -> dict[str, object]:
     cells = load_cells()
     infer_missing_positions(cells)
@@ -647,15 +658,15 @@ def build_bundle() -> dict[str, object]:
     for report in reports:
         report_id = str(report["id"])
         x, y = report_positions[report_id]
-        node_positions[f"r:{report_id}"] = {
+        node_positions[f"m:{report_id}"] = {
             "x": round(x + x_shift, 2),
             "y": round(y + y_shift, 2),
         }
-        node_widths[f"r:{report_id}"] = round(report_widths[report_id], 2)
+        node_widths[f"m:{report_id}"] = round(report_widths[report_id], 2)
 
     if existing_bundle:
-        node_positions = dict(existing_bundle.get("nodePositions", {}))
-        node_widths = dict(existing_bundle.get("nodeWidths", {}))
+        node_positions = normalize_legacy_matn_node_ids(dict(existing_bundle.get("nodePositions", {})))
+        node_widths = normalize_legacy_matn_node_ids(dict(existing_bundle.get("nodeWidths", {})))
 
     legend_colors_in_order: list[str] = []
     seen_colors = set()
