@@ -252,6 +252,18 @@ button:disabled {
   min-height: calc(100vh - 1.5rem);
 }
 
+.layout.left-sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+}
+
+.layout.right-sidebar-collapsed {
+  grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
+}
+
+.layout.left-sidebar-collapsed.right-sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .panel,
 .graph-card {
   border: 1px solid var(--line);
@@ -635,6 +647,28 @@ textarea:focus {
 .graph-card {
   min-height: 66vh;
   min-width: 0;
+  position: relative;
+  display: grid;
+}
+
+.graph-toolbar {
+  position: absolute;
+  top: 0.8rem;
+  left: 0.8rem;
+  right: 0.8rem;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  pointer-events: none;
+}
+
+.graph-toolbar-button {
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--panel) 88%, transparent 12%);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 14px var(--panel-shadow);
 }
 
 .shared-legend {
@@ -759,8 +793,21 @@ textarea:focus {
     min-height: auto;
   }
 
+  .layout.left-sidebar-collapsed,
+  .layout.right-sidebar-collapsed,
+  .layout.left-sidebar-collapsed.right-sidebar-collapsed {
+    grid-template-columns: 1fr;
+  }
+
   .graph-card {
     min-height: 56vh;
+  }
+
+  .graph-toolbar {
+    top: 0.65rem;
+    left: 0.65rem;
+    right: 0.65rem;
+    flex-wrap: wrap;
   }
 
   .report-list {

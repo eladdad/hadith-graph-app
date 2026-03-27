@@ -173,6 +173,8 @@ function App() {
   const [newLegendLabel, setNewLegendLabel] = useState('');
   const [newLegendColor, setNewLegendColor] = useState(HIGHLIGHT_COLOR_OPTIONS[0]?.color ?? '#f59e0b');
   const [isSharedLegendOpen, setIsSharedLegendOpen] = useState(false);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const matnPreviewRef = useRef<HTMLDivElement>(null);
@@ -855,11 +857,19 @@ function App() {
   const chainPreview = normalizedDraftNarrators.length > 0
     ? normalizedDraftNarrators.join(' -> ')
     : 'Add narrators to build the chain.';
+  const layoutClassName = [
+    'layout',
+    !isLeftSidebarOpen ? 'left-sidebar-collapsed' : '',
+    !isRightSidebarOpen ? 'right-sidebar-collapsed' : '',
+  ]
+    .filter((value) => value.length > 0)
+    .join(' ');
 
   return (
     <div className="app-shell" data-theme={theme}>
-      <main className="layout">
-        <section className="panel">
+      <main className={layoutClassName}>
+        {isLeftSidebarOpen ? (
+          <section className="panel">
           <div className="editor-header">
             <div>
               <h2>{editingReport ? `Edit Report #${editingReportIndex + 1}` : 'Create Report'}</h2>
@@ -1043,9 +1053,26 @@ function App() {
           </form>
 
           <div className="status" role="status">{message}</div>
-        </section>
+          </section>
+        ) : null}
 
         <section className="graph-card">
+          <div className="graph-toolbar">
+            <button
+              type="button"
+              className="graph-toolbar-button"
+              onClick={() => setIsLeftSidebarOpen((current) => !current)}
+            >
+              {isLeftSidebarOpen ? 'Hide Editor' : 'Show Editor'}
+            </button>
+            <button
+              type="button"
+              className="graph-toolbar-button"
+              onClick={() => setIsRightSidebarOpen((current) => !current)}
+            >
+              {isRightSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+            </button>
+          </div>
           <div
             ref={graphScrollRef}
             className={isPanning ? 'graph-scroll panning' : 'graph-scroll'}
@@ -1070,7 +1097,8 @@ function App() {
           </div>
         </section>
 
-        <aside className="sidebar">
+        {isRightSidebarOpen ? (
+          <aside className="sidebar">
           <section className="panel sidebar-panel">
             <div>
               <h1>Hadith Graph Builder</h1>
@@ -1180,7 +1208,8 @@ function App() {
               })}
             </ol>
           </section>
-        </aside>
+          </aside>
+        ) : null}
       </main>
     </div>
   );
