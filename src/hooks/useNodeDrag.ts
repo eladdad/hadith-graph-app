@@ -6,7 +6,10 @@
   useRef,
   useState,
 } from 'react';
-import type { GraphEdge, GraphNode, HadithBundle } from '../types';
+import type { GraphNode, HadithBundle } from '../types';
+
+const MIN_NODE_MARGIN = 8;
+const POSITION_PRECISION = 100;
 
 interface DragNodeState {
   x: number;
@@ -24,8 +27,12 @@ interface DragState {
   moved: boolean;
 }
 
+interface AnchorCounts {
+  vertical: Map<number, number>;
+  horizontal: Map<number, number>;
+}
+
 interface UseNodeDragParams {
-  graphEdges: GraphEdge[];
   graphNodes: GraphNode[];
   selectedNodeIds: string[];
   setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
@@ -39,8 +46,111 @@ interface UseNodeDragResult {
   handleNodePointerDown: (event: ReactPointerEvent<SVGGElement>, nodeId: string) => void;
 }
 
+function roundPosition(value: number): number {
+  return Math.round(value * POSITION_PRECISION) / POSITION_PRECISION;
+}
+
+function clampNodeCenter(value: number, halfSize: number): number {
+  return Math.max(halfSize + MIN_NODE_MARGIN, roundPosition(value));
+}
+
+function createAnchorCounts(): AnchorCounts {
+  return {
+    vertical: new Map<number, number>(),
+    horizontal: new Map<number, number>(),
+  };
+}
+
+function incrementAnchorCount(anchorCounts: Map<number, number>, value: number): void {
+  anchorCounts.set(value, (anchorCounts.get(value) ?? 0) + 1);
+}
+
+function decrementAnchorCount(anchorCounts: Map<number, number>, value: number): void {
+  const nextCount = (anchorCounts.get(value) ?? 0) - 1;
+  if (nextCount > 0) {
+    anchorCounts.set(value, nextCount);
+    return;
+  }
+
+  anchorCounts.delete(value);
+}
+
+function buildAnchorCounts(nodes: GraphNode[]): AnchorCounts {
+  const counts = createAnchorCounts();
+  nodes.forEach((node) => {
+    incrementAnchorCount(counts.vertical, node.x);
+    incrementAnchorCount(counts.horizontal, node.y);
+  });
+  return counts;
+}
+
+function cloneAnchorCounts(anchorCounts: AnchorCounts): AnchorCounts {
+  return {
+    vertical: new Map(anchorCounts.vertical),
+    horizontal: new Map(anchorCounts.horizontal),
+  };
+}
+
+function removeNodeAnchors(anchorCounts: AnchorCounts, nodes: Record<string, DragNodeState>): void {
+  Object.values(nodes).forEach((node) => {
+    decrementAnchorCount(anchorCounts.vertical, node.x);
+    decrementAnchorCount(anchorCounts.horizontal, node.y);
+  });
+}
+
+function getAxisSnapDelta(
+  nodes: Record<string, DragNodeState>,
+  axis: 'x' | 'y',
+  anchors: Map<number, number>,
+): number | null {
+  let bestDelta: number | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  Object.values(nodes).forEach((node) => {
+    const center = axis === 'x' ? node.x : node.y;
+    const halfSize = axis === 'x' ? node.halfWidth : node.halfHeight;
+    const minEdge = center - halfSize;
+    const maxEdge = center + halfSize;
+
+    anchors.forEach((count, anchor) => {
+      if (count <= 0 || anchor < minEdge || anchor > maxEdge) {
+        return;
+      }
+
+      const delta = roundPosition(anchor - center);
+      const distance = Math.abs(delta);
+      if (
+        distance < bestDistance
+        || (distance === bestDistance && bestDelta !== null && Math.abs(delta) < Math.abs(bestDelta))
+      ) {
+        bestDelta = delta;
+        bestDistance = distance;
+      }
+    });
+  });
+
+  return bestDelta;
+}
+
+function applySnapDelta(
+  nodes: Record<string, DragNodeState>,
+  deltaX: number,
+  deltaY: number,
+): Record<string, DragNodeState> {
+  const snappedNodes: Record<string, DragNodeState> = {};
+
+  Object.entries(nodes).forEach(([nodeId, node]) => {
+    snappedNodes[nodeId] = {
+      ...node,
+      x: clampNodeCenter(node.x + deltaX, node.halfWidth),
+      y: clampNodeCenter(node.y + deltaY, node.halfHeight),
+    };
+  });
+
+  return snappedNodes;
+}
+
 export function useNodeDrag({
-  graphEdges,
   graphNodes,
   selectedNodeIds,
   setSelectedNodeIds,
@@ -50,6 +160,15 @@ export function useNodeDrag({
 }: UseNodeDragParams): UseNodeDragResult {
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef<DragState | null>(null);
+  const anchorCountsRef = useRef<AnchorCounts>(buildAnchorCounts(graphNodes));
+
+  useEffect(() => {
+    if (isDragging) {
+      return;
+    }
+
+    anchorCountsRef.current = buildAnchorCounts(graphNodes);
+  }, [graphNodes, isDragging]);
 
   useEffect(() => {
     if (!isDragging) {
@@ -80,8 +199,8 @@ export function useNodeDrag({
             continue;
           }
 
-          const nextX = Math.max(start.halfWidth + 8, Math.round(start.x + deltaX));
-          const nextY = Math.max(start.halfHeight + 8, Math.round(start.y + deltaY));
+          const nextX = clampNodeCenter(start.x + deltaX, start.halfWidth);
+          const nextY = clampNodeCenter(start.y + deltaY, start.halfHeight);
           const current = previous.nodePositions[nodeId];
 
           if (!current || current.x !== nextX || current.y !== nextY) {
@@ -113,53 +232,35 @@ export function useNodeDrag({
       setIsDragging(false);
 
       if (dragState?.moved) {
-        const nodeById = new Map(graphNodes.map((node) => [node.id, node]));
-        let snapped = false;
-        let snappedNodeId: string | null = null;
-        let snappedParentId: string | null = null;
-        let snappedY = 0;
+        const anchorCounts = cloneAnchorCounts(anchorCountsRef.current);
+        removeNodeAnchors(anchorCounts, dragState.initialNodes);
 
-        if (dragState.nodeIds.length === 1) {
-          const nodeId = dragState.nodeIds[0];
-          const node = nodeById.get(nodeId);
+        const snapDeltaX = getAxisSnapDelta(dragState.currentNodes, 'x', anchorCounts.vertical) ?? 0;
+        const snapDeltaY = getAxisSnapDelta(dragState.currentNodes, 'y', anchorCounts.horizontal) ?? 0;
+        const snapped = snapDeltaX !== 0 || snapDeltaY !== 0;
+        const finalNodes = snapped
+          ? applySnapDelta(dragState.currentNodes, snapDeltaX, snapDeltaY)
+          : dragState.currentNodes;
 
-          if (node?.type === 'narrator') {
-            const parentIds = graphEdges
-              .filter((edge) => edge.target === nodeId)
-              .map((edge) => edge.source);
-
-            if (parentIds.length === 1) {
-              const parent = nodeById.get(parentIds[0]);
-              const currentPosition = dragState.currentNodes[nodeId] ?? dragState.initialNodes[nodeId];
-
-              if (parent && currentPosition) {
-                const parentLeft = parent.x - parent.width / 2;
-                const parentRight = parent.x + parent.width / 2;
-
-                if (currentPosition.x >= parentLeft && currentPosition.x <= parentRight && currentPosition.x !== parent.x) {
-                  snapped = true;
-                  snappedNodeId = nodeId;
-                  snappedParentId = parent.id;
-                  snappedY = currentPosition.y;
-                }
-              }
-            }
+        const nextNodePositions: HadithBundle['nodePositions'] = {};
+        dragState.nodeIds.forEach((nodeId) => {
+          const node = finalNodes[nodeId];
+          if (!node) {
+            return;
           }
-        }
+
+          nextNodePositions[nodeId] = {
+            x: node.x,
+            y: node.y,
+          };
+        });
 
         setBundle((previous) => ({
           ...previous,
-          nodePositions: snapped && snappedNodeId
-            ? {
-              ...previous.nodePositions,
-              [snappedNodeId]: {
-                x: Math.round(snappedParentId
-                  ? previous.nodePositions[snappedParentId]?.x ?? nodeById.get(snappedParentId)?.x ?? 0
-                  : 0),
-                y: snappedY,
-              },
-            }
-            : previous.nodePositions,
+          nodePositions: {
+            ...previous.nodePositions,
+            ...nextNodePositions,
+          },
           updatedAt: new Date().toISOString(),
         }));
         onDragCommitted(dragState.nodeIds.length, snapped);
@@ -175,7 +276,7 @@ export function useNodeDrag({
       window.removeEventListener('pointerup', finishDragging);
       window.removeEventListener('pointercancel', finishDragging);
     };
-  }, [graphEdges, graphNodes, isDragging, clientPointToSvg, setBundle, onDragCommitted]);
+  }, [graphNodes, isDragging, clientPointToSvg, setBundle, onDragCommitted]);
 
   const handleNodePointerDown = (
     event: ReactPointerEvent<SVGGElement>,
