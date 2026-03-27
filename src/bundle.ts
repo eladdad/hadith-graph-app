@@ -179,6 +179,15 @@ export function getNodeIdsForReport(report: HadithReport): string[] {
   return Array.from(ids);
 }
 
+export function getReportIdForMatnNode(nodeId: string): string | null {
+  if (!nodeId.startsWith(MATN_NODE_PREFIX)) {
+    return null;
+  }
+
+  const reportId = nodeId.slice(MATN_NODE_PREFIX.length);
+  return reportId.length > 0 ? reportId : null;
+}
+
 function filterMapKeys<T>(input: Record<string, T>, validKeys: Set<string>): Record<string, T> {
   const next: Record<string, T> = {};
   for (const [key, value] of Object.entries(input)) {

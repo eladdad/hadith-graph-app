@@ -17,6 +17,7 @@ import {
   createEmptyBundle,
   deleteReportFromBundle,
   getNodeIdsForReport,
+  getReportIdForMatnNode,
   makeExportFilename,
   parseBundleJson,
   updateReportInBundle,
@@ -436,13 +437,6 @@ function App() {
     clientPointToSvg,
   });
 
-  const handleNodePointerDown = useCallback((event: ReactPointerEvent<SVGGElement>, nodeId: string): void => {
-    if (isBoxSelecting || isResizing) {
-      return;
-    }
-    onNodePointerDownRaw(event, nodeId);
-  }, [isBoxSelecting, isResizing, onNodePointerDownRaw]);
-
   const handleResizePointerDown = useCallback(
     (event: ReactPointerEvent<SVGRectElement>, node: GraphNode, edge: 'left' | 'right'): void => {
       if (isDragging || isBoxSelecting) {
@@ -563,6 +557,49 @@ function App() {
     resetBoxSelection();
     setMessage('Editing selected report. Save changes to update the graph.');
   }, [confirmDiscardEditorChanges, editingReportId, loadReportIntoEditor, resetBoxSelection]);
+
+  const handleSelectReportFromMatnNode = useCallback((nodeId: string): boolean => {
+    const reportId = getReportIdForMatnNode(nodeId);
+    if (!reportId) {
+      return false;
+    }
+
+    const report = bundle.reports.find((item) => item.id === reportId);
+    if (!report) {
+      return false;
+    }
+
+    if (editingReportId !== report.id && !confirmDiscardEditorChanges()) {
+      return true;
+    }
+
+    loadReportIntoEditor(report);
+    setSelectedNodeIds(getNodeIdsForReport(report));
+    resetBoxSelection();
+    setMessage('Editing selected report. Save changes to update the graph.');
+    return true;
+  }, [
+    bundle.reports,
+    confirmDiscardEditorChanges,
+    editingReportId,
+    loadReportIntoEditor,
+    resetBoxSelection,
+  ]);
+
+  const handleNodePointerDown = useCallback((event: ReactPointerEvent<SVGGElement>, nodeId: string): void => {
+    if (isBoxSelecting || isResizing) {
+      return;
+    }
+
+    const additiveSelect = event.shiftKey || event.ctrlKey || event.metaKey;
+    if (!additiveSelect && event.button === 0 && handleSelectReportFromMatnNode(nodeId)) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    onNodePointerDownRaw(event, nodeId);
+  }, [handleSelectReportFromMatnNode, isBoxSelecting, isResizing, onNodePointerDownRaw]);
 
   const handleUseReportAsTemplate = useCallback((report: HadithReport): void => {
     if (!confirmDiscardEditorChanges()) {
