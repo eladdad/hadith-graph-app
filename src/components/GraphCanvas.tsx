@@ -34,7 +34,15 @@ interface MatnHighlightMarker {
   key: string;
   color: string;
   label: string;
+  isGeneric?: boolean;
 }
+
+const GENERIC_MATN_MARKER: MatnHighlightMarker = {
+  key: 'matn',
+  color: 'var(--matn-marker-generic-fill)',
+  label: 'Matn',
+  isGeneric: true,
+};
 
 function getMatnHighlightMarkers(node: GraphNode): MatnHighlightMarker[] {
   const markers = new Map<string, MatnHighlightMarker>();
@@ -58,6 +66,11 @@ function getMatnHighlightMarkers(node: GraphNode): MatnHighlightMarker[] {
   });
 
   return Array.from(markers.values());
+}
+
+function getCollapsedMatnMarkers(node: GraphNode): MatnHighlightMarker[] {
+  const markers = getMatnHighlightMarkers(node);
+  return markers.length > 0 ? markers : [GENERIC_MATN_MARKER];
 }
 
 function overlaysEqual(
@@ -205,7 +218,7 @@ export function GraphCanvas({
         const matnNodeTextX = node.width / 2 - MATN_NODE_SIDE_PADDING;
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
-        const highlightMarkers = node.type === 'matn' ? getMatnHighlightMarkers(node) : [];
+        const collapsedMatnMarkers = node.type === 'matn' ? getCollapsedMatnMarkers(node) : [];
 
         return (
           <g
@@ -311,18 +324,18 @@ export function GraphCanvas({
                     </g>
                   );
                 })}
-                {showHighlightMarkers && highlightMarkers.length > 0 ? (
+                {showHighlightMarkers && collapsedMatnMarkers.length > 0 ? (
                   <g className="matn-highlight-markers">
-                    {highlightMarkers.map((marker, markerIndex) => {
+                    {collapsedMatnMarkers.map((marker, markerIndex) => {
                       const markerWidth = 30;
                       const markerGap = 10;
                       const availableHeight = Math.max(72, node.height - 32);
                       const markerHeight = Math.max(
                         18,
-                        Math.min(42, (availableHeight - markerGap * (highlightMarkers.length - 1)) / highlightMarkers.length),
+                        Math.min(42, (availableHeight - markerGap * (collapsedMatnMarkers.length - 1)) / collapsedMatnMarkers.length),
                       );
                       const markersBlockHeight =
-                        highlightMarkers.length * markerHeight + (highlightMarkers.length - 1) * markerGap;
+                        collapsedMatnMarkers.length * markerHeight + (collapsedMatnMarkers.length - 1) * markerGap;
                       const startY = -markersBlockHeight / 2;
 
                       return (
@@ -334,7 +347,7 @@ export function GraphCanvas({
                             width={markerWidth}
                             height={markerHeight}
                             rx={8}
-                            className="matn-highlight-marker"
+                            className={marker.isGeneric ? 'matn-highlight-marker matn-highlight-marker-generic' : 'matn-highlight-marker'}
                             fill={marker.color}
                           />
                         </g>
