@@ -195,9 +195,10 @@ export function GraphCanvas({
       </defs>
 
       {graph.edges.map((edge) => (
-        <g key={edge.id}>
+        <g key={edge.id} data-edge-id={edge.id}>
           <path
             d={edge.path}
+            data-edge-id={edge.id}
             className={selectedEdgeSet.has(edge.id) ? 'graph-edge selected' : 'graph-edge'}
             markerEnd={selectedEdgeSet.has(edge.id) ? 'url(#arrow-selected)' : 'url(#arrow)'}
           />
@@ -247,6 +248,8 @@ export function GraphCanvas({
           <g
             key={node.id}
             transform={`translate(${node.x}, ${node.y})`}
+            data-node-id={node.id}
+            data-node-type={node.type}
             className={className}
             onPointerDown={(event) => onNodePointerDown(event, node.id)}
           >
