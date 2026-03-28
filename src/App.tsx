@@ -16,6 +16,7 @@ import {
   bundleToJson,
   createEmptyBundle,
   deleteReportFromBundle,
+  getEdgeIdsForReport,
   getNodeIdsForReport,
   getReportIdForMatnNode,
   makeExportFilename,
@@ -86,6 +87,15 @@ function normalizeDraftNarrators(values: string[]): string[] {
 
 function arraysEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function idSetsEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  const rightSet = new Set(right);
+  return left.every((value) => rightSet.has(value));
 }
 
 function downloadJson(filename: string, contents: string): void {
@@ -201,6 +211,10 @@ function App() {
   const editingReport = useMemo(
     () => bundle.reports.find((report) => report.id === editingReportId) ?? null,
     [bundle.reports, editingReportId],
+  );
+  const selectedEdgeSet = useMemo(
+    () => new Set(editingReport ? getEdgeIdsForReport(editingReport) : []),
+    [editingReport],
   );
 
   const editingReportIndex = useMemo(
@@ -426,7 +440,7 @@ function App() {
   const {
     isBoxSelecting,
     selectionBox,
-    handleCanvasPointerDown,
+    handleCanvasPointerDown: onCanvasPointerDownRaw,
     resetBoxSelection,
   } = useBoxSelection({
     nodes: graph.nodes,
@@ -446,6 +460,34 @@ function App() {
     },
     [isDragging, isBoxSelecting, onResizePointerDownRaw],
   );
+
+  const clearActiveReportSelection = useCallback((): boolean => {
+    if (!editingReportId) {
+      return true;
+    }
+
+    if (!confirmDiscardEditorChanges()) {
+      return false;
+    }
+
+    resetEditor();
+    return true;
+  }, [confirmDiscardEditorChanges, editingReportId, resetEditor]);
+
+  const handleCanvasPointerDown = useCallback((event: ReactPointerEvent<SVGSVGElement>): void => {
+    if (event.button !== 0) {
+      onCanvasPointerDownRaw(event);
+      return;
+    }
+
+    const additiveSelect = event.shiftKey || event.ctrlKey || event.metaKey;
+    if (!additiveSelect && !clearActiveReportSelection()) {
+      event.preventDefault();
+      return;
+    }
+
+    onCanvasPointerDownRaw(event);
+  }, [clearActiveReportSelection, onCanvasPointerDownRaw]);
 
   const handleGraphPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>): void => {
     if ((event.button !== 1 && event.button !== 2) || isDragging || isResizing || isBoxSelecting) {
@@ -598,8 +640,27 @@ function App() {
       return;
     }
 
+    if (!additiveSelect && event.button === 0 && editingReport) {
+      const nextSelection = selectedSet.has(nodeId) ? selectedNodeIds : [nodeId];
+      const reportNodeIds = getNodeIdsForReport(editingReport);
+      if (!idSetsEqual(nextSelection, reportNodeIds) && !clearActiveReportSelection()) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+    }
+
     onNodePointerDownRaw(event, nodeId);
-  }, [handleSelectReportFromMatnNode, isBoxSelecting, isResizing, onNodePointerDownRaw]);
+  }, [
+    clearActiveReportSelection,
+    editingReport,
+    handleSelectReportFromMatnNode,
+    isBoxSelecting,
+    isResizing,
+    onNodePointerDownRaw,
+    selectedNodeIds,
+    selectedSet,
+  ]);
 
   const handleUseReportAsTemplate = useCallback((report: HadithReport): void => {
     if (!confirmDiscardEditorChanges()) {
@@ -1124,6 +1185,7 @@ function App() {
               isBoxSelecting={isBoxSelecting}
               selectionBox={selectionBox}
               selectedSet={selectedSet}
+              selectedEdgeSet={selectedEdgeSet}
               isDragging={isDragging}
               isResizing={isResizing}
               onCanvasPointerDown={handleCanvasPointerDown}

@@ -179,6 +179,18 @@ export function getNodeIdsForReport(report: HadithReport): string[] {
   return Array.from(ids);
 }
 
+export function getEdgeIdsForReport(report: HadithReport): string[] {
+  const edgeIds: string[] = [];
+
+  for (let narratorIndex = 0; narratorIndex < report.isnad.length - 1; narratorIndex += 1) {
+    const source = getNarratorNodeIdForReport(report, narratorIndex);
+    const target = getNarratorNodeIdForReport(report, narratorIndex + 1);
+    edgeIds.push(`${source}->${target}`);
+  }
+
+  return edgeIds;
+}
+
 export function getReportIdForMatnNode(nodeId: string): string | null {
   if (!nodeId.startsWith(MATN_NODE_PREFIX)) {
     return null;

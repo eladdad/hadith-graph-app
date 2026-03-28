@@ -14,6 +14,7 @@ interface GraphCanvasProps {
   isBoxSelecting: boolean;
   selectionBox: SelectionBox | null;
   selectedSet: Set<string>;
+  selectedEdgeSet: Set<string>;
   isDragging: boolean;
   isResizing: boolean;
   onCanvasPointerDown: (event: ReactPointerEvent<SVGSVGElement>) => void;
@@ -97,6 +98,7 @@ export function GraphCanvas({
   isBoxSelecting,
   selectionBox,
   selectedSet,
+  selectedEdgeSet,
   isDragging,
   isResizing,
   onCanvasPointerDown,
@@ -179,13 +181,34 @@ export function GraphCanvas({
         >
           <path d="M 0 0 L 10 4 L 0 8 z" fill="var(--edge)" />
         </marker>
+        <marker
+          id="arrow-selected"
+          markerWidth="10"
+          markerHeight="8"
+          refX="9"
+          refY="4"
+          orient="auto"
+          markerUnits="strokeWidth"
+        >
+          <path d="M 0 0 L 10 4 L 0 8 z" fill="var(--edge-selected)" />
+        </marker>
       </defs>
 
       {graph.edges.map((edge) => (
         <g key={edge.id}>
-          <path d={edge.path} className="graph-edge" markerEnd="url(#arrow)" />
+          <path
+            d={edge.path}
+            className={selectedEdgeSet.has(edge.id) ? 'graph-edge selected' : 'graph-edge'}
+            markerEnd={selectedEdgeSet.has(edge.id) ? 'url(#arrow-selected)' : 'url(#arrow)'}
+          />
           {edge.label ? (
-            <text x={edge.labelX} y={edge.labelY} className="edge-label">{edge.label}</text>
+            <text
+              x={edge.labelX}
+              y={edge.labelY}
+              className={selectedEdgeSet.has(edge.id) ? 'edge-label selected' : 'edge-label'}
+            >
+              {edge.label}
+            </text>
           ) : null}
         </g>
       ))}

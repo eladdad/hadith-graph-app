@@ -49,10 +49,12 @@
   --narrator-selected: #fce8cf;
   --narrator-selected-stroke: #9c4f35;
   --edge: #4f6f98;
+  --edge-selected: #b45838;
   --graph-grid-x: rgba(156, 79, 53, 0.08);
   --graph-grid-y: rgba(79, 111, 152, 0.07);
   --graph-bg: #ffffff;
   --edge-label: #2a4769;
+  --edge-label-selected: #8b3f27;
   --node-label: #2f2a22;
   --node-subtitle: #2e4e73;
   --selection-fill: rgba(47, 110, 169, 0.18);
@@ -112,10 +114,12 @@
   --narrator-selected: #33424d;
   --narrator-selected-stroke: #e18a60;
   --edge: #8db7de;
+  --edge-selected: #f0a06d;
   --graph-grid-x: rgba(217, 122, 82, 0.12);
   --graph-grid-y: rgba(141, 183, 222, 0.11);
   --graph-bg: #0d141a;
   --edge-label: #c7def3;
+  --edge-label-selected: #ffd7bf;
   --node-label: #f1f6fb;
   --node-subtitle: #b8d4ee;
   --selection-fill: rgba(141, 183, 222, 0.2);
@@ -734,6 +738,12 @@ textarea:focus {
   opacity: 0.9;
 }
 
+.graph-edge.selected {
+  stroke: var(--edge-selected);
+  stroke-width: 2.4;
+  opacity: 1;
+}
+
 @media (min-width: 981px) {
   body {
     overflow: hidden;
@@ -838,6 +848,10 @@ textarea:focus {
   fill: var(--edge-label);
   font-weight: 700;
   text-anchor: middle;
+}
+
+.edge-label.selected {
+  fill: var(--edge-label-selected);
 }
 
 .node-narrator {
