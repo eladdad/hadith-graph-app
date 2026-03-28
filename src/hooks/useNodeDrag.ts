@@ -10,6 +10,7 @@ import type { GraphNode, HadithBundle } from '../types';
 
 const MIN_NODE_MARGIN = 8;
 const POSITION_PRECISION = 100;
+const DRAG_START_THRESHOLD_PX = 4;
 
 interface DragNodeState {
   x: number;
@@ -20,6 +21,8 @@ interface DragNodeState {
 
 interface DragState {
   nodeIds: string[];
+  pointerStartClientX: number;
+  pointerStartClientY: number;
   pointerStartX: number;
   pointerStartY: number;
   initialNodes: Record<string, DragNodeState>;
@@ -186,6 +189,15 @@ export function useNodeDrag({
         return;
       }
 
+      const clientDeltaX = event.clientX - dragState.pointerStartClientX;
+      const clientDeltaY = event.clientY - dragState.pointerStartClientY;
+      if (
+        !dragState.moved
+        && Math.hypot(clientDeltaX, clientDeltaY) < DRAG_START_THRESHOLD_PX
+      ) {
+        return;
+      }
+
       const deltaX = point.x - dragState.pointerStartX;
       const deltaY = point.y - dragState.pointerStartY;
 
@@ -349,6 +361,8 @@ export function useNodeDrag({
 
     dragStateRef.current = {
       nodeIds: draggableNodeIds,
+      pointerStartClientX: event.clientX,
+      pointerStartClientY: event.clientY,
       pointerStartX: point.x,
       pointerStartY: point.y,
       initialNodes,
