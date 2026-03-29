@@ -17,7 +17,10 @@ import {
   updateReportInBundle,
 } from '../bundle';
 import {
+  adjustMatnHighlightsForTextChange,
+  adjustTextRangeForChange,
   HIGHLIGHT_COLOR_OPTIONS,
+  getMatnTextChange,
   sanitizeHighlightColor,
   sanitizeMatnHighlights,
 } from '../matnHighlights';
@@ -348,8 +351,28 @@ export function useReportEditor({
   ]);
 
   const setMatn = useCallback((value: string): void => {
+    const previousNormalizedMatn = normalizeDraftMatn(editorMatn);
+    const nextNormalizedMatn = normalizeDraftMatn(value);
+    const validLegendIds = new Set(bundle.highlightLegend.map((entry) => entry.id));
+
+    if (previousNormalizedMatn !== nextNormalizedMatn) {
+      setEditorHighlights((previous) => adjustMatnHighlightsForTextChange(
+        previous,
+        previousNormalizedMatn,
+        nextNormalizedMatn,
+        validLegendIds,
+      ));
+
+      const change = getMatnTextChange(previousNormalizedMatn, nextNormalizedMatn);
+      if (change) {
+        setPreviewSelection((previous) => (
+          previous ? adjustTextRangeForChange(previous, change) : previous
+        ));
+      }
+    }
+
     setEditorMatn(value);
-  }, []);
+  }, [bundle.highlightLegend, editorMatn]);
 
   const changeNarrator = useCallback((index: number, value: string): void => {
     setEditorNarrators((previous) => previous.map((item, itemIndex) => (itemIndex === index ? value : item)));

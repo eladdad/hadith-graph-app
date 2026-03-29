@@ -13,6 +13,17 @@ export interface HighlightColorOption {
   color: string;
 }
 
+export interface TextRange {
+  start: number;
+  end: number;
+}
+
+export interface MatnTextChange {
+  start: number;
+  removedLength: number;
+  insertedLength: number;
+}
+
 export const HIGHLIGHT_COLOR_OPTIONS: HighlightColorOption[] = [
   { name: 'Amber', color: '#f59e0b' },
   { name: 'Orange', color: '#f97316' },
@@ -106,6 +117,109 @@ export function sanitizeMatnHighlights(
     latestEnd = highlight.end;
   }
   return result;
+}
+
+export function getMatnTextChange(previousText: string, nextText: string): MatnTextChange | null {
+  if (previousText === nextText) {
+    return null;
+  }
+
+  const maxPrefixLength = Math.min(previousText.length, nextText.length);
+  let start = 0;
+  while (start < maxPrefixLength && previousText[start] === nextText[start]) {
+    start += 1;
+  }
+
+  let previousSuffixStart = previousText.length;
+  let nextSuffixStart = nextText.length;
+  while (
+    previousSuffixStart > start
+    && nextSuffixStart > start
+    && previousText[previousSuffixStart - 1] === nextText[nextSuffixStart - 1]
+  ) {
+    previousSuffixStart -= 1;
+    nextSuffixStart -= 1;
+  }
+
+  return {
+    start,
+    removedLength: previousSuffixStart - start,
+    insertedLength: nextSuffixStart - start,
+  };
+}
+
+export function adjustTextRangeForChange<TRange extends TextRange>(
+  range: TRange,
+  change: MatnTextChange,
+): TRange | null {
+  const changeStart = change.start;
+  const removedEnd = change.start + change.removedLength;
+  const insertedEnd = change.start + change.insertedLength;
+  const delta = change.insertedLength - change.removedLength;
+
+  if (change.removedLength === 0) {
+    if (changeStart < range.start) {
+      return {
+        ...range,
+        start: range.start + delta,
+        end: range.end + delta,
+      };
+    }
+
+    if (changeStart <= range.end) {
+      return {
+        ...range,
+        end: range.end + delta,
+      };
+    }
+
+    return range;
+  }
+
+  if (removedEnd <= range.start) {
+    return {
+      ...range,
+      start: range.start + delta,
+      end: range.end + delta,
+    };
+  }
+
+  if (changeStart >= range.end) {
+    return range;
+  }
+
+  const nextStart = changeStart < range.start ? insertedEnd : range.start;
+  const nextEnd = removedEnd < range.end ? range.end + delta : insertedEnd;
+  if (nextEnd <= nextStart) {
+    return null;
+  }
+
+  return {
+    ...range,
+    start: nextStart,
+    end: nextEnd,
+  };
+}
+
+export function adjustMatnHighlightsForTextChange(
+  highlights: MatnHighlight[],
+  previousText: string,
+  nextText: string,
+  validLegendIds: Set<string>,
+): MatnHighlight[] {
+  const change = getMatnTextChange(previousText, nextText);
+  if (!change) {
+    return sanitizeMatnHighlights(highlights, nextText, validLegendIds);
+  }
+
+  return sanitizeMatnHighlights(
+    highlights.flatMap((highlight) => {
+      const nextHighlight = adjustTextRangeForChange(highlight, change);
+      return nextHighlight ? [nextHighlight] : [];
+    }),
+    nextText,
+    validLegendIds,
+  );
 }
 
 export function buildMatnTextSegments(
