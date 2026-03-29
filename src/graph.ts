@@ -503,6 +503,8 @@ export function buildRenderableGraph(
       width: 900,
       height: 420,
       hasCycle: false,
+      shiftX: 0,
+      shiftY: 0,
     };
   }
 
@@ -756,5 +758,7 @@ export function buildRenderableGraph(
     width: Math.max(autoWidth, maxX + paddingX),
     height: Math.max(autoHeight, maxY + paddingY),
     hasCycle,
+    shiftX,
+    shiftY,
   };
 }

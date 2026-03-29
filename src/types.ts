@@ -89,4 +89,6 @@ export interface RenderableGraph {
   width: number;
   height: number;
   hasCycle: boolean;
+  shiftX?: number;
+  shiftY?: number;
 }

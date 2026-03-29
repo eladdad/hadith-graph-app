@@ -108,6 +108,8 @@ function App() {
 
   const { isDragging, handleNodePointerDown: onNodePointerDownRaw } = useNodeDrag({
     graphNodes: graph.nodes,
+    graphShiftX: graph.shiftX ?? 0,
+    graphShiftY: graph.shiftY ?? 0,
     selectedNodeIds,
     setSelectedNodeIds,
     clientPointToSvg: viewport.clientPointToSvg,

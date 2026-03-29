@@ -179,9 +179,13 @@ describe('App', () => {
       clientX: 250,
       clientY: 180,
     });
+    fireEvent.pointerMove(window, {
+      clientX: 260,
+      clientY: 188,
+    });
     fireEvent.pointerUp(window, {
-      clientX: 250,
-      clientY: 180,
+      clientX: 260,
+      clientY: 188,
     });
 
     await waitFor(() => {

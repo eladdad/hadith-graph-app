@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react';
+import { logDragDebug } from '../debug';
 
 const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 2.8;
@@ -117,18 +118,43 @@ export function useGraphViewport({
   const clientPointToSvg = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
     const svg = svgRef.current;
     if (!svg) {
+      logDragDebug('clientPointToSvg:missing-svg', { clientX, clientY });
       return null;
     }
 
     const ctm = svg.getScreenCTM();
     if (!ctm) {
+      logDragDebug('clientPointToSvg:missing-ctm', { clientX, clientY });
       return null;
     }
 
+    const inverseCtm = ctm.inverse();
     const point = svg.createSVGPoint();
     point.x = clientX;
     point.y = clientY;
-    const transformed = point.matrixTransform(ctm.inverse());
+    const transformed = point.matrixTransform(inverseCtm);
+    logDragDebug('clientPointToSvg', {
+      clientX,
+      clientY,
+      ctm: {
+        a: ctm.a,
+        b: ctm.b,
+        c: ctm.c,
+        d: ctm.d,
+        e: ctm.e,
+        f: ctm.f,
+      },
+      inverseCtm: {
+        a: inverseCtm.a,
+        b: inverseCtm.b,
+        c: inverseCtm.c,
+        d: inverseCtm.d,
+        e: inverseCtm.e,
+        f: inverseCtm.f,
+      },
+      svgX: transformed.x,
+      svgY: transformed.y,
+    });
     return { x: transformed.x, y: transformed.y };
   }, []);
 

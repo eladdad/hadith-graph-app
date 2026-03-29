@@ -6,6 +6,7 @@
   useRef,
   useState,
 } from 'react';
+import { logDragDebug } from '../debug';
 import type { GraphNode, HadithBundle } from '../types';
 
 const MIN_NODE_MARGIN = 8;
@@ -20,13 +21,13 @@ interface DragNodeState {
 }
 
 interface DragState {
+  dragId: number;
   nodeIds: string[];
   pointerStartClientX: number;
   pointerStartClientY: number;
-  pointerStartX: number;
-  pointerStartY: number;
   initialNodes: Record<string, DragNodeState>;
   currentNodes: Record<string, DragNodeState>;
+  dragArmed: boolean;
   moved: boolean;
 }
 
@@ -37,6 +38,8 @@ interface AnchorCounts {
 
 interface UseNodeDragParams {
   graphNodes: GraphNode[];
+  graphShiftX?: number;
+  graphShiftY?: number;
   selectedNodeIds: string[];
   setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
   clientPointToSvg: (clientX: number, clientY: number) => { x: number; y: number } | null;
@@ -155,6 +158,8 @@ function applySnapDelta(
 
 export function useNodeDrag({
   graphNodes,
+  graphShiftX = 0,
+  graphShiftY = 0,
   selectedNodeIds,
   setSelectedNodeIds,
   clientPointToSvg,
@@ -164,6 +169,7 @@ export function useNodeDrag({
   const [isDragging, setIsDragging] = useState(false);
   const dragStateRef = useRef<DragState | null>(null);
   const anchorCountsRef = useRef<AnchorCounts>(buildAnchorCounts(graphNodes));
+  const nextDragIdRef = useRef(1);
 
   useEffect(() => {
     if (isDragging) {
@@ -185,25 +191,84 @@ export function useNodeDrag({
       }
 
       const point = clientPointToSvg(event.clientX, event.clientY);
-      if (!point) {
+      const startPoint = clientPointToSvg(dragState.pointerStartClientX, dragState.pointerStartClientY);
+      if (!point || !startPoint) {
+        logDragDebug('drag:missing-svg-point', {
+          dragId: dragState.dragId,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          startClientX: dragState.pointerStartClientX,
+          startClientY: dragState.pointerStartClientY,
+          hasPoint: Boolean(point),
+          hasStartPoint: Boolean(startPoint),
+        });
         return;
       }
 
       const clientDeltaX = event.clientX - dragState.pointerStartClientX;
       const clientDeltaY = event.clientY - dragState.pointerStartClientY;
       if (
-        !dragState.moved
+        !dragState.dragArmed
         && Math.hypot(clientDeltaX, clientDeltaY) < DRAG_START_THRESHOLD_PX
       ) {
+        logDragDebug('drag:below-threshold', {
+          dragId: dragState.dragId,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          startClientX: dragState.pointerStartClientX,
+          startClientY: dragState.pointerStartClientY,
+          clientDeltaX,
+          clientDeltaY,
+          distance: Math.hypot(clientDeltaX, clientDeltaY),
+          threshold: DRAG_START_THRESHOLD_PX,
+        });
         return;
       }
 
-      const deltaX = point.x - dragState.pointerStartX;
-      const deltaY = point.y - dragState.pointerStartY;
+      if (!dragState.dragArmed) {
+        logDragDebug('drag:armed', {
+          dragId: dragState.dragId,
+          previousStartClientX: dragState.pointerStartClientX,
+          previousStartClientY: dragState.pointerStartClientY,
+          armedAtClientX: event.clientX,
+          armedAtClientY: event.clientY,
+          armedAtSvgX: point.x,
+          armedAtSvgY: point.y,
+        });
+        dragState.pointerStartClientX = event.clientX;
+        dragState.pointerStartClientY = event.clientY;
+        dragState.dragArmed = true;
+        return;
+      }
+
+      const deltaX = point.x - startPoint.x;
+      const deltaY = point.y - startPoint.y;
+      logDragDebug('drag:move', {
+        dragId: dragState.dragId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        startClientX: dragState.pointerStartClientX,
+        startClientY: dragState.pointerStartClientY,
+        svgX: point.x,
+        svgY: point.y,
+        startSvgX: startPoint.x,
+        startSvgY: startPoint.y,
+        deltaX,
+        deltaY,
+        nodeIds: dragState.nodeIds,
+      });
 
       setBundle((previous) => {
         let changed = false;
         const nextNodePositions = { ...previous.nodePositions };
+        const changedNodes: Record<string, {
+          fromX: number;
+          fromY: number;
+          toX: number;
+          toY: number;
+          renderToX: number;
+          renderToY: number;
+        }> = {};
 
         for (const nodeId of dragState.nodeIds) {
           const start = dragState.initialNodes[nodeId];
@@ -213,24 +278,43 @@ export function useNodeDrag({
 
           const nextX = clampNodeCenter(start.x + deltaX, start.halfWidth);
           const nextY = clampNodeCenter(start.y + deltaY, start.halfHeight);
+          const nextRawX = roundPosition(nextX - graphShiftX);
+          const nextRawY = roundPosition(nextY - graphShiftY);
           const current = previous.nodePositions[nodeId];
 
-          if (!current || current.x !== nextX || current.y !== nextY) {
-            nextNodePositions[nodeId] = { x: nextX, y: nextY };
+          if (!current || current.x !== nextRawX || current.y !== nextRawY) {
+            nextNodePositions[nodeId] = { x: nextRawX, y: nextRawY };
             dragState.currentNodes[nodeId] = {
               ...start,
               x: nextX,
               y: nextY,
+            };
+            changedNodes[nodeId] = {
+              fromX: current?.x ?? start.x,
+              fromY: current?.y ?? start.y,
+              toX: nextRawX,
+              toY: nextRawY,
+              renderToX: nextX,
+              renderToY: nextY,
             };
             changed = true;
           }
         }
 
         if (!changed) {
+          logDragDebug('drag:no-position-change', {
+            dragId: dragState.dragId,
+            deltaX,
+            deltaY,
+          });
           return previous;
         }
 
         dragState.moved = true;
+        logDragDebug('drag:position-change', {
+          dragId: dragState.dragId,
+          changedNodes,
+        });
         return {
           ...previous,
           nodePositions: nextNodePositions,
@@ -243,6 +327,15 @@ export function useNodeDrag({
       dragStateRef.current = null;
       setIsDragging(false);
 
+      if (dragState) {
+        logDragDebug('drag:finish', {
+          dragId: dragState.dragId,
+          moved: dragState.moved,
+          dragArmed: dragState.dragArmed,
+          nodeIds: dragState.nodeIds,
+        });
+      }
+
       if (dragState?.moved) {
         const anchorCounts = cloneAnchorCounts(anchorCountsRef.current);
         removeNodeAnchors(anchorCounts, dragState.initialNodes);
@@ -253,6 +346,14 @@ export function useNodeDrag({
         const finalNodes = snapped
           ? applySnapDelta(dragState.currentNodes, snapDeltaX, snapDeltaY)
           : dragState.currentNodes;
+        logDragDebug('drag:snap', {
+          dragId: dragState.dragId,
+          snapDeltaX,
+          snapDeltaY,
+          snapped,
+          currentNodes: dragState.currentNodes,
+          finalNodes,
+        });
 
         const nextNodePositions: HadithBundle['nodePositions'] = {};
         dragState.nodeIds.forEach((nodeId) => {
@@ -262,8 +363,8 @@ export function useNodeDrag({
           }
 
           nextNodePositions[nodeId] = {
-            x: node.x,
-            y: node.y,
+            x: roundPosition(node.x - graphShiftX),
+            y: roundPosition(node.y - graphShiftY),
           };
         });
 
@@ -288,7 +389,7 @@ export function useNodeDrag({
       window.removeEventListener('pointerup', finishDragging);
       window.removeEventListener('pointercancel', finishDragging);
     };
-  }, [graphNodes, isDragging, clientPointToSvg, setBundle, onDragCommitted]);
+  }, [graphNodes, graphShiftX, graphShiftY, isDragging, clientPointToSvg, setBundle, onDragCommitted]);
 
   const handleNodePointerDown = (
     event: ReactPointerEvent<SVGGElement>,
@@ -300,6 +401,11 @@ export function useNodeDrag({
 
     const point = clientPointToSvg(event.clientX, event.clientY);
     if (!point) {
+      logDragDebug('drag:pointer-down-missing-point', {
+        nodeId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
       return;
     }
 
@@ -359,14 +465,37 @@ export function useNodeDrag({
       };
     }
 
+    const dragId = nextDragIdRef.current;
+    nextDragIdRef.current += 1;
+    logDragDebug('drag:pointer-down', {
+      dragId,
+      nodeId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+      svgX: point.x,
+      svgY: point.y,
+      selectedNodeIds,
+      nextSelection,
+      draggableNodeIds,
+      clickedNode: {
+        id: clickedNode.id,
+        type: clickedNode.type,
+        x: clickedNode.x,
+        y: clickedNode.y,
+        width: clickedNode.width,
+        height: clickedNode.height,
+      },
+      initialNodes,
+    });
+
     dragStateRef.current = {
+      dragId,
       nodeIds: draggableNodeIds,
       pointerStartClientX: event.clientX,
       pointerStartClientY: event.clientY,
-      pointerStartX: point.x,
-      pointerStartY: point.y,
       initialNodes,
       currentNodes: { ...initialNodes },
+      dragArmed: false,
       moved: false,
     };
 
