@@ -701,7 +701,7 @@ textarea:focus {
 
 .shared-legend-item {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   gap: 0.55rem;
   align-items: center;
   font-size: 0.92rem;
@@ -714,6 +714,11 @@ textarea:focus {
 .shared-legend-count {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+.shared-legend-remove {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.82rem;
 }
 
 .graph-scroll {

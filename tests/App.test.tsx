@@ -86,6 +86,51 @@ describe('App', () => {
     });
   });
 
+  it('removes a shared highlight legend category from the sidebar', async () => {
+    const user = userEvent.setup();
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const bundle = makeBundle(
+      [
+        {
+          ...makeReport('r1', ['Alpha', 'Beta'], 'Highlighted matn'),
+          matnHighlights: [
+            { id: 'h1', legendId: 'legend-1', start: 0, end: 11 },
+          ],
+        },
+      ],
+      {
+        highlightLegend: [
+          { id: 'legend-1', label: 'Actor', color: '#f59e0b' },
+        ],
+      },
+    );
+
+    const { container } = render(<App />);
+
+    await importJson(container, bundleToJson(bundle), 'bundle.hadith-graph.json');
+    await waitFor(() => {
+      expect(screen.getByText('Reports (1)')).toBeInTheDocument();
+    });
+
+    const sidebar = screen.getByRole('complementary');
+    await user.click(within(sidebar).getByRole('button', { name: /Highlight Legend/ }));
+
+    const removeButton = within(sidebar)
+      .getAllByRole('button', { name: 'Remove' })
+      .find((button) => !button.hasAttribute('disabled'));
+    if (!removeButton) {
+      throw new Error('Shared legend remove button not found.');
+    }
+
+    await user.click(removeButton);
+
+    expect(confirmSpy).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(screen.queryByText('Actor')).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('Removed "Actor" and cleared 1 matching highlight(s).');
+  });
+
   it('selecting a matn node selects the whole report in graph, edges, and list', async () => {
     const bundle = makeBundle([
       makeReport('r1', ['Alpha', 'Beta'], 'Matn selection target'),

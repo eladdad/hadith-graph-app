@@ -1,6 +1,14 @@
 import { ChangeEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles.css';
-import { bundleToJson, createEmptyBundle, getEdgeIdsForReport, getNodeIdsForReport, makeExportFilename, parseBundleJson } from './bundle';
+import {
+  bundleToJson,
+  createEmptyBundle,
+  getEdgeIdsForReport,
+  getNodeIdsForReport,
+  makeExportFilename,
+  parseBundleJson,
+  removeHighlightLegendItemFromBundle,
+} from './bundle';
 import { GraphCanvas } from './components/GraphCanvas';
 import { ReportEditorPanel } from './components/ReportEditorPanel';
 import { RightSidebar } from './components/RightSidebar';
@@ -319,6 +327,37 @@ function App() {
     );
   }, [loadBundleIntoApp, reportEditor]);
 
+  const handleRemoveHighlightLegend = useCallback((legendId: string): void => {
+    const entry = bundle.highlightLegend.find((item) => item.id === legendId);
+    if (!entry) {
+      setMessage('That highlight category no longer exists.');
+      return;
+    }
+
+    const usageCount = highlightUsageCounts.get(legendId) ?? 0;
+    if (usageCount > 0) {
+      const confirmed = window.confirm(
+        `Remove "${entry.label}" from the legend? This will also remove ${usageCount} highlight(s) using it.`,
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    const result = removeHighlightLegendItemFromBundle(bundle, legendId);
+    if (!result.bundle) {
+      setMessage(result.error ?? 'Could not remove this highlight category.');
+      return;
+    }
+
+    setBundle(result.bundle);
+    setMessage(
+      usageCount > 0
+        ? `Removed "${entry.label}" and cleared ${result.removedHighlights ?? 0} matching highlight(s).`
+        : `Removed "${entry.label}" from the shared legend.`,
+    );
+  }, [bundle, highlightUsageCounts]);
+
   const layoutClassName = [
     'layout',
     !isLeftSidebarOpen ? 'left-sidebar-collapsed' : '',
@@ -396,6 +435,7 @@ function App() {
             onToggleSharedLegend={() => setIsSharedLegendOpen((current) => !current)}
             onFontSizeChange={handleFontSizeChange}
             onImport={handleImport}
+            onRemoveHighlightLegend={handleRemoveHighlightLegend}
             onStartNewReport={reportEditor.startNewReport}
             onSelectReport={reportEditor.selectReport}
             onUseReportAsTemplate={reportEditor.useReportAsTemplate}

@@ -20,6 +20,7 @@ interface RightSidebarProps {
   onToggleSharedLegend: () => void;
   onFontSizeChange: (key: 'narrator' | 'matn', rawValue: string) => void;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
+  onRemoveHighlightLegend: (legendId: string) => void;
   onStartNewReport: () => void;
   onSelectReport: (report: HadithReport) => void;
   onUseReportAsTemplate: (report: HadithReport) => void;
@@ -40,6 +41,7 @@ export function RightSidebar({
   onToggleSharedLegend,
   onFontSizeChange,
   onImport,
+  onRemoveHighlightLegend,
   onStartNewReport,
   onSelectReport,
   onUseReportAsTemplate,
@@ -101,6 +103,13 @@ export function RightSidebar({
                     <span className="legend-swatch" style={{ backgroundColor: entry.color }} />
                     <span className="shared-legend-label">{entry.label}</span>
                     <span className="shared-legend-count">{highlightUsageCounts.get(entry.id) ?? 0}</span>
+                    <button
+                      type="button"
+                      className="danger-button shared-legend-remove"
+                      onClick={() => onRemoveHighlightLegend(entry.id)}
+                    >
+                      Remove
+                    </button>
                   </div>
                 ))}
               </div>

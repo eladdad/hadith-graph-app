@@ -5,6 +5,7 @@ import {
   createEmptyBundle,
   deleteReportFromBundle,
   parseBundleJson,
+  removeHighlightLegendItemFromBundle,
   updateReportInBundle,
 } from '../src/bundle';
 import { buildRenderableGraph } from '../src/graph';
@@ -91,5 +92,36 @@ describe('bundle helpers', () => {
     });
 
     expect(parseBundleJson(JSON.stringify({})).error).toContain('Unsupported format');
+  });
+
+  it('removes a highlight legend item and clears attached highlights from reports', () => {
+    const bundle = makeBundle(
+      [
+        {
+          ...makeReport('r1', ['Alpha'], 'Matn with highlights'),
+          matnHighlights: [
+            { id: 'h1', legendId: 'legend-1', start: 0, end: 4 },
+            { id: 'h2', legendId: 'legend-2', start: 5, end: 9 },
+          ],
+        },
+      ],
+      {
+        highlightLegend: [
+          { id: 'legend-1', label: 'Actor', color: '#f59e0b' },
+          { id: 'legend-2', label: 'Place', color: '#0ea5e9' },
+        ],
+      },
+    );
+
+    const result = removeHighlightLegendItemFromBundle(bundle, 'legend-1');
+
+    expect(result.bundle).toBeDefined();
+    expect(result.removedHighlights).toBe(1);
+    expect(result.bundle?.highlightLegend).toEqual([
+      { id: 'legend-2', label: 'Place', color: '#0ea5e9' },
+    ]);
+    expect(result.bundle?.reports[0]?.matnHighlights).toEqual([
+      { id: 'h2', legendId: 'legend-2', start: 5, end: 9 },
+    ]);
   });
 });

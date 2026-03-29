@@ -73,6 +73,7 @@ describe('RightSidebar', () => {
         onToggleSharedLegend={vi.fn()}
         onFontSizeChange={vi.fn()}
         onImport={vi.fn()}
+        onRemoveHighlightLegend={vi.fn()}
         onStartNewReport={vi.fn()}
         onSelectReport={onSelectReport}
         onUseReportAsTemplate={onUseReportAsTemplate}
@@ -96,6 +97,8 @@ describe('RightSidebar', () => {
   });
 
   it('shows shared legend entries when expanded', () => {
+    const onRemoveHighlightLegend = vi.fn();
+
     render(
       <RightSidebar
         bundle={createBundle()}
@@ -112,6 +115,7 @@ describe('RightSidebar', () => {
         onToggleSharedLegend={vi.fn()}
         onFontSizeChange={vi.fn()}
         onImport={vi.fn()}
+        onRemoveHighlightLegend={onRemoveHighlightLegend}
         onStartNewReport={vi.fn()}
         onSelectReport={vi.fn()}
         onUseReportAsTemplate={vi.fn()}
@@ -121,5 +125,37 @@ describe('RightSidebar', () => {
     expect(screen.getByText('Actor')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Light Theme' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Remove' })).toBeInTheDocument();
+  });
+
+  it('calls the remove handler for a shared legend entry', async () => {
+    const user = userEvent.setup();
+    const onRemoveHighlightLegend = vi.fn();
+
+    render(
+      <RightSidebar
+        bundle={createBundle()}
+        theme="dark"
+        isSharedLegendOpen
+        highlightUsageCounts={new Map([['legend-1', 3]])}
+        editingReportId={null}
+        fileInputRef={createRef<HTMLInputElement>()}
+        onNewBundle={vi.fn()}
+        onLoadExample={vi.fn()}
+        onOpenImport={vi.fn()}
+        onExport={vi.fn()}
+        onToggleTheme={vi.fn()}
+        onToggleSharedLegend={vi.fn()}
+        onFontSizeChange={vi.fn()}
+        onImport={vi.fn()}
+        onRemoveHighlightLegend={onRemoveHighlightLegend}
+        onStartNewReport={vi.fn()}
+        onSelectReport={vi.fn()}
+        onUseReportAsTemplate={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
+    expect(onRemoveHighlightLegend).toHaveBeenCalledWith('legend-1');
   });
 });

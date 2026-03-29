@@ -384,6 +384,44 @@ export function deleteReportFromBundle(
   };
 }
 
+export function removeHighlightLegendItemFromBundle(
+  bundle: HadithBundle,
+  legendId: string,
+): { bundle?: HadithBundle; removedHighlights?: number; error?: string } {
+  const legendExists = bundle.highlightLegend.some((entry) => entry.id === legendId);
+  if (!legendExists) {
+    return { error: 'Highlight legend item not found.' };
+  }
+
+  let removedHighlights = 0;
+  const nextReports = bundle.reports.map((report) => {
+    const nextHighlights = report.matnHighlights.filter((highlight) => {
+      const shouldKeep = highlight.legendId !== legendId;
+      if (!shouldKeep) {
+        removedHighlights += 1;
+      }
+      return shouldKeep;
+    });
+
+    return nextHighlights.length === report.matnHighlights.length
+      ? report
+      : {
+        ...report,
+        matnHighlights: nextHighlights,
+      };
+  });
+
+  return {
+    bundle: {
+      ...bundle,
+      updatedAt: nowIso(),
+      reports: nextReports,
+      highlightLegend: bundle.highlightLegend.filter((entry) => entry.id !== legendId),
+    },
+    removedHighlights,
+  };
+}
+
 export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: string } {
   let parsed: unknown;
   try {
