@@ -1,5 +1,7 @@
 ﻿import { buildMatnTextSegments } from './matnHighlights';
 import type {
+  GraphEdge,
+  GraphNode,
   GraphTextLine,
   GraphTextSegment,
   HadithFontSizes,
@@ -28,6 +30,16 @@ export const DEFAULT_NARRATOR_FONT_SIZE = 13;
 export const DEFAULT_MATN_FONT_SIZE = 12;
 export const MIN_FONT_SIZE = 10;
 export const MAX_FONT_SIZE = 24;
+const DEFAULT_GRAPH_WIDTH = 900;
+const DEFAULT_GRAPH_HEIGHT = 420;
+const MIN_TEXT_WRAP_WIDTH = 80;
+const LINE_HEIGHT_PADDING = 4;
+const TEXT_MEASURE_FONT_FAMILY = "'IBM Plex Sans', 'Noto Naskh Arabic', 'Trebuchet MS', sans-serif";
+const NARRATOR_BASE_HEIGHT = 24;
+const HORIZONTAL_GAP = 70;
+const VERTICAL_GAP = 120;
+const PADDING_X = 96;
+const PADDING_Y = 72;
 
 export function clampFontSize(value: number, fallback: number): number {
   if (!Number.isFinite(value)) {
@@ -44,12 +56,8 @@ export function getNormalizedFontSizes(fontSizes?: Partial<HadithFontSizes>): Ha
   };
 }
 
-function narratorLineHeight(fontSize: number): number {
-  return fontSize + 4;
-}
-
-function matnLineHeight(fontSize: number): number {
-  return fontSize + 4;
+function lineHeight(fontSize: number): number {
+  return fontSize + LINE_HEIGHT_PADDING;
 }
 
 export function clampMatnNodeWidth(width: number): number {
@@ -78,18 +86,10 @@ function matnNodeId(sourceReportId: string): string {
   return `${MATN_NODE_PREFIX}${sourceReportId}`;
 }
 
-function nodeLabelSort(a: string, b: string, labels: Map<string, string>): number {
-  const labelA = labels.get(a) ?? a;
-  const labelB = labels.get(b) ?? b;
+function nodeLabelSort(a: string, b: string, labelsById: Map<string, { label: string }>): number {
+  const labelA = labelsById.get(a)?.label ?? a;
+  const labelB = labelsById.get(b)?.label ?? b;
   return labelA.localeCompare(labelB, 'ar');
-}
-
-function splitLongToken(token: string, maxCharsPerLine: number): string[] {
-  const slices: string[] = [];
-  for (let i = 0; i < token.length; i += maxCharsPerLine) {
-    slices.push(token.slice(i, i + maxCharsPerLine));
-  }
-  return slices;
 }
 
 let textMeasureContext: CanvasRenderingContext2D | null | undefined;
@@ -107,7 +107,7 @@ function getTextMeasureContext(): CanvasRenderingContext2D | null {
   const canvas = document.createElement('canvas');
   textMeasureContext = canvas.getContext('2d');
   if (textMeasureContext) {
-    textMeasureContext.font = "12px 'IBM Plex Sans', 'Noto Naskh Arabic', 'Trebuchet MS', sans-serif";
+    textMeasureContext.font = `12px ${TEXT_MEASURE_FONT_FAMILY}`;
   }
 
   return textMeasureContext;
@@ -119,7 +119,7 @@ function measureTextWidth(text: string, fontSize: number): number {
     return text.length * fontSize * 0.6;
   }
 
-  context.font = `${fontSize}px 'IBM Plex Sans', 'Noto Naskh Arabic', 'Trebuchet MS', sans-serif`;
+  context.font = `${fontSize}px ${TEXT_MEASURE_FONT_FAMILY}`;
   return context.measureText(text).width;
 }
 
@@ -366,57 +366,459 @@ function wrapMatnSegmentsToWidth(
   return lines;
 }
 
-export function hasNarratorCycle(reports: HadithReport[]): boolean {
-  const nodes = new Set<string>();
-  const adjacency = new Map<string, Set<string>>();
-  const indegree = new Map<string, number>();
+type IndexedGraphNode = {
+  id: string;
+  label: string;
+  type: 'narrator' | 'matn';
+  matn?: string;
+  matnHighlights?: HadithReport['matnHighlights'];
+  matnAnchorId?: string;
+};
 
-  for (const report of reports) {
-    for (const name of report.isnad) {
-      nodes.add(name);
-      if (!adjacency.has(name)) {
-        adjacency.set(name, new Set<string>());
-      }
-      if (!indegree.has(name)) {
-        indegree.set(name, 0);
-      }
-    }
+type IndexedGraph = {
+  nodesById: Map<string, IndexedGraphNode>;
+  adjacency: Map<string, Set<string>>;
+  indegree: Map<string, number>;
+  edgesById: Map<string, { source: string; target: string }>;
+};
 
-    for (let i = 0; i < report.isnad.length - 1; i += 1) {
-      const source = report.isnad[i];
-      const target = report.isnad[i + 1];
-      const neighbors = adjacency.get(source);
-      if (!neighbors) {
-        continue;
-      }
-      if (neighbors.has(target)) {
-        continue;
-      }
-      neighbors.add(target);
-      indegree.set(target, (indegree.get(target) ?? 0) + 1);
-    }
+type NodeMeta = {
+  width: number;
+  height: number;
+  labelLines: string[];
+  matnLines?: string[];
+  matnLineSegments?: GraphTextLine[];
+};
+
+type GraphTopology = {
+  narratorNodeIds: string[];
+  matnNodeIds: string[];
+  depth: Map<string, number>;
+  rows: Map<number, string[]>;
+  hasCycle: boolean;
+};
+
+type AutoLayout = {
+  rowCenterY: Map<number, number>;
+  autoX: Map<string, number>;
+  autoWidth: number;
+  autoHeight: number;
+};
+
+function createEmptyRenderableGraph(): RenderableGraph {
+  return {
+    nodes: [],
+    edges: [],
+    width: DEFAULT_GRAPH_WIDTH,
+    height: DEFAULT_GRAPH_HEIGHT,
+    hasCycle: false,
+    shiftX: 0,
+    shiftY: 0,
+  };
+}
+
+function ensureDirectedNode(
+  adjacency: Map<string, Set<string>>,
+  indegree: Map<string, number>,
+  id: string,
+): void {
+  if (!adjacency.has(id)) {
+    adjacency.set(id, new Set<string>());
   }
 
-  const queue: string[] = Array.from(nodes).filter((name) => (indegree.get(name) ?? 0) === 0);
-  let processed = 0;
+  if (!indegree.has(id)) {
+    indegree.set(id, 0);
+  }
+}
+
+function addDirectedEdge(
+  adjacency: Map<string, Set<string>>,
+  indegree: Map<string, number>,
+  source: string,
+  target: string,
+): void {
+  const neighbors = adjacency.get(source);
+  if (!neighbors || neighbors.has(target)) {
+    return;
+  }
+
+  neighbors.add(target);
+  indegree.set(target, (indegree.get(target) ?? 0) + 1);
+}
+
+function topologicalSort(
+  nodeIds: string[],
+  adjacency: Map<string, Set<string>>,
+  indegree: Map<string, number>,
+  compare: (a: string, b: string) => number,
+): string[] {
+  const queue = nodeIds.filter((id) => (indegree.get(id) ?? 0) === 0);
+  const indegreeCopy = new Map(indegree);
+  const order: string[] = [];
 
   while (queue.length > 0) {
-    queue.sort((a, b) => a.localeCompare(b, 'ar'));
+    queue.sort(compare);
     const current = queue.shift();
     if (!current) {
       break;
     }
-    processed += 1;
+
+    order.push(current);
     for (const neighbor of adjacency.get(current) ?? []) {
-      const nextIndegree = (indegree.get(neighbor) ?? 0) - 1;
-      indegree.set(neighbor, nextIndegree);
+      const nextIndegree = (indegreeCopy.get(neighbor) ?? 0) - 1;
+      indegreeCopy.set(neighbor, nextIndegree);
       if (nextIndegree === 0) {
         queue.push(neighbor);
       }
     }
   }
 
-  return processed !== nodes.size;
+  return order;
+}
+
+function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
+  const nodesById = new Map<string, IndexedGraphNode>();
+  const adjacency = new Map<string, Set<string>>();
+  const indegree = new Map<string, number>();
+  const edgesById = new Map<string, { source: string; target: string }>();
+
+  const ensureNode = (node: IndexedGraphNode): void => {
+    if (nodesById.has(node.id)) {
+      return;
+    }
+
+    nodesById.set(node.id, node);
+    ensureDirectedNode(adjacency, indegree, node.id);
+  };
+
+  reports.forEach((report, index) => {
+    const matnId = matnNodeId(report.id);
+    ensureNode({
+      id: matnId,
+      label: `Matn ${index + 1}`,
+      type: 'matn',
+      matn: report.matn,
+      matnHighlights: report.matnHighlights,
+      matnAnchorId: report.isnad.length > 0
+        ? getNarratorNodeIdForReport(report, report.isnad.length - 1)
+        : undefined,
+    });
+
+    report.isnad.forEach((narratorName, narratorIndex) => {
+      ensureNode({
+        id: getNarratorNodeIdForReport(report, narratorIndex),
+        label: narratorName,
+        type: 'narrator',
+      });
+    });
+
+    for (let i = 0; i < report.isnad.length - 1; i += 1) {
+      const source = getNarratorNodeIdForReport(report, i);
+      const target = getNarratorNodeIdForReport(report, i + 1);
+      addDirectedEdge(adjacency, indegree, source, target);
+      edgesById.set(`${source}->${target}`, { source, target });
+    }
+  });
+
+  return {
+    nodesById,
+    adjacency,
+    indegree,
+    edgesById,
+  };
+}
+
+function buildGraphTopology(indexedGraph: IndexedGraph): GraphTopology {
+  const narratorNodeIds: string[] = [];
+  const matnNodeIds: string[] = [];
+
+  for (const node of indexedGraph.nodesById.values()) {
+    if (node.type === 'narrator') {
+      narratorNodeIds.push(node.id);
+    } else {
+      matnNodeIds.push(node.id);
+    }
+  }
+
+  const topoOrder = topologicalSort(
+    narratorNodeIds,
+    indexedGraph.adjacency,
+    indexedGraph.indegree,
+    (a, b) => nodeLabelSort(a, b, indexedGraph.nodesById),
+  );
+  const hasCycle = topoOrder.length !== narratorNodeIds.length;
+  const orderedNarratorIds = [...topoOrder];
+
+  if (hasCycle) {
+    const remainingNarrators = [...narratorNodeIds].sort((a, b) => nodeLabelSort(a, b, indexedGraph.nodesById));
+    remainingNarrators.forEach((id) => {
+      if (!orderedNarratorIds.includes(id)) {
+        orderedNarratorIds.push(id);
+      }
+    });
+  }
+
+  const depth = new Map<string, number>();
+  orderedNarratorIds.forEach((id) => depth.set(id, 0));
+
+  orderedNarratorIds.forEach((id) => {
+    const sourceDepth = depth.get(id) ?? 0;
+    for (const neighbor of indexedGraph.adjacency.get(id) ?? []) {
+      depth.set(neighbor, Math.max(depth.get(neighbor) ?? 0, sourceDepth + 1));
+    }
+  });
+
+  const rows = new Map<number, string[]>();
+  orderedNarratorIds.forEach((id) => {
+    const rowIndex = depth.get(id) ?? 0;
+    if (!rows.has(rowIndex)) {
+      rows.set(rowIndex, []);
+    }
+    rows.get(rowIndex)?.push(id);
+  });
+
+  rows.forEach((rowNodes) => {
+    rowNodes.sort((a, b) => nodeLabelSort(a, b, indexedGraph.nodesById));
+  });
+
+  return {
+    narratorNodeIds,
+    matnNodeIds,
+    depth,
+    rows,
+    hasCycle,
+  };
+}
+
+function buildNodeMeta(
+  nodesById: Map<string, IndexedGraphNode>,
+  nodeWidths: NodeWidthMap,
+  fontSizes: HadithFontSizes,
+  highlightLegendById: Map<string, HighlightLegendItem>,
+): Map<string, NodeMeta> {
+  const nodeMeta = new Map<string, NodeMeta>();
+
+  for (const node of nodesById.values()) {
+    if (node.type === 'matn') {
+      const matnNodeWidth = clampMatnNodeWidth(nodeWidths[node.id] ?? MATN_NODE_DEFAULT_WIDTH);
+      const matnLineSegments = wrapMatnSegmentsToWidth(
+        node.matn ?? '',
+        Math.max(MIN_TEXT_WRAP_WIDTH, matnNodeWidth - MATN_NODE_SIDE_PADDING * 2),
+        fontSizes.matn,
+        highlightLegendById,
+        node.matnHighlights ?? [],
+      );
+      const matnLines = matnLineSegments.map((line) => line.segments.map((segment) => segment.text).join(''));
+      const height = MATN_NODE_TOP_PADDING
+        + matnLineSegments.length * lineHeight(fontSizes.matn)
+        + MATN_NODE_BOTTOM_PADDING;
+
+      nodeMeta.set(node.id, {
+        width: matnNodeWidth,
+        height,
+        labelLines: [node.label],
+        matnLines,
+        matnLineSegments,
+      });
+      continue;
+    }
+
+    const labelLines = wrapTextToWidth(
+      node.label,
+      Math.max(MIN_TEXT_WRAP_WIDTH, NARRATOR_NODE_WIDTH - NARRATOR_SIDE_PADDING * 2),
+      fontSizes.narrator,
+    );
+    const height = Math.max(NARRATOR_MIN_HEIGHT, NARRATOR_BASE_HEIGHT + labelLines.length * lineHeight(fontSizes.narrator));
+    nodeMeta.set(node.id, {
+      width: NARRATOR_NODE_WIDTH,
+      height,
+      labelLines,
+    });
+  }
+
+  return nodeMeta;
+}
+
+function buildAutoLayout(rows: Map<number, string[]>, nodeMeta: Map<string, NodeMeta>): AutoLayout {
+  const rowIndices = Array.from(rows.keys()).sort((a, b) => a - b);
+  const rowCenterY = new Map<number, number>();
+  let yCursor = PADDING_Y;
+
+  for (const rowIndex of rowIndices) {
+    const rowNodes = rows.get(rowIndex) ?? [];
+    const rowHeight = Math.max(...rowNodes.map((id) => nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT));
+    const centerY = yCursor + rowHeight / 2;
+    rowCenterY.set(rowIndex, centerY);
+    yCursor += rowHeight + VERTICAL_GAP;
+  }
+
+  let autoWidth = DEFAULT_GRAPH_WIDTH;
+  const autoX = new Map<string, number>();
+
+  for (const rowIndex of rowIndices) {
+    const rowNodes = rows.get(rowIndex) ?? [];
+    let xCursor = PADDING_X;
+    for (const id of rowNodes) {
+      const meta = nodeMeta.get(id);
+      if (!meta) {
+        continue;
+      }
+      autoX.set(id, xCursor + meta.width / 2);
+      xCursor += meta.width + HORIZONTAL_GAP;
+    }
+
+    const rowWidth = rowNodes.length > 0 ? xCursor - HORIZONTAL_GAP + PADDING_X : PADDING_X * 2;
+    autoWidth = Math.max(autoWidth, rowWidth);
+  }
+
+  const autoHeight = rowIndices.length > 0
+    ? Math.max(DEFAULT_GRAPH_HEIGHT, yCursor - VERTICAL_GAP + PADDING_Y)
+    : DEFAULT_GRAPH_HEIGHT;
+
+  return {
+    rowCenterY,
+    autoX,
+    autoWidth,
+    autoHeight,
+  };
+}
+
+function buildNarratorNodes(
+  indexedGraph: IndexedGraph,
+  topology: GraphTopology,
+  nodeMeta: Map<string, NodeMeta>,
+  autoLayout: AutoLayout,
+  nodePositions: NodePositionMap,
+): GraphNode[] {
+  return topology.narratorNodeIds.map((id) => {
+    const node = indexedGraph.nodesById.get(id);
+    const meta = nodeMeta.get(id);
+    const rowIndex = topology.depth.get(id) ?? 0;
+    const defaultX = autoLayout.autoX.get(id) ?? PADDING_X;
+    const defaultY = autoLayout.rowCenterY.get(rowIndex) ?? PADDING_Y;
+
+    const legacyCollectorPosition = id.startsWith(COLLECTOR_PREFIX) && node
+      ? nodePositions[getSharedNarratorNodeId(node.label)]
+      : undefined;
+    const savedPosition = nodePositions[id] ?? legacyCollectorPosition;
+
+    return {
+      id,
+      label: node?.label ?? id,
+      labelLines: meta?.labelLines ?? [node?.label ?? id],
+      matnLines: meta?.matnLines,
+      matnLineSegments: meta?.matnLineSegments,
+      type: node?.type ?? 'narrator',
+      width: meta?.width ?? NARRATOR_NODE_WIDTH,
+      height: meta?.height ?? NARRATOR_MIN_HEIGHT,
+      x: typeof savedPosition?.x === 'number' && Number.isFinite(savedPosition.x) ? savedPosition.x : defaultX,
+      y: typeof savedPosition?.y === 'number' && Number.isFinite(savedPosition.y) ? savedPosition.y : defaultY,
+    };
+  });
+}
+
+function buildMatnNodes(
+  indexedGraph: IndexedGraph,
+  topology: GraphTopology,
+  nodeMeta: Map<string, NodeMeta>,
+  narratorNodes: GraphNode[],
+): GraphNode[] {
+  const narratorBottom = narratorNodes.length > 0
+    ? Math.max(...narratorNodes.map((node) => node.y + node.height / 2))
+    : PADDING_Y;
+  const matnTopY = narratorBottom + VERTICAL_GAP;
+  const narratorNodeById = new Map(narratorNodes.map((node) => [node.id, node]));
+
+  return topology.matnNodeIds.map((id) => {
+    const node = indexedGraph.nodesById.get(id);
+    const meta = nodeMeta.get(id);
+    const width = meta?.width ?? MATN_NODE_DEFAULT_WIDTH;
+    const height = meta?.height ?? NARRATOR_MIN_HEIGHT;
+    const anchorNode = narratorNodeById.get(node?.matnAnchorId ?? '');
+    const anchorRight = anchorNode ? anchorNode.x + anchorNode.width / 2 : PADDING_X + width;
+
+    return {
+      id,
+      label: node?.label ?? id,
+      labelLines: meta?.labelLines ?? [node?.label ?? id],
+      matnLines: meta?.matnLines,
+      matnLineSegments: meta?.matnLineSegments,
+      type: node?.type ?? 'matn',
+      width,
+      height,
+      x: anchorRight - width / 2,
+      y: matnTopY + height / 2,
+    };
+  });
+}
+
+function shiftNodesIntoBounds(nodes: GraphNode[]): { shiftX: number; shiftY: number } {
+  const minX = Math.min(...nodes.map((node) => node.x - node.width / 2));
+  const minY = Math.min(...nodes.map((node) => node.y - node.height / 2));
+  const shiftX = minX < PADDING_X ? PADDING_X - minX : 0;
+  const shiftY = minY < PADDING_Y ? PADDING_Y - minY : 0;
+
+  if (shiftX > 0 || shiftY > 0) {
+    nodes.forEach((node) => {
+      node.x += shiftX;
+      node.y += shiftY;
+    });
+  }
+
+  return { shiftX, shiftY };
+}
+
+function buildEdges(edgesById: Map<string, { source: string; target: string }>, nodes: GraphNode[]): GraphEdge[] {
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const edges: GraphEdge[] = [];
+
+  for (const [edgeId, edge] of edgesById.entries()) {
+    const source = nodeById.get(edge.source);
+    const target = nodeById.get(edge.target);
+    if (!source || !target) {
+      continue;
+    }
+
+    const dy = target.y - source.y;
+    const verticalDirection = dy >= 0 ? 1 : -1;
+    const sourceY = source.y + verticalDirection * (source.height / 2);
+    const targetY = target.y - verticalDirection * (target.height / 2);
+
+    edges.push({
+      id: edgeId,
+      source: edge.source,
+      target: edge.target,
+      path: `M ${source.x} ${sourceY} L ${target.x} ${targetY}`,
+      label: undefined,
+      labelX: source.x + (target.x - source.x) / 2,
+      labelY: source.y + dy / 2 - verticalDirection * 10,
+    });
+  }
+
+  return edges;
+}
+
+export function hasNarratorCycle(reports: HadithReport[]): boolean {
+  const adjacency = new Map<string, Set<string>>();
+  const indegree = new Map<string, number>();
+  const narratorIds: string[] = [];
+  const seenNarrators = new Set<string>();
+
+  for (const report of reports) {
+    for (const name of report.isnad) {
+      if (!seenNarrators.has(name)) {
+        seenNarrators.add(name);
+        narratorIds.push(name);
+      }
+      ensureDirectedNode(adjacency, indegree, name);
+    }
+
+    for (let i = 0; i < report.isnad.length - 1; i += 1) {
+      addDirectedEdge(adjacency, indegree, report.isnad[i], report.isnad[i + 1]);
+    }
+  }
+
+  return topologicalSort(narratorIds, adjacency, indegree, (a, b) => a.localeCompare(b, 'ar')).length !== narratorIds.length;
 }
 
 export function buildRenderableGraph(
@@ -427,337 +829,33 @@ export function buildRenderableGraph(
   highlightLegend: HighlightLegendItem[] = [],
 ): RenderableGraph {
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
-  const labels = new Map<string, string>();
-  const matnByNodeId = new Map<string, string>();
-  const matnHighlightsByNodeId = new Map<string, HadithReport['matnHighlights']>();
-  const matnAnchorByNodeId = new Map<string, string>();
-  const types = new Map<string, 'narrator' | 'matn'>();
   const highlightLegendById = new Map(highlightLegend.map((entry) => [entry.id, entry]));
+  const indexedGraph = buildIndexedGraph(reports);
 
-  const adjacency = new Map<string, Set<string>>();
-  const indegree = new Map<string, number>();
-  const edgeWeights = new Map<string, { source: string; target: string; weight: number; showWeight: boolean }>();
-
-  const ensureNode = (id: string, label: string, type: 'narrator' | 'matn'): void => {
-    if (!labels.has(id)) {
-      labels.set(id, label);
-      types.set(id, type);
-      adjacency.set(id, new Set<string>());
-      indegree.set(id, indegree.get(id) ?? 0);
-    }
-  };
-
-  const addEdge = (source: string, target: string, countWeight: boolean): void => {
-    const neighbors = adjacency.get(source);
-    if (!neighbors) {
-      return;
-    }
-
-    if (!neighbors.has(target)) {
-      neighbors.add(target);
-      indegree.set(target, (indegree.get(target) ?? 0) + 1);
-    }
-
-    const edgeId = `${source}->${target}`;
-    const existing = edgeWeights.get(edgeId);
-    if (existing) {
-      if (countWeight) {
-        existing.weight += 1;
-      }
-      return;
-    }
-
-    edgeWeights.set(edgeId, {
-      source,
-      target,
-      weight: countWeight ? 1 : 0,
-      showWeight: countWeight,
-    });
-  };
-
-  reports.forEach((report, index) => {
-    const matnId = matnNodeId(report.id);
-    ensureNode(matnId, `Matn ${index + 1}`, 'matn');
-    matnByNodeId.set(matnId, report.matn);
-    matnHighlightsByNodeId.set(matnId, report.matnHighlights);
-
-    report.isnad.forEach((narratorName, narratorIndex) => {
-      ensureNode(getNarratorNodeIdForReport(report, narratorIndex), narratorName, 'narrator');
-    });
-
-    for (let i = 0; i < report.isnad.length - 1; i += 1) {
-      const source = getNarratorNodeIdForReport(report, i);
-      const target = getNarratorNodeIdForReport(report, i + 1);
-      addEdge(source, target, true);
-    }
-
-    if (report.isnad.length > 0) {
-      matnAnchorByNodeId.set(matnId, getNarratorNodeIdForReport(report, report.isnad.length - 1));
-    }
-  });
-
-  if (labels.size === 0) {
-    return {
-      nodes: [],
-      edges: [],
-      width: 900,
-      height: 420,
-      hasCycle: false,
-      shiftX: 0,
-      shiftY: 0,
-    };
+  if (indexedGraph.nodesById.size === 0) {
+    return createEmptyRenderableGraph();
   }
 
-  const narratorNodeIds = Array.from(labels.keys()).filter((id) => (types.get(id) ?? 'narrator') === 'narrator');
-  const matnNodeIds = Array.from(labels.keys()).filter((id) => (types.get(id) ?? 'narrator') === 'matn');
-
-  const queue: string[] = narratorNodeIds.filter((id) => (indegree.get(id) ?? 0) === 0);
-  const indegreeCopy = new Map(indegree);
-  const topoOrder: string[] = [];
-
-  while (queue.length > 0) {
-    queue.sort((a, b) => nodeLabelSort(a, b, labels));
-    const current = queue.shift();
-    if (!current) {
-      break;
-    }
-
-    topoOrder.push(current);
-    for (const neighbor of adjacency.get(current) ?? []) {
-      const nextIndegree = (indegreeCopy.get(neighbor) ?? 0) - 1;
-      indegreeCopy.set(neighbor, nextIndegree);
-      if (nextIndegree === 0) {
-        queue.push(neighbor);
-      }
-    }
-  }
-
-  const hasCycle = topoOrder.length !== narratorNodeIds.length;
-  if (hasCycle) {
-    const fallbackNodes = narratorNodeIds.sort((a, b) => nodeLabelSort(a, b, labels));
-    fallbackNodes.forEach((id) => {
-      if (!topoOrder.includes(id)) {
-        topoOrder.push(id);
-      }
-    });
-  }
-
-  const depth = new Map<string, number>();
-  topoOrder.forEach((id) => depth.set(id, 0));
-
-  topoOrder.forEach((id) => {
-    const sourceDepth = depth.get(id) ?? 0;
-    for (const neighbor of adjacency.get(id) ?? []) {
-      depth.set(neighbor, Math.max(depth.get(neighbor) ?? 0, sourceDepth + 1));
-    }
-  });
-
-  const rows = new Map<number, string[]>();
-  topoOrder.forEach((id) => {
-    const rowIndex = depth.get(id) ?? 0;
-    if (!rows.has(rowIndex)) {
-      rows.set(rowIndex, []);
-    }
-    rows.get(rowIndex)?.push(id);
-  });
-
-  rows.forEach((rowNodes) => {
-    rowNodes.sort((a, b) => {
-      const typeA = types.get(a) === 'narrator' ? 0 : 1;
-      const typeB = types.get(b) === 'narrator' ? 0 : 1;
-      if (typeA !== typeB) {
-        return typeA - typeB;
-      }
-      return nodeLabelSort(a, b, labels);
-    });
-  });
-
-  const nodeMeta = new Map<string, { width: number; height: number; labelLines: string[]; matnLines?: string[]; matnLineSegments?: GraphTextLine[] }>();
-  for (const id of labels.keys()) {
-    const type = types.get(id) ?? 'narrator';
-    const label = labels.get(id) ?? id;
-
-    if (type === 'matn') {
-      const matnNodeWidth = clampMatnNodeWidth(nodeWidths[id] ?? MATN_NODE_DEFAULT_WIDTH);
-      const matnLineSegments = wrapMatnSegmentsToWidth(
-        matnByNodeId.get(id) ?? '',
-        Math.max(80, matnNodeWidth - MATN_NODE_SIDE_PADDING * 2),
-        normalizedFontSizes.matn,
-        highlightLegendById,
-        matnHighlightsByNodeId.get(id) ?? [],
-      );
-      const matnLines = matnLineSegments.map((line) => line.segments.map((segment) => segment.text).join(''));
-      const height = MATN_NODE_TOP_PADDING
-        + matnLineSegments.length * matnLineHeight(normalizedFontSizes.matn)
-        + MATN_NODE_BOTTOM_PADDING;
-
-      nodeMeta.set(id, {
-        width: matnNodeWidth,
-        height,
-        labelLines: [label],
-        matnLines,
-        matnLineSegments,
-      });
-      continue;
-    }
-
-    const labelLines = wrapTextToWidth(
-      label,
-      Math.max(80, NARRATOR_NODE_WIDTH - NARRATOR_SIDE_PADDING * 2),
-      normalizedFontSizes.narrator,
-    );
-    const height = Math.max(NARRATOR_MIN_HEIGHT, 24 + labelLines.length * narratorLineHeight(normalizedFontSizes.narrator));
-    nodeMeta.set(id, {
-      width: NARRATOR_NODE_WIDTH,
-      height,
-      labelLines,
-    });
-  }
-
-  const horizontalGap = 70;
-  const verticalGap = 120;
-  const paddingX = 96;
-  const paddingY = 72;
-
-  const rowIndices = Array.from(rows.keys()).sort((a, b) => a - b);
-
-  const rowCenterY = new Map<number, number>();
-  let yCursor = paddingY;
-  for (const rowIndex of rowIndices) {
-    const rowNodes = rows.get(rowIndex) ?? [];
-    const rowHeight = Math.max(...rowNodes.map((id) => nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT));
-    const centerY = yCursor + rowHeight / 2;
-    rowCenterY.set(rowIndex, centerY);
-    yCursor += rowHeight + verticalGap;
-  }
-
-  let autoWidth = 900;
-  const autoX = new Map<string, number>();
-  for (const rowIndex of rowIndices) {
-    const rowNodes = rows.get(rowIndex) ?? [];
-    let xCursor = paddingX;
-    for (const id of rowNodes) {
-      const meta = nodeMeta.get(id);
-      if (!meta) {
-        continue;
-      }
-      autoX.set(id, xCursor + meta.width / 2);
-      xCursor += meta.width + horizontalGap;
-    }
-
-    const rowWidth = rowNodes.length > 0 ? xCursor - horizontalGap + paddingX : paddingX * 2;
-    autoWidth = Math.max(autoWidth, rowWidth);
-  }
-
-  const autoHeight = rowIndices.length > 0
-    ? Math.max(420, yCursor - verticalGap + paddingY)
-    : 420;
-
-  const narratorNodes = narratorNodeIds.map((id) => {
-    const meta = nodeMeta.get(id);
-    const rowIndex = depth.get(id) ?? 0;
-
-    const defaultX = autoX.get(id) ?? paddingX;
-    const defaultY = rowCenterY.get(rowIndex) ?? paddingY;
-
-    const legacyCollectorPosition = id.startsWith(COLLECTOR_PREFIX)
-      ? nodePositions[getSharedNarratorNodeId(labels.get(id) ?? id)]
-      : undefined;
-    const savedPosition = nodePositions[id] ?? legacyCollectorPosition;
-
-    return {
-      id,
-      label: labels.get(id) ?? id,
-      labelLines: meta?.labelLines ?? [labels.get(id) ?? id],
-      matnLines: meta?.matnLines,
-      matnLineSegments: meta?.matnLineSegments,
-      type: types.get(id) ?? 'narrator',
-      width: meta?.width ?? NARRATOR_NODE_WIDTH,
-      height: meta?.height ?? NARRATOR_MIN_HEIGHT,
-      x: typeof savedPosition?.x === 'number' && Number.isFinite(savedPosition.x) ? savedPosition.x : defaultX,
-      y: typeof savedPosition?.y === 'number' && Number.isFinite(savedPosition.y) ? savedPosition.y : defaultY,
-    };
-  });
-
-  const narratorBottom = narratorNodes.length > 0
-    ? Math.max(...narratorNodes.map((node) => node.y + node.height / 2))
-    : paddingY;
-  const matnTopY = narratorBottom + verticalGap;
-  const narratorNodeById = new Map(narratorNodes.map((node) => [node.id, node]));
-
-  const matnNodes = matnNodeIds.map((id) => {
-    const meta = nodeMeta.get(id);
-    const anchorNode = narratorNodeById.get(matnAnchorByNodeId.get(id) ?? '');
-    const width = meta?.width ?? MATN_NODE_DEFAULT_WIDTH;
-    const height = meta?.height ?? NARRATOR_MIN_HEIGHT;
-    const anchorRight = anchorNode ? anchorNode.x + anchorNode.width / 2 : paddingX + width;
-
-    return {
-      id,
-      label: labels.get(id) ?? id,
-      labelLines: meta?.labelLines ?? [labels.get(id) ?? id],
-      matnLines: meta?.matnLines,
-      matnLineSegments: meta?.matnLineSegments,
-      type: types.get(id) ?? 'matn',
-      width,
-      height,
-      x: anchorRight - width / 2,
-      y: matnTopY + height / 2,
-    };
-  });
-
-  const nodes = Array.from(labels.keys())
-    .map((id) => narratorNodeById.get(id) ?? matnNodes.find((node) => node.id === id))
-    .filter((node): node is NonNullable<typeof node> => node !== undefined);
-
-  const minX = Math.min(...nodes.map((node) => node.x - node.width / 2));
-  const minY = Math.min(...nodes.map((node) => node.y - node.height / 2));
-  const shiftX = minX < paddingX ? paddingX - minX : 0;
-  const shiftY = minY < paddingY ? paddingY - minY : 0;
-
-  if (shiftX > 0 || shiftY > 0) {
-    nodes.forEach((node) => {
-      node.x += shiftX;
-      node.y += shiftY;
-    });
-  }
-
-  const nodeById = new Map(nodes.map((node) => [node.id, node]));
-  const edges = Array.from(edgeWeights.entries())
-    .map(([edgeId, edge]) => {
-      const source = nodeById.get(edge.source);
-      const target = nodeById.get(edge.target);
-      if (!source || !target) {
-        return null;
-      }
-
-      const dy = target.y - source.y;
-      const verticalDirection = dy >= 0 ? 1 : -1;
-      const sourceY = source.y + verticalDirection * (source.height / 2);
-      const targetY = target.y - verticalDirection * (target.height / 2);
-      const path = `M ${source.x} ${sourceY} L ${target.x} ${targetY}`;
-
-      return {
-        id: edgeId,
-        source: edge.source,
-        target: edge.target,
-        path,
-        label: undefined,
-        labelX: source.x + (target.x - source.x) / 2,
-        labelY: source.y + dy / 2 - verticalDirection * 10,
-      };
-    })
-    .filter((edge): edge is NonNullable<typeof edge> => edge !== null);
-
+  const topology = buildGraphTopology(indexedGraph);
+  const nodeMeta = buildNodeMeta(indexedGraph.nodesById, nodeWidths, normalizedFontSizes, highlightLegendById);
+  const autoLayout = buildAutoLayout(topology.rows, nodeMeta);
+  const narratorNodes = buildNarratorNodes(indexedGraph, topology, nodeMeta, autoLayout, nodePositions);
+  const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, narratorNodes);
+  const nodeById = new Map<string, GraphNode>([...narratorNodes, ...matnNodes].map((node) => [node.id, node]));
+  const nodes = Array.from(indexedGraph.nodesById.keys())
+    .map((id) => nodeById.get(id))
+    .filter((node): node is GraphNode => node !== undefined);
+  const { shiftX, shiftY } = shiftNodesIntoBounds(nodes);
+  const edges = buildEdges(indexedGraph.edgesById, nodes);
   const maxX = Math.max(...nodes.map((node) => node.x + node.width / 2));
   const maxY = Math.max(...nodes.map((node) => node.y + node.height / 2));
 
   return {
     nodes,
     edges,
-    width: Math.max(autoWidth, maxX + paddingX),
-    height: Math.max(autoHeight, maxY + paddingY),
-    hasCycle,
+    width: Math.max(autoLayout.autoWidth, maxX + PADDING_X),
+    height: Math.max(autoLayout.autoHeight, maxY + PADDING_Y),
+    hasCycle: topology.hasCycle,
     shiftX,
     shiftY,
   };
