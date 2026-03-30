@@ -38,3 +38,6 @@ __pycache__/
 *.zip
 *.tar
 *.gz
+
+# Test coverage files
+coverage/
