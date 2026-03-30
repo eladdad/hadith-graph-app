@@ -44,6 +44,15 @@ function sanitizeMatn(value: string): string {
     .trim();
 }
 
+function sanitizeNote(value: string): string {
+  return value
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map((line) => line.replace(/[^\S\n]+$/g, ''))
+    .join('\n')
+    .trim();
+}
+
 function sanitizeNarrators(values: string[]): string[] {
   return values
     .map((value) => sanitizeText(value))
@@ -191,6 +200,10 @@ export function getEdgeIdsForReport(report: HadithReport): string[] {
   return edgeIds;
 }
 
+export function getMatnNodeIdForReport(reportId: string): string {
+  return `${MATN_NODE_PREFIX}${reportId}`;
+}
+
 export function getReportIdForMatnNode(nodeId: string): string | null {
   if (!nodeId.startsWith(MATN_NODE_PREFIX)) {
     return null;
@@ -311,6 +324,7 @@ export function addReportToBundleFromFields(
     isnad: validated.isnad,
     matn: validated.matn,
     matnHighlights: validated.matnHighlights,
+    note: '',
     createdAt: nowIso(),
   };
 
@@ -361,6 +375,37 @@ export function updateReportInBundle(
   return {
     bundle: result.bundle,
     updatedNodeIds: getNodeIdsForReport(updatedReport),
+  };
+}
+
+export function updateReportNoteInBundle(
+  bundle: HadithBundle,
+  reportId: string,
+  noteInput: string,
+): { bundle?: HadithBundle; error?: string } {
+  const existingReport = bundle.reports.find((report) => report.id === reportId);
+  if (!existingReport) {
+    return { error: 'Report not found.' };
+  }
+
+  const nextNote = sanitizeNote(noteInput);
+  if (existingReport.note === nextNote) {
+    return { bundle };
+  }
+
+  return {
+    bundle: {
+      ...bundle,
+      updatedAt: nowIso(),
+      reports: bundle.reports.map((report) => (
+        report.id === reportId
+          ? {
+            ...report,
+            note: nextNote,
+          }
+          : report
+      )),
+    },
   };
 }
 
@@ -500,6 +545,7 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       isnad,
       matn,
       matnHighlights: sanitizeMatnHighlights(rawHighlights, matn, legendIds),
+      note: typeof raw.note === 'string' ? sanitizeNote(raw.note) : '',
       createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : nowIso(),
     };
     reports.push(report);

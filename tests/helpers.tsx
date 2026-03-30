@@ -13,6 +13,7 @@ export function makeReport(
     isnad,
     matn,
     matnHighlights: [],
+    note: '',
     createdAt: TEST_TIMESTAMP,
   };
 }

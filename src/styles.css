@@ -628,6 +628,14 @@ textarea:focus {
   font-size: 0.85rem;
 }
 
+.report-card-meta {
+  margin-top: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
 .report-chain {
   font-weight: 600;
   font-size: 0.9rem;
@@ -645,9 +653,65 @@ textarea:focus {
 }
 
 .report-meta {
-  margin-top: 0.2rem;
   color: var(--report-meta);
   font-size: 0.8rem;
+}
+
+.report-note-pill {
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--panel) 86%);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent 74%);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.report-note-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--panel) 95%, var(--bg) 5%);
+  box-shadow: 0 12px 28px var(--panel-shadow);
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.graph-note-card {
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 3;
+  max-height: min(22rem, calc(100vh - 10rem));
+}
+
+.report-note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.75rem;
+}
+
+.report-note-body,
+.report-note-empty {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.report-note-body {
+  max-height: min(14rem, calc(100vh - 18rem));
+  overflow: auto;
+  color: var(--text);
+}
+
+.report-note-body a {
+  color: var(--accent);
+  text-decoration-thickness: 2px;
+}
+
+.report-note-empty {
+  color: var(--muted);
 }
 
 .graph-card {
@@ -722,6 +786,7 @@ textarea:focus {
 }
 
 .graph-scroll {
+  position: relative;
   overflow: hidden;
   cursor: default;
   min-height: 100%;
@@ -730,6 +795,10 @@ textarea:focus {
     linear-gradient(to right, var(--graph-grid-x) 1px, transparent 1px) 0 0 / 28px 28px,
     linear-gradient(to bottom, var(--graph-grid-y) 1px, transparent 1px) 0 0 / 28px 28px,
     var(--graph-bg);
+}
+
+.graph-content {
+  position: relative;
 }
 
 .graph-svg {
@@ -747,6 +816,30 @@ textarea:focus {
   stroke: var(--edge-selected);
   stroke-width: 2.4;
   opacity: 1;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(22, 18, 14, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.dialog-panel {
+  width: min(42rem, 100%);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--panel);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.24);
+  padding: 1rem;
+}
+
+.note-dialog textarea {
+  min-height: 13rem;
 }
 
 @media (min-width: 981px) {
@@ -834,7 +927,8 @@ textarea:focus {
   .editor-header,
   .field-label-row,
   .editor-actions,
-  .chain-row {
+  .chain-row,
+  .report-note-header {
     grid-template-columns: 1fr;
     display: grid;
   }
@@ -845,6 +939,10 @@ textarea:focus {
 
   .chain-row .danger-button {
     grid-column: 1 / -1;
+  }
+
+  .graph-note-card {
+    max-width: calc(100% - 1rem);
   }
 }
 

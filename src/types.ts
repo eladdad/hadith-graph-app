@@ -16,6 +16,7 @@ export interface HadithReport {
   isnad: string[];
   matn: string;
   matnHighlights: MatnHighlight[];
+  note: string;
   createdAt: string;
 }
 

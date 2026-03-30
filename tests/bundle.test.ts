@@ -7,6 +7,7 @@ import {
   parseBundleJson,
   removeHighlightLegendItemFromBundle,
   updateReportInBundle,
+  updateReportNoteInBundle,
 } from '../src/bundle';
 import { buildRenderableGraph } from '../src/graph';
 import { makeBundle, makeReport } from './helpers';
@@ -74,7 +75,10 @@ describe('bundle helpers', () => {
 
   it('roundtrips bundle json and rejects invalid input', () => {
     const bundle = makeBundle(
-      [makeReport('r1', ['Alpha', 'Beta'], 'Roundtrip matn')],
+      [{
+        ...makeReport('r1', ['Alpha', 'Beta'], 'Roundtrip matn'),
+        note: 'Collection link: https://sunnah.com/bukhari:1',
+      }],
       {
         nodePositions: {
           'n:Alpha': { x: 100, y: 110 },
@@ -92,6 +96,19 @@ describe('bundle helpers', () => {
     });
 
     expect(parseBundleJson(JSON.stringify({})).error).toContain('Unsupported format');
+  });
+
+  it('updates a report note without disturbing the report structure', () => {
+    const bundle = makeBundle([
+      makeReport('r1', ['Alpha', 'Beta'], 'Matn with note'),
+    ]);
+
+    const result = updateReportNoteInBundle(bundle, 'r1', 'Reference: https://sunnah.com/muslim:1');
+
+    expect(result.bundle).toBeDefined();
+    expect(result.bundle?.reports[0]?.note).toBe('Reference: https://sunnah.com/muslim:1');
+    expect(result.bundle?.reports[0]?.isnad).toEqual(['Alpha', 'Beta']);
+    expect(result.bundle?.reports[0]?.matn).toBe('Matn with note');
   });
 
   it('removes a highlight legend item and clears attached highlights from reports', () => {

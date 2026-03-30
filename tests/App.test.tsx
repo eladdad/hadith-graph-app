@@ -157,6 +157,40 @@ describe('App', () => {
     expect(getGraphEdge(container, 'n:Alpha->c:r1')).toHaveClass('selected');
   });
 
+  it('shows a selected report note beneath the matn node and keeps note links clickable', async () => {
+    const user = userEvent.setup();
+    const bundle = makeBundle([
+      makeReport('r1', ['Alpha', 'Beta'], 'Matn selection target'),
+    ]);
+    const { container } = render(<App />);
+
+    await importJson(container, bundleToJson(bundle));
+    await waitFor(() => {
+      expect(container.querySelector('[data-node-id="m:r1"]')).not.toBeNull();
+    });
+
+    fireEvent.pointerDown(getGraphNode(container, 'm:r1'), {
+      button: 0,
+      clientX: 300,
+      clientY: 250,
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Add Note' }));
+    await user.type(
+      screen.getByPlaceholderText('Add hadith collection links, commentary, or evaluation notes'),
+      'Primary source: https://sunnah.com/bukhari:1',
+    );
+    await user.click(screen.getByRole('button', { name: 'Save Note' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Primary source:')).toBeInTheDocument();
+    });
+
+    const noteLink = screen.getByRole('link', { name: 'https://sunnah.com/bukhari:1' });
+    expect(noteLink).toHaveAttribute('href', 'https://sunnah.com/bukhari:1');
+    expect(screen.getByText('Note')).toBeInTheDocument();
+  });
+
   it('keeps the selected report active while right-click panning', async () => {
     const bundle = makeBundle([
       makeReport('r1', ['Alpha', 'Beta'], 'Pan target matn'),

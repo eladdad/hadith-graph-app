@@ -44,7 +44,10 @@ export function ReportList({
                     legend={highlightLegend}
                     dir="auto"
                   />
-                  <div className="report-meta">#{index + 1}</div>
+                  <div className="report-card-meta">
+                    <div className="report-meta">#{index + 1}</div>
+                    {report.note.length > 0 ? <span className="report-note-pill">Note</span> : null}
+                  </div>
                 </button>
                 <div className="report-card-actions">
                   <button type="button" onClick={() => onSelectReport(report)}>Edit</button>

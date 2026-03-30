@@ -4,13 +4,17 @@ import {
   bundleToJson,
   createEmptyBundle,
   getEdgeIdsForReport,
+  getMatnNodeIdForReport,
   getNodeIdsForReport,
   makeExportFilename,
   parseBundleJson,
   removeHighlightLegendItemFromBundle,
+  updateReportNoteInBundle,
 } from './bundle';
 import { GraphCanvas } from './components/GraphCanvas';
 import { ReportEditorPanel } from './components/ReportEditorPanel';
+import { ReportNoteCard } from './components/ReportNoteCard';
+import { ReportNoteDialog } from './components/ReportNoteDialog';
 import { RightSidebar } from './components/RightSidebar';
 import { buildRenderableGraph, clampFontSize } from './graph';
 import { useBoxSelection } from './hooks/useBoxSelection';
@@ -71,6 +75,8 @@ function App() {
   const [isSharedLegendOpen, setIsSharedLegendOpen] = useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -166,6 +172,61 @@ function App() {
     () => new Set(reportEditor.editingReport ? getEdgeIdsForReport(reportEditor.editingReport) : []),
     [reportEditor.editingReport],
   );
+
+  const selectedMatnNode = useMemo(() => {
+    if (!reportEditor.editingReport) {
+      return null;
+    }
+
+    const matnNodeId = getMatnNodeIdForReport(reportEditor.editingReport.id);
+    return graph.nodes.find((node) => node.id === matnNodeId) ?? null;
+  }, [graph.nodes, reportEditor.editingReport]);
+
+  const graphContentWidth = Math.round(graph.width * viewport.zoom);
+  const graphContentBaseHeight = Math.round(graph.height * viewport.zoom);
+
+  const selectedReportNoteOverlay = useMemo(() => {
+    if (!reportEditor.editingReport || !selectedMatnNode) {
+      return null;
+    }
+
+    const overlayWidth = Math.min(360, Math.max(220, graphContentWidth - 24));
+    const halfWidth = overlayWidth / 2;
+    const left = Math.min(
+      graphContentWidth - halfWidth - 12,
+      Math.max(halfWidth + 12, selectedMatnNode.x * viewport.zoom),
+    );
+    const top = (selectedMatnNode.y + selectedMatnNode.height / 2) * viewport.zoom + 18;
+
+    return {
+      contentHeight: Math.max(graphContentBaseHeight, Math.ceil(top + 260)),
+      reportLabel: `Report #${reportEditor.editingReportIndex + 1}`,
+      style: {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${overlayWidth}px`,
+      },
+    };
+  }, [
+    graphContentBaseHeight,
+    graphContentWidth,
+    reportEditor.editingReport,
+    reportEditor.editingReportIndex,
+    selectedMatnNode,
+    viewport.zoom,
+  ]);
+
+  useEffect(() => {
+    if (!reportEditor.editingReport) {
+      setIsNoteEditorOpen(false);
+      setNoteDraft('');
+      return;
+    }
+
+    if (isNoteEditorOpen) {
+      setNoteDraft(reportEditor.editingReport.note);
+    }
+  }, [isNoteEditorOpen, reportEditor.editingReport]);
 
   const handleResizePointerDown = useCallback(
     (event: ReactPointerEvent<SVGRectElement>, node: GraphNode, edge: 'left' | 'right'): void => {
@@ -358,6 +419,40 @@ function App() {
     );
   }, [bundle, highlightUsageCounts]);
 
+  const handleOpenNoteEditor = useCallback((): void => {
+    if (!reportEditor.editingReport) {
+      return;
+    }
+
+    setNoteDraft(reportEditor.editingReport.note);
+    setIsNoteEditorOpen(true);
+  }, [reportEditor.editingReport]);
+
+  const handleCloseNoteEditor = useCallback((): void => {
+    setIsNoteEditorOpen(false);
+  }, []);
+
+  const handleSaveNote = useCallback((): void => {
+    if (!reportEditor.editingReport) {
+      return;
+    }
+
+    const result = updateReportNoteInBundle(bundle, reportEditor.editingReport.id, noteDraft);
+    if (!result.bundle) {
+      setMessage(result.error ?? 'Failed to save report note.');
+      return;
+    }
+
+    const nextNote = result.bundle.reports.find((report) => report.id === reportEditor.editingReport?.id)?.note ?? '';
+    setBundle(result.bundle);
+    setIsNoteEditorOpen(false);
+    setMessage(
+      nextNote.length > 0
+        ? `Saved note for Report #${reportEditor.editingReportIndex + 1}.`
+        : `Cleared note for Report #${reportEditor.editingReportIndex + 1}.`,
+    );
+  }, [bundle, noteDraft, reportEditor.editingReport, reportEditor.editingReportIndex]);
+
   const layoutClassName = [
     'layout',
     !isLeftSidebarOpen ? 'left-sidebar-collapsed' : '',
@@ -400,22 +495,39 @@ function App() {
             onPointerDown={handleGraphPointerDown}
             onContextMenu={viewport.handleGraphContextMenu}
           >
-            <GraphCanvas
-              graph={graph}
-              zoom={viewport.zoom}
-              svgRef={viewport.svgRef}
-              narratorFontSize={bundle.fontSizes.narrator}
-              matnFontSize={bundle.fontSizes.matn}
-              isBoxSelecting={isBoxSelecting}
-              selectionBox={selectionBox}
-              selectedSet={selectedSet}
-              selectedEdgeSet={selectedEdgeSet}
-              isDragging={isDragging}
-              isResizing={isResizing}
-              onCanvasPointerDown={handleCanvasPointerDown}
-              onNodePointerDown={handleNodePointerDown}
-              onResizePointerDown={handleResizePointerDown}
-            />
+            <div
+              className="graph-content"
+              style={{
+                width: `${graphContentWidth}px`,
+                height: `${selectedReportNoteOverlay?.contentHeight ?? graphContentBaseHeight}px`,
+              }}
+            >
+              <GraphCanvas
+                graph={graph}
+                zoom={viewport.zoom}
+                svgRef={viewport.svgRef}
+                narratorFontSize={bundle.fontSizes.narrator}
+                matnFontSize={bundle.fontSizes.matn}
+                isBoxSelecting={isBoxSelecting}
+                selectionBox={selectionBox}
+                selectedSet={selectedSet}
+                selectedEdgeSet={selectedEdgeSet}
+                isDragging={isDragging}
+                isResizing={isResizing}
+                onCanvasPointerDown={handleCanvasPointerDown}
+                onNodePointerDown={handleNodePointerDown}
+                onResizePointerDown={handleResizePointerDown}
+              />
+              {selectedReportNoteOverlay && reportEditor.editingReport ? (
+                <ReportNoteCard
+                  className="report-note-card graph-note-card"
+                  report={reportEditor.editingReport}
+                  reportLabel={selectedReportNoteOverlay.reportLabel}
+                  onEdit={handleOpenNoteEditor}
+                  style={selectedReportNoteOverlay.style}
+                />
+              ) : null}
+            </div>
           </div>
         </section>
 
@@ -442,6 +554,15 @@ function App() {
           />
         ) : null}
       </main>
+
+      <ReportNoteDialog
+        isOpen={isNoteEditorOpen}
+        reportLabel={reportEditor.editingReport ? `Report #${reportEditor.editingReportIndex + 1}` : 'Report'}
+        value={noteDraft}
+        onChange={setNoteDraft}
+        onClose={handleCloseNoteEditor}
+        onSave={handleSaveNote}
+      />
     </div>
   );
 }

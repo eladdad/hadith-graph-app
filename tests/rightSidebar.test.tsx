@@ -38,6 +38,7 @@ function createBundle(): HadithBundle {
             end: 4,
           },
         ],
+        note: '',
         createdAt: '2026-03-28T00:00:00.000Z',
       },
       {
@@ -45,6 +46,7 @@ function createBundle(): HadithBundle {
         isnad: ['C'],
         matn: 'Text two',
         matnHighlights: [],
+        note: '',
         createdAt: '2026-03-28T00:00:00.000Z',
       },
     ],
