@@ -2,7 +2,7 @@
 import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/hadith-graph-app/' : '/',
+  base: '/',
   plugins: [react()],
   test: {
     environment: 'jsdom',
