@@ -161,7 +161,7 @@ h3 {
 }
 
 h1 {
-  font-size: 1.8rem;
+  font-size: 1.7rem;
 }
 
 h2 {
@@ -176,6 +176,30 @@ h3 {
   margin: 0.25rem 0 0;
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.sidebar-title-block {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.sidebar-title-row {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.about-button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex: 0 0 auto;
 }
 
 .actions {
@@ -836,6 +860,27 @@ textarea:focus {
   background: var(--panel);
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.24);
   padding: 1rem;
+}
+
+.about-dialog {
+  width: min(34rem, 100%);
+  display: grid;
+  gap: 0.9rem;
+}
+
+.about-dialog-body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.about-dialog-body p {
+  margin: 0;
+}
+
+.about-dialog-body a {
+  color: var(--accent);
+  text-decoration-thickness: 2px;
+  overflow-wrap: anywhere;
 }
 
 .note-dialog textarea {

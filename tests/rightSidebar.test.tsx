@@ -71,6 +71,7 @@ describe('RightSidebar', () => {
         onLoadExample={vi.fn()}
         onOpenImport={vi.fn()}
         onExport={vi.fn()}
+        onOpenAbout={vi.fn()}
         onToggleTheme={vi.fn()}
         onToggleSharedLegend={vi.fn()}
         onFontSizeChange={vi.fn()}
@@ -113,6 +114,7 @@ describe('RightSidebar', () => {
         onLoadExample={vi.fn()}
         onOpenImport={vi.fn()}
         onExport={vi.fn()}
+        onOpenAbout={vi.fn()}
         onToggleTheme={vi.fn()}
         onToggleSharedLegend={vi.fn()}
         onFontSizeChange={vi.fn()}
@@ -146,6 +148,7 @@ describe('RightSidebar', () => {
         onLoadExample={vi.fn()}
         onOpenImport={vi.fn()}
         onExport={vi.fn()}
+        onOpenAbout={vi.fn()}
         onToggleTheme={vi.fn()}
         onToggleSharedLegend={vi.fn()}
         onFontSizeChange={vi.fn()}
@@ -159,5 +162,37 @@ describe('RightSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remove' }));
     expect(onRemoveHighlightLegend).toHaveBeenCalledWith('legend-1');
+  });
+
+  it('calls the about handler from the title area', async () => {
+    const user = userEvent.setup();
+    const onOpenAbout = vi.fn();
+
+    render(
+      <RightSidebar
+        bundle={createBundle()}
+        theme="light"
+        isSharedLegendOpen={false}
+        highlightUsageCounts={new Map([['legend-1', 1]])}
+        editingReportId={null}
+        fileInputRef={createRef<HTMLInputElement>()}
+        onNewBundle={vi.fn()}
+        onLoadExample={vi.fn()}
+        onOpenImport={vi.fn()}
+        onExport={vi.fn()}
+        onOpenAbout={onOpenAbout}
+        onToggleTheme={vi.fn()}
+        onToggleSharedLegend={vi.fn()}
+        onFontSizeChange={vi.fn()}
+        onImport={vi.fn()}
+        onRemoveHighlightLegend={vi.fn()}
+        onStartNewReport={vi.fn()}
+        onSelectReport={vi.fn()}
+        onUseReportAsTemplate={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'About Hadith Graph Builder' }));
+    expect(onOpenAbout).toHaveBeenCalledTimes(1);
   });
 });

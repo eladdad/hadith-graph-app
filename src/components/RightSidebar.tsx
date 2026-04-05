@@ -16,6 +16,7 @@ interface RightSidebarProps {
   onLoadExample: () => void;
   onOpenImport: () => void;
   onExport: () => void;
+  onOpenAbout: () => void;
   onToggleTheme: () => void;
   onToggleSharedLegend: () => void;
   onFontSizeChange: (key: 'narrator' | 'matn', rawValue: string) => void;
@@ -37,6 +38,7 @@ export function RightSidebar({
   onLoadExample,
   onOpenImport,
   onExport,
+  onOpenAbout,
   onToggleTheme,
   onToggleSharedLegend,
   onFontSizeChange,
@@ -49,8 +51,19 @@ export function RightSidebar({
   return (
     <aside className="sidebar">
       <section className="panel sidebar-panel">
-        <div>
-          <h1>Hadith Graph Builder</h1>
+        <div className="sidebar-title-block">
+          <div className="sidebar-title-row">
+            <h1>Hadith Graph Builder</h1>
+            <button
+              type="button"
+              className="about-button"
+              aria-label="About Hadith Graph Builder"
+              title="About Hadith Graph Builder"
+              onClick={onOpenAbout}
+            >
+              ?
+            </button>
+          </div>
           <p className="subtitle">Bundle: {bundle.title}</p>
         </div>
         <div className="actions">

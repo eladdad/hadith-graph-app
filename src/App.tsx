@@ -11,6 +11,7 @@ import {
   removeHighlightLegendItemFromBundle,
   updateReportNoteInBundle,
 } from './bundle';
+import { AboutDialog } from './components/AboutDialog';
 import { GraphCanvas } from './components/GraphCanvas';
 import { ReportEditorPanel } from './components/ReportEditorPanel';
 import { ReportNoteCard } from './components/ReportNoteCard';
@@ -76,6 +77,7 @@ function App() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -543,6 +545,7 @@ function App() {
             onLoadExample={handleLoadExample}
             onOpenImport={handleOpenImport}
             onExport={handleExport}
+            onOpenAbout={() => setIsAboutOpen(true)}
             onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
             onToggleSharedLegend={() => setIsSharedLegendOpen((current) => !current)}
             onFontSizeChange={handleFontSizeChange}
@@ -562,6 +565,11 @@ function App() {
         onChange={setNoteDraft}
         onClose={handleCloseNoteEditor}
         onSave={handleSaveNote}
+      />
+
+      <AboutDialog
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
       />
     </div>
   );

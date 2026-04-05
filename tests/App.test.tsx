@@ -191,6 +191,23 @@ describe('App', () => {
     expect(screen.getByText('Note')).toBeInTheDocument();
   });
 
+  it('opens the about dialog from the sidebar title and shows the repository link', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'About Hadith Graph Builder' }));
+
+    expect(screen.getByRole('heading', { name: 'About Hadith Graph Builder' })).toBeInTheDocument();
+    const repoLink = screen.getByRole('link', { name: 'github.com/eladdad/hadith-graph-app' });
+    expect(repoLink).toHaveAttribute('href', 'https://github.com/eladdad/hadith-graph-app');
+
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'About Hadith Graph Builder' })).not.toBeInTheDocument();
+    });
+  });
+
   it('keeps the selected report active while right-click panning', async () => {
     const bundle = makeBundle([
       makeReport('r1', ['Alpha', 'Beta'], 'Pan target matn'),
