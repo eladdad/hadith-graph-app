@@ -41,3 +41,6 @@ __pycache__/
 
 # Test coverage files
 coverage/
+
+# Local notes
+TODO.md
