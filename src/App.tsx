@@ -53,7 +53,7 @@ function downloadJson(filename: string, contents: string): void {
 
 function getInitialTheme(): ThemeMode {
   if (typeof window === 'undefined') {
-    return 'light';
+    return 'dark';
   }
 
   const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
@@ -61,7 +61,7 @@ function getInitialTheme(): ThemeMode {
     return savedTheme;
   }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
 
 function getValidatedExampleBundle(): { bundle?: HadithBundle; error?: string } {
