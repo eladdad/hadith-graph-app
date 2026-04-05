@@ -48,15 +48,14 @@ export function AboutDialog({
           <div>
             <h2 id="about-dialog-title">About Hadith Graph Builder</h2>
             <p className="subtitle">
-              A browser-based workspace for building, annotating, and exporting hadith report graphs.
+              A browser-based workspace for building, annotating, and exporting hadith graphs.
             </p>
           </div>
         </div>
 
         <div className="about-dialog-body">
           <p>
-            The app lets you model isnad relationships as a directed acyclic graph, manage shared narrators across
-            reports, highlight matn passages, and save layout metadata in a portable JSON bundle.
+            The app lets you model isnad relationships as a directed acyclic graph, highlight matn passages, and export these graphs to a JSON file.
           </p>
           <p>
             Repository:{' '}
