@@ -55,7 +55,7 @@ export function AboutDialog({
 
         <div className="about-dialog-body">
           <p>
-            The app lets you model isnad relationships as a directed acyclic graph, highlight matn passages, and export these graphs to a JSON file.
+            The app lets you model isnad relationships as a directed acyclic graph, highlight matn passages, and export these graphs to a JSON file. In modern hadith studies in Western academia, building hadith graphs is usually done as part of ICMA (Isnād-cum-matn analysis).
           </p>
           <p>
             Repository:{' '}
