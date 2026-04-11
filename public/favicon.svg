@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Hadith Graph Builder favicon</title>
+  <rect width="64" height="64" rx="16" fill="#fffdfa" />
+  <path
+    d="M18 18 L32 30 L46 18 M32 30 L32 46"
+    fill="none"
+    stroke="#4f6f98"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="5"
+  />
+  <circle cx="18" cy="18" r="7" fill="#f8efdf" stroke="#9c4f35" stroke-width="4" />
+  <circle cx="46" cy="18" r="7" fill="#f8efdf" stroke="#9c4f35" stroke-width="4" />
+  <circle cx="32" cy="46" r="7" fill="#f8efdf" stroke="#9c4f35" stroke-width="4" />
+</svg>
