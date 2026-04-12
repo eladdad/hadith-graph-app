@@ -31,12 +31,25 @@ describe('App', () => {
     await user.type(screen.getByPlaceholderText('The report statement'), 'Original matn');
     await user.click(screen.getByRole('button', { name: 'Add Report' }));
 
-    expect(screen.getByText('Reports (1)')).toBeInTheDocument();
-    expect(screen.getByText('Narrator A -> Narrator B')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Report added and 3 node(s) auto-selected.');
     expect(within(getGraphNode(container, 'n:Narrator A')).getByText('Narrator A')).toBeInTheDocument();
     expect(screen.getAllByText('Original matn').length).toBeGreaterThan(0);
 
-    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    const createdMatnNode = container.querySelector('[data-node-type="matn"]');
+    if (!(createdMatnNode instanceof SVGGElement)) {
+      throw new Error('Created matn node not found.');
+    }
+
+    fireEvent.pointerDown(createdMatnNode, {
+      button: 0,
+      clientX: 300,
+      clientY: 250,
+    });
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Edit Report #1' })).toBeInTheDocument();
+    });
+
     const narratorTwo = screen.getByDisplayValue('Narrator B');
     await user.clear(narratorTwo);
     await user.type(narratorTwo, 'Narrator C');
@@ -55,7 +68,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Delete Report' }));
 
     await waitFor(() => {
-      expect(screen.getByText('Reports (0)')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('Report deleted.');
     });
     expect(container.querySelectorAll('[data-node-id]')).toHaveLength(0);
     expect(screen.queryByText('Updated matn')).not.toBeInTheDocument();
@@ -72,10 +85,9 @@ describe('App', () => {
     await importJson(container, bundleToJson(bundle), 'bundle.hadith-graph.json');
 
     await waitFor(() => {
-      expect(screen.getByText('Reports (2)')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('Imported bundle.hadith-graph.json with 2 report(s).');
     });
-    expect(screen.getByText('Alpha -> Beta')).toBeInTheDocument();
-    expect(screen.getByText('Gamma -> Delta')).toBeInTheDocument();
+    expect(screen.getByText('Bundle: Test Bundle')).toBeInTheDocument();
     expect(getGraphNode(container, 'n:Alpha')).toBeInTheDocument();
     expect(getGraphNode(container, 'n:Gamma')).toBeInTheDocument();
 
@@ -109,11 +121,11 @@ describe('App', () => {
 
     await importJson(container, bundleToJson(bundle), 'bundle.hadith-graph.json');
     await waitFor(() => {
-      expect(screen.getByText('Reports (1)')).toBeInTheDocument();
+      expect(screen.getByRole('status')).toHaveTextContent('Imported bundle.hadith-graph.json with 1 report(s).');
     });
 
     const sidebar = screen.getByRole('complementary');
-    await user.click(within(sidebar).getByRole('button', { name: /Highlight Legend/ }));
+    await user.click(within(sidebar).getByRole('button', { name: /Options/ }));
 
     const removeButton = within(sidebar)
       .getAllByRole('button', { name: 'Remove' })
@@ -149,7 +161,7 @@ describe('App', () => {
     });
 
     await waitFor(() => {
-      expect(container.querySelectorAll('.report-card.selected')).toHaveLength(1);
+      expect(screen.getByRole('heading', { name: 'Edit Report #1' })).toBeInTheDocument();
     });
     expect(getGraphNode(container, 'm:r1')).toHaveClass('selected');
     expect(getGraphNode(container, 'n:Alpha')).toHaveClass('selected');
@@ -188,7 +200,7 @@ describe('App', () => {
 
     const noteLink = screen.getByRole('link', { name: 'https://sunnah.com/bukhari:1' });
     expect(noteLink).toHaveAttribute('href', 'https://sunnah.com/bukhari:1');
-    expect(screen.getByText('Note')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Report #1 Note' })).toBeInTheDocument();
   });
 
   it('opens the about dialog from the sidebar title and shows the repository link', async () => {
@@ -236,12 +248,13 @@ describe('App', () => {
       clientY: 100,
     });
 
-    expect(container.querySelectorAll('.report-card.selected')).toHaveLength(1);
+    expect(screen.getByRole('heading', { name: 'Edit Report #1' })).toBeInTheDocument();
     expect(getGraphNode(container, 'm:r1')).toHaveClass('selected');
     expect(getGraphEdge(container, 'n:Alpha->c:r1')).toHaveClass('selected');
   });
 
   it('drags a narrator node, snaps it to nearby anchors, and exports the updated layout', async () => {
+    const user = userEvent.setup();
     const bundle = makeBundle(
       [
         makeReport('r1', ['Alpha', 'Beta'], 'First matn'),
@@ -304,6 +317,7 @@ describe('App', () => {
       return 'blob:export';
     });
 
+    await user.click(screen.getByRole('button', { name: /Options/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Export JSON' }));
 
     expect(exportedBlob).not.toBeNull();

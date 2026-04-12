@@ -36,14 +36,6 @@
   --preview-border: #d8c8b3;
   --preview-text: #44382c;
   --matn-marker-generic-fill: #d7d1c7;
-  --report-card-bg: #ffffff;
-  --report-card-selected-bg: #fff2e6;
-  --report-card-selected-border: #9c4f35;
-  --report-card-selected-shadow: rgba(156, 79, 53, 0.15);
-  --report-card-hover: #fff7ef;
-  --report-card-selected-hover: #ffe9d6;
-  --report-matn: #4a3f33;
-  --report-meta: #796b5a;
   --narrator: #f8efdf;
   --narrator-stroke: #baa17e;
   --narrator-selected: #fce8cf;
@@ -101,14 +93,6 @@
   --preview-border: #445462;
   --preview-text: #e5edf5;
   --matn-marker-generic-fill: #53616d;
-  --report-card-bg: #111922;
-  --report-card-selected-bg: #2a1f1a;
-  --report-card-selected-border: #d97a52;
-  --report-card-selected-shadow: rgba(217, 122, 82, 0.22);
-  --report-card-hover: #1a2430;
-  --report-card-selected-hover: #342720;
-  --report-matn: #d7e0e8;
-  --report-meta: #9aaab7;
   --narrator: #243039;
   --narrator-stroke: #71879a;
   --narrator-selected: #33424d;
@@ -297,20 +281,12 @@ button:disabled {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(290px, 360px) minmax(0, 1fr) minmax(280px, 340px);
+  grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
   gap: 0.75rem;
   min-height: calc(100vh - 1.5rem);
 }
 
 .layout.left-sidebar-collapsed {
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-}
-
-.layout.right-sidebar-collapsed {
-  grid-template-columns: minmax(290px, 360px) minmax(0, 1fr);
-}
-
-.layout.left-sidebar-collapsed.right-sidebar-collapsed {
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -611,96 +587,6 @@ textarea:focus {
   border-radius: 10px;
 }
 
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.report-list {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: grid;
-  gap: 0.6rem;
-  max-height: 40vh;
-  overflow: auto;
-}
-
-.report-list li {
-  list-style: decimal;
-}
-
-.report-card {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--report-card-bg);
-  overflow: hidden;
-}
-
-.report-card.selected {
-  border-color: var(--report-card-selected-border);
-  background: var(--report-card-selected-bg);
-  box-shadow: inset 0 0 0 1px var(--report-card-selected-shadow);
-}
-
-.report-card-main {
-  width: 100%;
-  text-align: left;
-  border: 0;
-  border-radius: 0;
-  padding: 0.6rem 0.7rem 0.5rem;
-  background: transparent;
-}
-
-.report-card-main:hover {
-  background: var(--report-card-hover);
-}
-
-.report-card.selected .report-card-main:hover {
-  background: var(--report-card-selected-hover);
-}
-
-.report-card-actions {
-  display: flex;
-  gap: 0.45rem;
-  padding: 0 0.7rem 0.65rem;
-  flex-wrap: wrap;
-}
-
-.report-card-actions button {
-  padding: 0.42rem 0.65rem;
-  font-size: 0.85rem;
-}
-
-.report-card-meta {
-  margin-top: 0.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-}
-
-.report-chain {
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.report-matn {
-  margin-top: 0.25rem;
-  font-size: 0.9rem;
-  color: var(--report-matn);
-  white-space: pre-wrap;
-}
-
-.report-matn .matn-highlight {
-  padding: 0 0.08rem;
-}
-
-.report-meta {
-  color: var(--report-meta);
-  font-size: 0.8rem;
-}
-
 .report-note-pill {
   padding: 0.12rem 0.5rem;
   border-radius: 999px;
@@ -772,7 +658,7 @@ textarea:focus {
   right: 0.8rem;
   z-index: 2;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   gap: 0.6rem;
   pointer-events: none;
@@ -937,16 +823,6 @@ textarea:focus {
     grid-template-rows: auto minmax(0, 1fr);
   }
 
-  .reports-panel {
-    grid-template-rows: auto minmax(0, 1fr);
-    overflow: hidden;
-  }
-
-  .report-list {
-    min-height: 0;
-    max-height: none;
-  }
-
   .graph-card {
     height: 100%;
     overflow: hidden;
@@ -964,9 +840,7 @@ textarea:focus {
     min-height: auto;
   }
 
-  .layout.left-sidebar-collapsed,
-  .layout.right-sidebar-collapsed,
-  .layout.left-sidebar-collapsed.right-sidebar-collapsed {
+  .layout.left-sidebar-collapsed {
     grid-template-columns: 1fr;
   }
 
@@ -979,10 +853,6 @@ textarea:focus {
     left: 0.65rem;
     right: 0.65rem;
     flex-wrap: wrap;
-  }
-
-  .report-list {
-    max-height: 28vh;
   }
 
   .editor-header,

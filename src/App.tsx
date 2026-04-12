@@ -16,7 +16,7 @@ import { GraphCanvas } from './components/GraphCanvas';
 import { ReportEditorPanel } from './components/ReportEditorPanel';
 import { ReportNoteCard } from './components/ReportNoteCard';
 import { ReportNoteDialog } from './components/ReportNoteDialog';
-import { RightSidebar } from './components/RightSidebar';
+import { SidebarControls } from './components/SidebarControls';
 import { buildRenderableGraph, clampFontSize } from './graph';
 import { useBoxSelection } from './hooks/useBoxSelection';
 import { useGraphViewport } from './hooks/useGraphViewport';
@@ -74,7 +74,6 @@ function App() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
-  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
@@ -458,23 +457,34 @@ function App() {
     );
   }, [bundle, noteDraft, reportEditor.editingReport, reportEditor.editingReportIndex]);
 
-  const layoutClassName = [
-    'layout',
-    !isLeftSidebarOpen ? 'left-sidebar-collapsed' : '',
-    !isRightSidebarOpen ? 'right-sidebar-collapsed' : '',
-  ]
-    .filter((value) => value.length > 0)
-    .join(' ');
+  const layoutClassName = isLeftSidebarOpen ? 'layout' : 'layout left-sidebar-collapsed';
 
   return (
     <div className="app-shell" data-theme={theme}>
       <main className={layoutClassName}>
         {isLeftSidebarOpen ? (
-          <ReportEditorPanel
-            controller={reportEditor}
-            highlightLegend={bundle.highlightLegend}
-            message={message}
-          />
+          <aside className="sidebar">
+            <SidebarControls
+              bundle={bundle}
+              theme={theme}
+              highlightUsageCounts={highlightUsageCounts}
+              fileInputRef={fileInputRef}
+              onNewBundle={handleNewBundle}
+              onLoadExample={handleLoadExample}
+              onOpenImport={handleOpenImport}
+              onExport={handleExport}
+              onOpenAbout={() => setIsAboutOpen(true)}
+              onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
+              onFontSizeChange={handleFontSizeChange}
+              onImport={handleImport}
+              onRemoveHighlightLegend={handleRemoveHighlightLegend}
+            />
+            <ReportEditorPanel
+              controller={reportEditor}
+              highlightLegend={bundle.highlightLegend}
+              message={message}
+            />
+          </aside>
         ) : null}
 
         <section className="graph-card">
@@ -484,14 +494,7 @@ function App() {
               className="graph-toolbar-button"
               onClick={() => setIsLeftSidebarOpen((current) => !current)}
             >
-              {isLeftSidebarOpen ? 'Hide Editor' : 'Show Editor'}
-            </button>
-            <button
-              type="button"
-              className="graph-toolbar-button"
-              onClick={() => setIsRightSidebarOpen((current) => !current)}
-            >
-              {isRightSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
+              {isLeftSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
             </button>
           </div>
           <div
@@ -536,27 +539,6 @@ function App() {
           </div>
         </section>
 
-        {isRightSidebarOpen ? (
-          <RightSidebar
-            bundle={bundle}
-            theme={theme}
-            highlightUsageCounts={highlightUsageCounts}
-            editingReportId={reportEditor.editingReportId}
-            fileInputRef={fileInputRef}
-            onNewBundle={handleNewBundle}
-            onLoadExample={handleLoadExample}
-            onOpenImport={handleOpenImport}
-            onExport={handleExport}
-            onOpenAbout={() => setIsAboutOpen(true)}
-            onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
-            onFontSizeChange={handleFontSizeChange}
-            onImport={handleImport}
-            onRemoveHighlightLegend={handleRemoveHighlightLegend}
-            onStartNewReport={reportEditor.startNewReport}
-            onSelectReport={reportEditor.selectReport}
-            onUseReportAsTemplate={reportEditor.useReportAsTemplate}
-          />
-        ) : null}
       </main>
 
       <ReportNoteDialog
