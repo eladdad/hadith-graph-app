@@ -212,6 +212,8 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'About Hadith Graph Builder' }));
 
     expect(screen.getByRole('heading', { name: 'About Hadith Graph Builder' })).toBeInTheDocument();
+    expect(screen.getByText('Graph controls')).toBeInTheDocument();
+    expect(screen.getByText(/Click a matn node to select the whole report/i)).toBeInTheDocument();
     const repoLink = screen.getByRole('link', { name: 'github.com/eladdad/hadith-graph-app' });
     expect(repoLink).toHaveAttribute('href', 'https://github.com/eladdad/hadith-graph-app');
 

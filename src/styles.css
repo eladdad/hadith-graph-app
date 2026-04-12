@@ -779,6 +779,22 @@ textarea:focus {
   margin: 0;
 }
 
+.about-dialog-section {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.about-dialog-section-title {
+  font-weight: 700;
+}
+
+.about-dialog-body ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
 .about-dialog-body a {
   color: var(--accent);
   text-decoration-thickness: 2px;
