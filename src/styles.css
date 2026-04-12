@@ -193,12 +193,13 @@ h3 {
 .about-button {
   width: 2rem;
   height: 2rem;
-  padding: 0;
+  padding: 0.4rem 0 0;
   border-radius: 999px;
   display: inline-grid;
   place-items: center;
   font-weight: 700;
   font-size: 1rem;
+  line-height: 1;
   flex: 0 0 auto;
 }
 
