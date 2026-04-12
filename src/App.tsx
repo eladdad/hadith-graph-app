@@ -310,7 +310,11 @@ function App() {
     }
 
     const title = window.prompt('Bundle title', 'My Hadith Bundle');
-    const nextBundle = createEmptyBundle(title ?? 'My Hadith Bundle');
+    if (title === null) {
+      return;
+    }
+
+    const nextBundle = createEmptyBundle(title);
     setBundle(nextBundle);
     reportEditor.resetEditor();
     setSelectedNodeIds([]);
