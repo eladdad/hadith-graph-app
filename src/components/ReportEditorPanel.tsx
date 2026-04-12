@@ -29,9 +29,6 @@ export function ReportEditorPanel({
               : 'Build a chain one narrator at a time, then add the report.'}
           </p>
         </div>
-        {controller.editingReport ? (
-          <button type="button" onClick={controller.startNewReport}>New Report</button>
-        ) : null}
       </div>
 
       <form className="form" onSubmit={controller.saveReport}>

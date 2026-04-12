@@ -49,6 +49,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: 'Edit Report #1' })).toBeInTheDocument();
     });
+    expect(screen.queryByRole('button', { name: 'New Report' })).not.toBeInTheDocument();
 
     const narratorTwo = screen.getByDisplayValue('Narrator B');
     await user.clear(narratorTwo);
