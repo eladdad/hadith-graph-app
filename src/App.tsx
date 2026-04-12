@@ -73,7 +73,6 @@ function App() {
   const [message, setMessage] = useState('Ready. Create reports and drag nodes to arrange your graph.');
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
-  const [isSharedLegendOpen, setIsSharedLegendOpen] = useState(false);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
@@ -541,7 +540,6 @@ function App() {
           <RightSidebar
             bundle={bundle}
             theme={theme}
-            isSharedLegendOpen={isSharedLegendOpen}
             highlightUsageCounts={highlightUsageCounts}
             editingReportId={reportEditor.editingReportId}
             fileInputRef={fileInputRef}
@@ -551,7 +549,6 @@ function App() {
             onExport={handleExport}
             onOpenAbout={() => setIsAboutOpen(true)}
             onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
-            onToggleSharedLegend={() => setIsSharedLegendOpen((current) => !current)}
             onFontSizeChange={handleFontSizeChange}
             onImport={handleImport}
             onRemoveHighlightLegend={handleRemoveHighlightLegend}
