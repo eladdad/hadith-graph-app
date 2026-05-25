@@ -2,7 +2,7 @@
 
 https://www.hadith-graph.com
 
-A browser-only app for building hadith report graphs as a directed acyclic graph (DAG), editing report text and highlights, and saving everything in a versioned JSON bundle.
+The app lets you model isnad relationships as a directed acyclic graph, highlight matn passages, and export these graphs to a JSON file. In modern hadith studies in Western academia, building hadith graphs is usually done as part of ICMA (Isnād-cum-matn analysis), a process that seeks to determine when a certain tradition went into circulation.
 
 ## Features
 
