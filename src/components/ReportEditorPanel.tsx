@@ -19,7 +19,7 @@ export function ReportEditorPanel({
     : '';
 
   return (
-    <section className="panel">
+    <section className="panel editor-panel">
       <div className="editor-header">
         <div>
           <h2>{controller.editingReport ? `Edit Report #${controller.editingReportIndex + 1}` : 'Create Report'}</h2>
@@ -75,7 +75,7 @@ export function ReportEditorPanel({
           />
         </label>
 
-        <div className="field-group">
+        <div className="field-group highlights-field-group">
           <div className="field-label-row">
             <span className="field-label">Highlights</span>
             <span className="highlight-selection-note" dir="auto">

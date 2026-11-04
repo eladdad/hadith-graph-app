@@ -41,7 +41,7 @@ export function SidebarControls({
     <section className="panel sidebar-panel">
       <div className="sidebar-title-block">
         <div className="sidebar-title-row">
-          <h1>Hadith Graph Builder</h1>
+          <h2>Your bundle</h2>
           <button
             type="button"
             className="about-button"

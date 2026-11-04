@@ -461,6 +461,21 @@ function App() {
 
   return (
     <div className="app-shell" data-theme={theme}>
+      <header className="masthead">
+        <div className="brand">
+          <svg className="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+            <path d="M11 10v7a5 5 0 0 0 5 5h8a5 5 0 0 0 5-5v-7M20 22v8" />
+            <circle cx="11" cy="9" r="4" />
+            <circle cx="29" cy="9" r="4" />
+            <circle cx="20" cy="31" r="4" />
+          </svg>
+          <div>
+            <p className="eyebrow">Isnād &amp; matn</p>
+            <h1>Hadith Graph Builder</h1>
+          </div>
+        </div>
+        <p className="masthead-caption">A workspace for tracing traditions.</p>
+      </header>
       <main className={layoutClassName}>
         {isLeftSidebarOpen ? (
           <aside className="sidebar">
@@ -487,13 +502,25 @@ function App() {
           </aside>
         ) : null}
 
-        <section className="graph-card">
+        <section className="graph-card" aria-label="Transmission graph">
           <div className="graph-toolbar">
+            <div className="graph-title-block">
+              <h2>Transmission graph</h2>
+              <p>
+                {bundle.reports.length} report{bundle.reports.length === 1 ? '' : 's'}
+                {' '}<span aria-hidden="true">·</span>{' '}
+                {graph.nodes.length} node{graph.nodes.length === 1 ? '' : 's'}
+              </p>
+            </div>
             <button
               type="button"
               className="graph-toolbar-button"
               onClick={() => setIsLeftSidebarOpen((current) => !current)}
             >
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <rect x="2.5" y="3.5" width="15" height="13" rx="2" />
+                <path d="M7.5 4v12" />
+              </svg>
               {isLeftSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
             </button>
           </div>
@@ -503,6 +530,20 @@ function App() {
             onPointerDown={handleGraphPointerDown}
             onContextMenu={viewport.handleGraphContextMenu}
           >
+            {graph.nodes.length === 0 ? (
+              <div className="graph-empty-state">
+                <svg className="empty-graph-mark" viewBox="0 0 160 104" fill="none" aria-hidden="true">
+                  <path d="M44 32v18a10 10 0 0 0 10 10h52a10 10 0 0 0 10-10V32M80 60v19" />
+                  <rect x="18" y="10" width="52" height="26" rx="6" />
+                  <rect x="90" y="10" width="52" height="26" rx="6" />
+                  <rect x="54" y="78" width="52" height="26" rx="6" />
+                  <path d="M33 23h22M105 23h22M69 91h22" />
+                </svg>
+                <p className="eyebrow">From text to transmission</p>
+                <h3>Your graph starts here</h3>
+                <p>Create a report in the sidebar, or load an<br className="empty-state-break" /> example graph from Options.</p>
+              </div>
+            ) : null}
             <div
               className="graph-content"
               style={{
@@ -536,6 +577,14 @@ function App() {
                 />
               ) : null}
             </div>
+          </div>
+          <div className="graph-footer">
+            <div className="graph-key" aria-label="Graph legend">
+              <span><i className="graph-key-narrator" aria-hidden="true" /> Narrator</span>
+              <span><i className="graph-key-matn" aria-hidden="true" /> Matn</span>
+            </div>
+            <span className="graph-hint">Drag nodes to arrange <span aria-hidden="true">·</span> Ctrl + scroll to zoom</span>
+            <span className="graph-zoom">{Math.round(viewport.zoom * 100)}%</span>
           </div>
         </section>
 
