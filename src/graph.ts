@@ -27,6 +27,7 @@ const MATN_NODE_DEFAULT_WIDTH = 360;
 export const MATN_NODE_MIN_WIDTH = 220;
 export const MATN_NODE_MAX_WIDTH = 760;
 export const MATN_NODE_SIDE_PADDING = 14;
+export const MATN_NODE_HEADER_HEIGHT = 28;
 const MATN_NODE_TOP_PADDING = 14;
 const MATN_NODE_BOTTOM_PADDING = 14;
 export const DEFAULT_NARRATOR_FONT_SIZE = 13;
@@ -378,11 +379,17 @@ type IndexedGraphNode = {
   matnAnchorId?: string;
 };
 
+type IndexedGraphEdge = {
+  source: string;
+  target: string;
+  reportNumbers: Set<number>;
+};
+
 type IndexedGraph = {
   nodesById: Map<string, IndexedGraphNode>;
   adjacency: Map<string, Set<string>>;
   indegree: Map<string, number>;
-  edgesById: Map<string, { source: string; target: string }>;
+  edgesById: Map<string, IndexedGraphEdge>;
 };
 
 type NodeMeta = {
@@ -483,7 +490,7 @@ function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
   const nodesById = new Map<string, IndexedGraphNode>();
   const adjacency = new Map<string, Set<string>>();
   const indegree = new Map<string, number>();
-  const edgesById = new Map<string, { source: string; target: string }>();
+  const edgesById = new Map<string, IndexedGraphEdge>();
 
   const ensureNode = (node: IndexedGraphNode): void => {
     if (nodesById.has(node.id)) {
@@ -498,7 +505,7 @@ function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
     const matnId = matnNodeId(report.id);
     ensureNode({
       id: matnId,
-      label: `Matn ${index + 1}`,
+      label: `Report #${index + 1}`,
       type: 'matn',
       matn: report.matn,
       matnHighlights: report.matnHighlights,
@@ -519,7 +526,10 @@ function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
       const source = getNarratorNodeIdForReport(report, i);
       const target = getNarratorNodeIdForReport(report, i + 1);
       addDirectedEdge(adjacency, indegree, source, target);
-      edgesById.set(`${source}->${target}`, { source, target });
+      const edgeId = `${source}->${target}`;
+      const edge = edgesById.get(edgeId) ?? { source, target, reportNumbers: new Set<number>() };
+      edge.reportNumbers.add(index + 1);
+      edgesById.set(edgeId, edge);
     }
   });
 
@@ -613,6 +623,7 @@ function buildNodeMeta(
       );
       const matnLines = matnLineSegments.map((line) => line.segments.map((segment) => segment.text).join(''));
       const height = MATN_NODE_TOP_PADDING
+        + MATN_NODE_HEADER_HEIGHT
         + matnLineSegments.length * lineHeight(fontSizes.matn)
         + MATN_NODE_BOTTOM_PADDING;
 
@@ -802,11 +813,11 @@ function shiftNodesIntoBounds(nodes: GraphNode[]): { shiftX: number; shiftY: num
   return { shiftX, shiftY };
 }
 
-function buildEdges(edgesById: Map<string, { source: string; target: string }>, nodes: GraphNode[]): GraphEdge[] {
+function buildEdges(indexedGraph: IndexedGraph, nodes: GraphNode[]): GraphEdge[] {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const edges: GraphEdge[] = [];
 
-  for (const [edgeId, edge] of edgesById.entries()) {
+  for (const [edgeId, edge] of indexedGraph.edgesById.entries()) {
     const source = nodeById.get(edge.source);
     const target = nodeById.get(edge.target);
     if (!source || !target) {
@@ -817,13 +828,17 @@ function buildEdges(edgesById: Map<string, { source: string; target: string }>, 
     const verticalDirection = dy >= 0 ? 1 : -1;
     const sourceY = source.y + verticalDirection * (source.height / 2);
     const targetY = target.y - verticalDirection * (target.height / 2);
+    // Label both sides of a merge to identify which source each student's
+    // reports use, even when several reports share the same visible edge.
+    const showReports = (indexedGraph.indegree.get(edge.source) ?? 0) > 1
+      || (indexedGraph.indegree.get(edge.target) ?? 0) > 1;
 
     edges.push({
       id: edgeId,
       source: edge.source,
       target: edge.target,
       path: `M ${source.x} ${sourceY} L ${target.x} ${targetY}`,
-      label: undefined,
+      label: showReports ? [...edge.reportNumbers].map((number) => `#${number}`).join(', ') : undefined,
       labelX: source.x + (target.x - source.x) / 2,
       labelY: source.y + dy / 2 - verticalDirection * 10,
     });
@@ -884,7 +899,7 @@ export function buildRenderableGraph(
     .map((id) => nodeById.get(id))
     .filter((node): node is GraphNode => node !== undefined);
   const { shiftX, shiftY } = shiftNodesIntoBounds(nodes);
-  const edges = buildEdges(indexedGraph.edgesById, nodes);
+  const edges = buildEdges(indexedGraph, nodes);
   const maxX = Math.max(...nodes.map((node) => node.x + node.width / 2));
   const maxY = Math.max(...nodes.map((node) => node.y + node.height / 2));
 

@@ -1,5 +1,5 @@
 import { PointerEvent as ReactPointerEvent, RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MATN_NODE_SIDE_PADDING } from '../graph';
+import { MATN_NODE_HEADER_HEIGHT, MATN_NODE_SIDE_PADDING } from '../graph';
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
 
@@ -238,7 +238,7 @@ export function GraphCanvas({
         const narratorLineStep = narratorFontSize + 4;
         const matnLineStep = matnFontSize + 4;
         const labelStartDy = -((node.labelLines.length - 1) * narratorLineStep) / 2;
-        const matnNodeTextStartY = -node.height / 2 + matnFontSize + 6;
+        const matnNodeTextStartY = -node.height / 2 + MATN_NODE_HEADER_HEIGHT + matnFontSize + 6;
         const matnNodeTextX = node.width / 2 - MATN_NODE_SIDE_PADDING;
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
@@ -275,6 +275,14 @@ export function GraphCanvas({
 
             {node.type === 'matn' ? (
               <>
+                <text
+                  x={matnNodeTextX}
+                  y={-node.height / 2 + 18}
+                  textAnchor="end"
+                  className="matn-report-label"
+                >
+                  {node.label}
+                </text>
                 {selected ? (
                   <>
                     <rect
@@ -354,15 +362,15 @@ export function GraphCanvas({
                   <g className="matn-highlight-markers">
                     {collapsedMatnMarkers.map((marker, markerIndex) => {
                       const markerWidth = 30;
-                      const markerGap = 10;
-                      const availableHeight = Math.max(72, node.height - 32);
-                      const markerHeight = Math.max(
-                        18,
-                        Math.min(42, (availableHeight - markerGap * (collapsedMatnMarkers.length - 1)) / collapsedMatnMarkers.length),
+                      const availableHeight = Math.max(1, node.height - MATN_NODE_HEADER_HEIGHT - 16);
+                      const markerGap = Math.min(10, availableHeight / (collapsedMatnMarkers.length * 2));
+                      const markerHeight = Math.min(
+                        42,
+                        (availableHeight - markerGap * (collapsedMatnMarkers.length - 1)) / collapsedMatnMarkers.length,
                       );
                       const markersBlockHeight =
                         collapsedMatnMarkers.length * markerHeight + (collapsedMatnMarkers.length - 1) * markerGap;
-                      const startY = -markersBlockHeight / 2;
+                      const startY = MATN_NODE_HEADER_HEIGHT / 2 - markersBlockHeight / 2;
 
                       return (
                         <g key={`${node.id}-${marker.key}`}>

@@ -821,6 +821,11 @@ textarea:focus {
   fill: var(--edge-label);
   font-weight: 700;
   text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--graph-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
 }
 
 .edge-label.selected {
@@ -891,6 +896,16 @@ textarea:focus {
 .matn-node-text {
   font-size: 0.75rem;
   fill: var(--matn-text);
+}
+
+.matn-report-label {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--edge-label);
+}
+
+.node-group.selected .matn-report-label {
+  fill: var(--edge-label-selected);
 }
 
 .matn-highlight-band {

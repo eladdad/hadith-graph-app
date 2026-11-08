@@ -30,7 +30,7 @@ describe('bundle helpers', () => {
     );
 
     expect(addedGraph.nodes.map((node) => node.label)).toEqual(
-      expect.arrayContaining(['Narrator A', 'Narrator B', 'Matn 1']),
+      expect.arrayContaining(['Narrator A', 'Narrator B', 'Report #1']),
     );
     expect(addedGraph.nodes.find((node) => node.type === 'matn')?.matnLines?.join('')).toContain('Original matn');
     expect(addedGraph.edges).toHaveLength(1);
@@ -52,7 +52,7 @@ describe('bundle helpers', () => {
     );
 
     expect(updatedGraph.nodes.map((node) => node.label)).toEqual(
-      expect.arrayContaining(['Narrator A', 'Narrator C', 'Matn 1']),
+      expect.arrayContaining(['Narrator A', 'Narrator C', 'Report #1']),
     );
     expect(updatedGraph.nodes.map((node) => node.label)).not.toContain('Narrator B');
     expect(updatedGraph.nodes.find((node) => node.type === 'matn')?.matnLines?.join('')).toContain('Updated matn');
