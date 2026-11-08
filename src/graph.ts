@@ -12,6 +12,7 @@ import type {
   RenderableGraph,
 } from './types';
 import { orderLayers } from './layerOrdering';
+import { positionLayers } from './layerPlacement';
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
@@ -660,28 +661,25 @@ function buildAutoLayout(
   let autoWidth = DEFAULT_GRAPH_WIDTH;
   const autoX = new Map<string, number>();
 
-  const orderedRows = orderLayers(rowIndices.map((rowIndex) => ({
+  const layers = rowIndices.map((rowIndex) => ({
     y: rowCenterY.get(rowIndex) ?? PADDING_Y,
     nodes: (rows.get(rowIndex) ?? []).map((id) => ({
       id,
       width: nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
       height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
     })),
+  }));
+  const orderedRows = orderLayers(layers, edges, HORIZONTAL_GAP);
+  const layoutNodeById = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node] as const)));
+  const positions = positionLayers(layers.map((layer, index) => ({
+    ...layer,
+    nodes: orderedRows[index].map((id) => layoutNodeById.get(id)!),
   })), edges, HORIZONTAL_GAP);
 
-  for (const rowNodes of orderedRows) {
-    let xCursor = PADDING_X;
-    for (const id of rowNodes) {
-      const meta = nodeMeta.get(id);
-      if (!meta) {
-        continue;
-      }
-      autoX.set(id, xCursor + meta.width / 2);
-      xCursor += meta.width + HORIZONTAL_GAP;
-    }
-
-    const rowWidth = rowNodes.length > 0 ? xCursor - HORIZONTAL_GAP + PADDING_X : PADDING_X * 2;
-    autoWidth = Math.max(autoWidth, rowWidth);
+  for (const [id, position] of positions) {
+    const x = PADDING_X + position.x;
+    autoX.set(id, x);
+    autoWidth = Math.max(autoWidth, x + (nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH) / 2 + PADDING_X);
   }
 
   const autoHeight = rowIndices.length > 0

@@ -1,23 +1,5 @@
-interface LayoutNode {
-  id: string;
-  width: number;
-  height: number;
-}
-
-export interface LayoutLayer {
-  y: number;
-  nodes: LayoutNode[];
-}
-
-interface LayoutEdge {
-  source: string;
-  target: string;
-}
-
-interface Point {
-  x: number;
-  y: number;
-}
+import { positionLayers } from './layerPlacement';
+import type { LayoutEdge, LayoutLayer, Point } from './layerPlacement';
 
 interface Segment extends LayoutEdge {
   start: Point;
@@ -39,18 +21,6 @@ let cachedOrder: { key: string; rows: string[][] } | undefined;
 
 function copyLayers(layers: LayoutLayer[]): LayoutLayer[] {
   return layers.map((layer) => ({ ...layer, nodes: [...layer.nodes] }));
-}
-
-function nodeCenters(layers: LayoutLayer[], gap: number): Map<string, Point> {
-  const centers = new Map<string, Point>();
-  for (const layer of layers) {
-    let x = 0;
-    for (const node of layer.nodes) {
-      centers.set(node.id, { x: x + node.width / 2, y: layer.y });
-      x += node.width + gap;
-    }
-  }
-  return centers;
 }
 
 function intersects(a: Segment, b: Segment): boolean {
@@ -76,7 +46,7 @@ function intersects(a: Segment, b: Segment): boolean {
 }
 
 function score(layers: LayoutLayer[], edges: LayoutEdge[], gap: number): Score {
-  const centers = nodeCenters(layers, gap);
+  const centers = positionLayers(layers, edges, gap);
   const heights = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node.height] as const)));
   const segments: Segment[] = [];
   let horizontalSpan = 0;
@@ -146,7 +116,7 @@ export function orderLayers(input: LayoutLayer[], inputEdges: LayoutEdge[], gap:
     }
 
     for (const index of indices) {
-      const centers = nodeCenters(layers, gap);
+      const centers = positionLayers(layers, edges, gap);
       const weighted = layers[index].nodes.map((node, previousIndex) => {
         const xs = (neighbors.get(node.id) ?? []).flatMap((id) => {
           const center = centers.get(id);
