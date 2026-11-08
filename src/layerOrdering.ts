@@ -1,5 +1,5 @@
 import { positionLayers } from './layerPlacement';
-import type { LayoutEdge, LayoutLayer, Point } from './layerPlacement';
+import type { LayoutEdge, LayoutFootprint, LayoutLayer, Point } from './layerPlacement';
 
 interface Segment extends LayoutEdge {
   start: Point;
@@ -45,8 +45,8 @@ function intersects(a: Segment, b: Segment): boolean {
   return t > 1e-8 && t < 1 - 1e-8 && u > 1e-8 && u < 1 - 1e-8;
 }
 
-function score(layers: LayoutLayer[], edges: LayoutEdge[], gap: number): Score {
-  const centers = positionLayers(layers, edges, gap);
+function score(layers: LayoutLayer[], edges: LayoutEdge[], gap: number, footprints: LayoutFootprint[]): Score {
+  const centers = positionLayers(layers, edges, gap, footprints);
   const heights = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node.height] as const)));
   const segments: Segment[] = [];
   let horizontalSpan = 0;
@@ -89,18 +89,24 @@ function improves(candidate: Score, previous: Score): boolean {
  * including edges that span several ranks. This matches the current renderer
  * rather than assuming edges follow virtual nodes in intervening ranks.
  */
-export function orderLayers(input: LayoutLayer[], inputEdges: LayoutEdge[], gap: number): string[][] {
+export function orderLayers(
+  input: LayoutLayer[],
+  inputEdges: LayoutEdge[],
+  gap: number,
+  inputFootprints: LayoutFootprint[] = [],
+): string[][] {
   const edges = [...inputEdges].sort((a, b) => (
     a.source.localeCompare(b.source) || a.target.localeCompare(b.target)
   ));
-  const key = JSON.stringify([input, edges, gap]);
+  const footprints = [...inputFootprints].sort((a, b) => a.anchor.localeCompare(b.anchor));
+  const key = JSON.stringify([input, edges, gap, footprints]);
   if (cachedOrder?.key === key) {
     return cachedOrder.rows.map((row) => [...row]);
   }
 
   let layers = copyLayers(input);
   let best = copyLayers(layers);
-  let bestScore = score(best, edges, gap);
+  let bestScore = score(best, edges, gap, footprints);
   const predecessors = new Map<string, string[]>();
   const successors = new Map<string, string[]>();
   for (const { source, target } of edges) {
@@ -116,7 +122,7 @@ export function orderLayers(input: LayoutLayer[], inputEdges: LayoutEdge[], gap:
     }
 
     for (const index of indices) {
-      const centers = positionLayers(layers, edges, gap);
+      const centers = positionLayers(layers, edges, gap, footprints);
       const weighted = layers[index].nodes.map((node, previousIndex) => {
         const xs = (neighbors.get(node.id) ?? []).flatMap((id) => {
           const center = centers.get(id);
@@ -134,7 +140,7 @@ export function orderLayers(input: LayoutLayer[], inputEdges: LayoutEdge[], gap:
       layers[index].nodes = weighted.map(({ node }) => node);
     }
 
-    const candidate = score(layers, edges, gap);
+    const candidate = score(layers, edges, gap, footprints);
     if (improves(candidate, bestScore)) {
       best = copyLayers(layers);
       bestScore = candidate;
@@ -158,7 +164,7 @@ export function orderLayers(input: LayoutLayer[], inputEdges: LayoutEdge[], gap:
         const left = pass % 2 === 0 ? step : nodes.length - 2 - step;
         [nodes[left], nodes[left + 1]] = [nodes[left + 1], nodes[left]];
         attempts -= 1;
-        const candidate = score(layers, edges, gap);
+        const candidate = score(layers, edges, gap, footprints);
         if (improves(candidate, bestScore)) {
           bestScore = candidate;
           changed = true;

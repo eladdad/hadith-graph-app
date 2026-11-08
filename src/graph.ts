@@ -12,7 +12,8 @@ import type {
   RenderableGraph,
 } from './types';
 import { orderLayers } from './layerOrdering';
-import { positionLayers, separateRowNodes } from './layerPlacement';
+import { positionLayers } from './layerPlacement';
+import type { LayoutFootprint } from './layerPlacement';
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
@@ -645,6 +646,7 @@ function buildAutoLayout(
   rows: Map<number, string[]>,
   nodeMeta: Map<string, NodeMeta>,
   edges: Array<{ source: string; target: string }>,
+  footprints: LayoutFootprint[],
 ): AutoLayout {
   const rowIndices = Array.from(rows.keys()).sort((a, b) => a - b);
   const rowCenterY = new Map<number, number>();
@@ -669,12 +671,12 @@ function buildAutoLayout(
       height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
     })),
   }));
-  const orderedRows = orderLayers(layers, edges, HORIZONTAL_GAP);
+  const orderedRows = orderLayers(layers, edges, HORIZONTAL_GAP, footprints);
   const layoutNodeById = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node] as const)));
   const positions = positionLayers(layers.map((layer, index) => ({
     ...layer,
     nodes: orderedRows[index].map((id) => layoutNodeById.get(id)!),
-  })), edges, HORIZONTAL_GAP);
+  })), edges, HORIZONTAL_GAP, footprints);
 
   for (const [id, position] of positions) {
     const x = PADDING_X + position.x;
@@ -746,7 +748,6 @@ function buildMatnNodes(
     const width = meta?.width ?? MATN_NODE_DEFAULT_WIDTH;
     const height = meta?.height ?? NARRATOR_MIN_HEIGHT;
     const anchorNode = narratorNodeById.get(node?.matnAnchorId ?? '');
-    const anchorRight = anchorNode ? anchorNode.x + anchorNode.width / 2 : PADDING_X + width;
 
     return {
       id,
@@ -757,20 +758,31 @@ function buildMatnNodes(
       type: node?.type ?? 'matn',
       width,
       height,
-      x: anchorRight - width / 2,
+      x: anchorNode?.x ?? PADDING_X + width / 2,
       y: matnTopY + height / 2,
     };
   });
 
-  // Collectors can sit on different ranks or share a column. Lay out the full
-  // text row independently, keeping collector order even when widths change.
-  const ordered = [...nodes].sort((a, b) => {
-    const anchorA = narratorNodeById.get(indexedGraph.nodesById.get(a.id)?.matnAnchorId ?? '');
-    const anchorB = narratorNodeById.get(indexedGraph.nodesById.get(b.id)?.matnAnchorId ?? '');
-    return (anchorA?.x ?? PADDING_X) - (anchorB?.x ?? PADDING_X) || a.id.localeCompare(b.id);
-  });
-  const xs = separateRowNodes(ordered, ordered.map((node) => node.x), HORIZONTAL_GAP);
-  ordered.forEach((node, index) => { node.x = xs[index]; });
+  // Fixed manual collector positions can contradict the automatic spacing.
+  // Preserve those positions and the exact attachment; use a lower text row
+  // only where the pinned columns leave insufficient horizontal room.
+  const ordered = [...nodes].sort((a, b) => a.x - b.x || a.id.localeCompare(b.id));
+  const placed: GraphNode[] = [];
+  for (const node of ordered) {
+    let top = matnTopY;
+    const conflicts = placed
+      .filter((other) => Math.abs(other.x - node.x) < (other.width + node.width) / 2 + HORIZONTAL_GAP - 1e-6)
+      .sort((a, b) => a.y - a.height / 2 - (b.y - b.height / 2));
+    for (const other of conflicts) {
+      const otherTop = other.y - other.height / 2;
+      const otherBottom = other.y + other.height / 2;
+      if (top < otherBottom + HORIZONTAL_GAP && top + node.height > otherTop - HORIZONTAL_GAP) {
+        top = otherBottom + HORIZONTAL_GAP;
+      }
+    }
+    node.y = top + node.height / 2;
+    placed.push(node);
+  }
   return nodes;
 }
 
@@ -860,7 +872,11 @@ export function buildRenderableGraph(
 
   const topology = buildGraphTopology(indexedGraph);
   const nodeMeta = buildNodeMeta(indexedGraph.nodesById, nodeWidths, normalizedFontSizes, highlightLegendById);
-  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()]);
+  const footprints = topology.matnNodeIds.flatMap((id) => {
+    const anchor = indexedGraph.nodesById.get(id)?.matnAnchorId;
+    return anchor ? [{ anchor, width: nodeMeta.get(id)?.width ?? MATN_NODE_DEFAULT_WIDTH }] : [];
+  });
+  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()], footprints);
   const narratorNodes = buildNarratorNodes(indexedGraph, topology, nodeMeta, autoLayout, nodePositions);
   const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, narratorNodes);
   const nodeById = new Map<string, GraphNode>([...narratorNodes, ...matnNodes].map((node) => [node.id, node]));

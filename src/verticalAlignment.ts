@@ -1,4 +1,4 @@
-import type { LayoutEdge, LayoutLayer, Point } from './layerPlacement';
+import type { LayoutEdge, LayoutFootprint, LayoutLayer, Point } from './layerPlacement';
 
 interface Separation {
   left: string;
@@ -43,6 +43,7 @@ export function alignVerticalChains(
   edges: LayoutEdge[],
   preferred: Map<string, Point>,
   gap: number,
+  footprints: LayoutFootprint[] = [],
 ): Map<string, Point> {
   const rank = new Map(layers.flatMap((layer, index) => layer.nodes.map((node) => [node.id, index] as const)));
   const parents = new Map<string, Set<string>>();
@@ -83,7 +84,8 @@ export function alignVerticalChains(
     || a.source.localeCompare(b.source) || a.target.localeCompare(b.target)
   ));
 
-  if (candidates.every(({ source, target }) => preferred.get(source)!.x === preferred.get(target)!.x)) {
+  if (footprints.length === 0
+    && candidates.every(({ source, target }) => preferred.get(source)!.x === preferred.get(target)!.x)) {
     return preferred;
   }
 
@@ -130,12 +132,40 @@ export function alignVerticalChains(
     neighbors.set(b, Math.max(neighbors.get(b) ?? 0, distance));
   }
 
-  const order = [...targets.keys()].filter((id) => indegree.get(id) === 0);
-  for (let index = 0; index < order.length; index += 1) {
-    for (const id of outgoing.get(order[index])!.keys()) {
+  const compareTargets = (a: string, b: string): number => {
+    const left = targets.get(a)!;
+    const right = targets.get(b)!;
+    return left.sum / left.count - right.sum / right.count || a.localeCompare(b);
+  };
+  const pending = [...targets.keys()].filter((id) => indegree.get(id) === 0);
+  const order: string[] = [];
+  while (pending.length > 0) {
+    pending.sort(compareTargets);
+    const current = pending.shift()!;
+    order.push(current);
+    for (const id of outgoing.get(current)!.keys()) {
       indegree.set(id, indegree.get(id)! - 1);
-      if (indegree.get(id) === 0) order.push(id);
+      if (indegree.get(id) === 0) pending.push(id);
     }
+  }
+
+  // Collectors may finish on different ranks. Their text cards still occupy a
+  // shared row, so reserve that width between collector columns globally. Use
+  // a topological extension of existing row constraints to avoid adding cycles.
+  const footprintWidths = new Map<string, number>();
+  for (const { anchor, width } of footprints) {
+    if (rank.has(anchor)) {
+      const group = root(anchor);
+      footprintWidths.set(group, Math.max(footprintWidths.get(group) ?? 0, width));
+    }
+  }
+  const columns = order.filter((id) => footprintWidths.has(id));
+  for (let index = 1; index < columns.length; index += 1) {
+    const left = columns[index - 1];
+    const right = columns[index];
+    const distance = (footprintWidths.get(left)! + footprintWidths.get(right)!) / 2 + gap;
+    const neighbors = outgoing.get(left)!;
+    neighbors.set(right, Math.max(neighbors.get(right) ?? 0, distance));
   }
 
   const rightward = new Map([...targets].map(([id, { sum, count }]) => [id, sum / count]));

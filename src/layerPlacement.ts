@@ -16,6 +16,11 @@ export interface LayoutEdge {
   target: string;
 }
 
+export interface LayoutFootprint {
+  anchor: string;
+  width: number;
+}
+
 export interface Point {
   x: number;
   y: number;
@@ -70,7 +75,12 @@ export function separateRowNodes(nodes: { width: number }[], targets: number[], 
  * Negative coordinates are allowed here so the caller can shift the entire
  * graph into bounds without breaking vertical alignment.
  */
-export function positionLayers(layers: LayoutLayer[], edges: LayoutEdge[], gap: number): Map<string, Point> {
+export function positionLayers(
+  layers: LayoutLayer[],
+  edges: LayoutEdge[],
+  gap: number,
+  footprints: LayoutFootprint[] = [],
+): Map<string, Point> {
   const parents = new Map<string, Set<string>>();
   for (const { source, target } of edges) {
     if (!parents.has(target)) {
@@ -98,5 +108,5 @@ export function positionLayers(layers: LayoutLayer[], edges: LayoutEdge[], gap: 
     const xs = separateRowNodes(layer.nodes, targets, gap);
     layer.nodes.forEach((node, index) => centers.set(node.id, { x: xs[index], y: layer.y }));
   }
-  return alignVerticalChains(layers, edges, centers, gap);
+  return alignVerticalChains(layers, edges, centers, gap, footprints);
 }

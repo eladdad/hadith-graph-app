@@ -281,6 +281,7 @@ describe('App', () => {
     });
 
     const initialPosition = parseTranslate(getGraphNode(container, 'n:Alpha').getAttribute('transform'));
+    const initialAnchorPosition = parseTranslate(getGraphNode(container, 'n:Gamma').getAttribute('transform'));
 
     fireEvent.pointerDown(getGraphNode(container, 'n:Alpha'), {
       button: 0,
@@ -309,7 +310,10 @@ describe('App', () => {
       .filter((node) => node.getAttribute('data-node-id') !== 'n:Alpha')
       .map((node) => parseTranslate(node.getAttribute('transform')));
 
-    expect(finalPosition).not.toEqual(initialPosition);
+    const finalAnchorPosition = parseTranslate(getGraphNode(container, 'n:Gamma').getAttribute('transform'));
+    // Moving the leftmost node can translate the whole graph to retain its
+    // outer padding. Verify movement relative to an untouched anchor instead.
+    expect(finalPosition.x - finalAnchorPosition.x).not.toBe(initialPosition.x - initialAnchorPosition.x);
     expect(otherAnchorPositionsAfterDrag.map((position) => position.y)).toContain(finalPosition.y);
 
     let exportedBlob: Blob | null = null;
