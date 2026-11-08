@@ -1,0 +1,159 @@
+{
+  "format": "hadith-graph-bundle",
+  "version": 1,
+  "title": "Moon splitting — Ibn Masʿūd and Anas ibn Mālik (8 witnesses, 9 chains)",
+  "createdAt": "2026-11-08T17:26:17.740Z",
+  "updatedAt": "2026-11-08T17:26:17.740Z",
+  "reports": [
+    {
+      "id": "moon-split-bukhari_3636",
+      "isnad": [
+        "عبد الله بن مسعود",
+        "أبو معمر عبد الله بن سخبرة",
+        "مجاهد بن جبر",
+        "عبد الله بن أبي نجيح",
+        "سفيان بن عيينة",
+        "صدقة بن الفضل",
+        "البخاري"
+      ],
+      "matn": "انْشَقَّ الْقَمَرُ عَلَى عَهْدِ رَسُولِ اللَّهِ صلى الله عليه وسلم شِقَّتَيْنِ فَقَالَ النَّبِيُّ صلى الله عليه وسلم ‏\"‏ اشْهَدُوا ‏\"‏‏.‏",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W001; branch: bukhari_3636\nCompanion: عبد الله بن مسعود\nSource: Ṣaḥīḥ al-Bukhārī — 3636\nSource record: bukhari:3636\nSource links:\nhttps://sunnah.com/bukhari:3636\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: ibn_masud → abu_mamar → mujahid → ibn_abi_najih → sufyan_ibn_uyayna → sadaqa_ibn_fadl\n\nNotes copied from the HTML:\n- Report type: event_report\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا صَدَقَةُ بْنُ الْفَضْلِ، أَخْبَرَنَا ابْنُ عُيَيْنَةَ، عَنِ ابْنِ أَبِي نَجِيحٍ، عَنْ مُجَاهِدٍ، عَنْ أَبِي مَعْمَرٍ، عَنْ عَبْدِ اللَّهِ بْنِ مَسْعُودٍ ـ رضى الله عنه ـ قَالَ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-bukhari_3869",
+      "isnad": [
+        "عبد الله بن مسعود",
+        "أبو معمر عبد الله بن سخبرة",
+        "إبراهيم النخعي",
+        "سليمان بن مهران الأعمش",
+        "أبو حمزة محمد بن ميمون السكري",
+        "عبدان عبد الله بن عثمان",
+        "البخاري"
+      ],
+      "matn": "انْشَقَّ الْقَمَرُ وَنَحْنُ مَعَ النَّبِيِّ صلى الله عليه وسلم بِمِنًى فَقَالَ ‏\"‏ اشْهَدُوا ‏\"‏‏.‏ وَذَهَبَتْ فِرْقَةٌ نَحْوَ الْجَبَلِ",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W002; branch: bukhari_3869\nCompanion: عبد الله بن مسعود\nSource: Ṣaḥīḥ al-Bukhārī — 3869\nSource record: bukhari:3869\nSource links:\nhttps://sunnah.com/bukhari:3869\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: ibn_masud → abu_mamar → ibrahim_nakhai → al_amash → abu_hamza_sukkari → abdan\n\nNotes copied from the HTML:\n- Report type: event_report\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا عَبْدَانُ، عَنْ أَبِي حَمْزَةَ، عَنِ الأَعْمَشِ، عَنْ إِبْرَاهِيمَ، عَنْ أَبِي مَعْمَرٍ، عَنْ عَبْدِ اللَّهِ ـ رضى الله عنه ـ قَالَ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-bukhari_4864_shuba",
+      "isnad": [
+        "عبد الله بن مسعود",
+        "أبو معمر عبد الله بن سخبرة",
+        "إبراهيم النخعي",
+        "سليمان بن مهران الأعمش",
+        "شعبة بن الحجاج",
+        "يحيى بن سعيد القطان",
+        "مسدد بن مسرهد",
+        "البخاري"
+      ],
+      "matn": "انْشَقَّ الْقَمَرُ عَلَى عَهْدِ رَسُولِ اللَّهِ صلى الله عليه وسلم فِرْقَتَيْنِ، فِرْقَةً فَوْقَ الْجَبَلِ وَفِرْقَةً دُونَهُ فَقَالَ رَسُولُ اللَّهِ صلى الله عليه وسلم ‏\"‏ اشْهَدُوا ‏\"‏‏.‏",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W006; branch: bukhari_4864_shuba\nCompanion: عبد الله بن مسعود\nSource: Ṣaḥīḥ al-Bukhārī — 4864 [شعبة بن الحجاج]\nSource record: bukhari:4864\nSource links:\nhttps://sunnah.com/bukhari:4864\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: ibn_masud → abu_mamar → ibrahim_nakhai → al_amash → shuba → yahya_qattan → musaddad\n\nFORMAT CONVERSION: Route 1 of 2 in the single text witness W006.\nVersion 1 supports one chain per report, so each supplied route has its own entry with the same source matn.\nThe repeated matn is shared source wording, not an independent wording attestation for each chain.\nOther branch in this witness: bukhari_4864_sufyan_unresolved\n\nNotes copied from the HTML:\n- Report type: event_report\n- This source entry supplies 2 named routes. Shared source wording is not independent verbatim evidence for each route.\n- One combined source record with two explicitly named intermediates; not two separately printed wordings.\n- The primary source names only Sufyan. Conservatively left unresolved between al-Thawri and Ibn Uyayna; al-Qastallani's discussion is referenced by the parallel project audit at https://bukhari-pedia.net/book/ershad_sary/7246. Do not merge this node with either named Sufyan without independent evidence.\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا مُسَدَّدٌ، حَدَّثَنَا يَحْيَى، عَنْ شُعْبَةَ، وَسُفْيَانَ، عَنِ الأَعْمَشِ، عَنْ إِبْرَاهِيمَ، عَنْ أَبِي مَعْمَرٍ، عَنِ ابْنِ مَسْعُودٍ، قَالَ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-bukhari_4864_sufyan_unresolved",
+      "isnad": [
+        "عبد الله بن مسعود",
+        "أبو معمر عبد الله بن سخبرة",
+        "إبراهيم النخعي",
+        "سليمان بن مهران الأعمش",
+        "سفيان (عن الأعمش؛ رواية يحيى؛ تعيينه مختلف فيه)",
+        "يحيى بن سعيد القطان",
+        "مسدد بن مسرهد",
+        "البخاري"
+      ],
+      "matn": "انْشَقَّ الْقَمَرُ عَلَى عَهْدِ رَسُولِ اللَّهِ صلى الله عليه وسلم فِرْقَتَيْنِ، فِرْقَةً فَوْقَ الْجَبَلِ وَفِرْقَةً دُونَهُ فَقَالَ رَسُولُ اللَّهِ صلى الله عليه وسلم ‏\"‏ اشْهَدُوا ‏\"‏‏.‏",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W006; branch: bukhari_4864_sufyan_unresolved\nCompanion: عبد الله بن مسعود\nSource: Ṣaḥīḥ al-Bukhārī — 4864 [سفيان غير محسوم]\nSource record: bukhari:4864\nSource links:\nhttps://sunnah.com/bukhari:4864\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: ibn_masud → abu_mamar → ibrahim_nakhai → al_amash → sufyan_yahya_amash → yahya_qattan → musaddad\n\nFORMAT CONVERSION: Route 2 of 2 in the single text witness W006.\nVersion 1 supports one chain per report, so each supplied route has its own entry with the same source matn.\nThe repeated matn is shared source wording, not an independent wording attestation for each chain.\nOther branch in this witness: bukhari_4864_shuba\n\nNotes copied from the HTML:\n- Report type: event_report\n- This source entry supplies 2 named routes. Shared source wording is not independent verbatim evidence for each route.\n- One combined source record with two explicitly named intermediates; not two separately printed wordings.\n- The primary source names only Sufyan. Conservatively left unresolved between al-Thawri and Ibn Uyayna; al-Qastallani's discussion is referenced by the parallel project audit at https://bukhari-pedia.net/book/ershad_sary/7246. Do not merge this node with either named Sufyan without independent evidence.\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا مُسَدَّدٌ، حَدَّثَنَا يَحْيَى، عَنْ شُعْبَةَ، وَسُفْيَانَ، عَنِ الأَعْمَشِ، عَنْ إِبْرَاهِيمَ، عَنْ أَبِي مَعْمَرٍ، عَنِ ابْنِ مَسْعُودٍ، قَالَ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-muslim_2800c",
+      "isnad": [
+        "عبد الله بن مسعود",
+        "أبو معمر عبد الله بن سخبرة",
+        "إبراهيم النخعي",
+        "سليمان بن مهران الأعمش",
+        "شعبة بن الحجاج",
+        "معاذ بن معاذ العنبري",
+        "عبيد الله بن معاذ العنبري",
+        "مسلم"
+      ],
+      "matn": "انْشَقَّ الْقَمَرُ عَلَى عَهْدِ رَسُولِ اللَّهِ صلى الله عليه وسلم فِلْقَتَيْنِ فَسَتَرَ الْجَبَلُ فِلْقَةً وَكَانَتْ فِلْقَةٌ فَوْقَ الْجَبَلِ فَقَالَ رَسُولُ اللَّهِ صلى الله عليه وسلم ‏\"‏ اللَّهُمَّ اشْهَدْ ‏\" ‏ ‏.‏",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W010; branch: muslim_2800c\nCompanion: عبد الله بن مسعود\nSource: Ṣaḥīḥ Muslim — 2800c\nSource record: muslim:2800c\nSource links:\nhttps://sunnah.com/muslim:2800c\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: ibn_masud → abu_mamar → ibrahim_nakhai → al_amash → shuba → muadh_ibn_muadh → ubaydallah_ibn_muadh\n\nNotes copied from the HTML:\n- Report type: event_report\n- Distinct closing wording «اللهم اشهد»; the displayed English translation does not preserve this difference.\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا عُبَيْدُ اللَّهِ بْنُ مُعَاذٍ الْعَنْبَرِيُّ، حَدَّثَنَا أَبِي، حَدَّثَنَا شُعْبَةُ، عَنِ الأَعْمَشِ، عَنْ إِبْرَاهِيمَ، عَنْ أَبِي مَعْمَرٍ، عَنْ عَبْدِ اللَّهِ بْنِ مَسْعُودٍ، قَالَ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-B3868",
+      "isnad": [
+        "أنس بن مالك",
+        "قتادة بن دعامة",
+        "سعيد بن أبي عروبة",
+        "بشر بن المفضل",
+        "عبد الله بن عبد الوهاب",
+        "البخاري"
+      ],
+      "matn": "أَنَّ أَهْلَ مَكَّةَ سَأَلُوا رَسُولَ اللَّهِ صلى الله عليه وسلم أَنْ يُرِيَهُمْ آيَةً، فَأَرَاهُمُ الْقَمَرَ شِقَّتَيْنِ، حَتَّى رَأَوْا حِرَاءً بَيْنَهُمَا.",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W021; branch: B3868\nCompanion: أنس بن مالك\nSource: Ṣaḥīḥ al-Bukhārī — 3868\nSource record: 3868\nSource links:\nhttps://sunnah.com/bukhari:3868\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: anas_b_malik → qatada → said_abi_aruba → bishr_b_mufaddal → abdallah_b_abd_alwahhab\n\nNotes copied from the HTML:\n- Report type: event_report\n- Distinctive Ḥirāʾ-between-the-halves wording.\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنِي عَبْدُ اللَّهِ بْنُ عَبْدِ الْوَهَّابِ، حَدَّثَنَا بِشْرُ بْنُ الْمُفَضَّلِ، حَدَّثَنَا سَعِيدُ بْنُ أَبِي عَرُوبَةَ، عَنْ قَتَادَةَ، عَنْ أَنَسِ بْنِ مَالِكٍ ـ رضى الله عنه",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-B4868",
+      "isnad": [
+        "أنس بن مالك",
+        "قتادة بن دعامة",
+        "شعبة بن الحجاج",
+        "يحيى بن سعيد القطان",
+        "مسدد بن مسرهد",
+        "البخاري"
+      ],
+      "matn": "انْشَقَّ الْقَمَرُ فِرْقَتَيْنِ.",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W024; branch: B4868\nCompanion: أنس بن مالك\nSource: Ṣaḥīḥ al-Bukhārī — 4868\nSource record: 4868\nSource links:\nhttps://sunnah.com/bukhari:4868\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: anas_b_malik → qatada → shuba → yahya_qattan → musaddad\n\nNotes copied from the HTML:\n- Report type: event_report\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا مُسَدَّدٌ، حَدَّثَنَا يَحْيَى، عَنْ شُعْبَةَ، عَنْ قَتَادَةَ، عَنْ أَنَسٍ، قَالَ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-T3286",
+      "isnad": [
+        "أنس بن مالك",
+        "قتادة بن دعامة",
+        "معمر بن راشد",
+        "عبد الرزاق الصنعاني",
+        "عبد بن حميد",
+        "الترمذي"
+      ],
+      "matn": "سَأَلَ أَهْلُ مَكَّةَ النَّبِيَّ صلى الله عليه وسلم آيَةً فَانْشَقَّ الْقَمَرُ بِمَكَّةَ مَرَّتَيْنِ فَنَزَلَتْ: ﴿اقْتَرَبَتِ السَّاعَةُ وَانْشَقَّ الْقَمَرُ﴾ إِلَى قَوْلِهِ: ﴿سِحْرٌ مُسْتَمِرٌّ﴾ يَقُولُ ذَاهِبٌ.",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W035; branch: T3286\nCompanion: أنس بن مالك\nSource: Jāmiʿ al-Tirmidhī — 3286\nSource record: 3286\nSource links:\nhttps://sunnah.com/tirmidhi:3286\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: anas_b_malik → qatada → mamar → abd_razzaq → abd_b_humayd\n\nNotes copied from the HTML:\n- Report type: event_report\n- Preserves مرتين and revelation / مستمر gloss. Source does not clearly distinguish who supplies the gloss يقول ذاهب. Tirmidhī grades حسن صحيح.\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا عَبْدُ بْنُ حُمَيْدٍ، حَدَّثَنَا عَبْدُ الرَّزَّاقِ، عَنْ مَعْمَرٍ، عَنْ قَتَادَةَ، عَنْ أَنَسٍ، قَالَ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    },
+    {
+      "id": "moon-split-abuyaala_3114",
+      "isnad": [
+        "أنس بن مالك",
+        "قتادة بن دعامة",
+        "شيبان بن عبد الرحمن",
+        "يونس بن محمد المؤدب",
+        "زهير بن حرب",
+        "أبو يعلى الموصلي"
+      ],
+      "matn": "أَنَّ أَهْلَ مَكَّةَ سَأَلُوا رَسُولَ اللهِ ﷺ أَنْ يُرِيَهُمْ آيَةً ، فَأَرَاهُمُ انْشِقَاقَ الْقَمَرِ مَرَّتَيْنِ",
+      "matnHighlights": [],
+      "note": "Extracted from the supplied moon_split_explorer.html (no external source re-verification).\nHTML witness: W172; branch: abuyaala_3114\nCompanion: أنس بن مالك\nSource: Musnad Abī Yaʿlā — 3114\nSource record: abuyaala_3114\nSource links:\nhttps://hadithunlocked.com/abuyaala:3114\n\nRoute order: earliest named narrator → compiler. Compiler label appended from the HTML metadata.\nCanonical narrator IDs in this route: anas_b_malik → qatada → shayban → yunus_muhammad → zuhayr_ibn_harb\n\nNotes copied from the HTML:\n- Report type: event_report\n\nSource isnad wording as supplied in the HTML:\nحَدَّثَنَا زُهَيْرٌ، حَدَّثَنَا يُونُسُ بْنُ مُحَمَّدٍ، حَدَّثَنَا شَيْبَانُ، عَنْ قَتَادَةَ، عَنْ أَنَسٍ",
+      "createdAt": "2026-11-08T17:26:17.740Z"
+    }
+  ],
+  "highlightLegend": [],
+  "nodePositions": {},
+  "nodeWidths": {},
+  "fontSizes": {
+    "narrator": 13,
+    "matn": 14
+  }
+}

@@ -11,6 +11,7 @@ import type {
   NodeWidthMap,
   RenderableGraph,
 } from './types';
+import { orderLayers } from './layerOrdering';
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
@@ -89,7 +90,7 @@ function matnNodeId(sourceReportId: string): string {
 function nodeLabelSort(a: string, b: string, labelsById: Map<string, { label: string }>): number {
   const labelA = labelsById.get(a)?.label ?? a;
   const labelB = labelsById.get(b)?.label ?? b;
-  return labelA.localeCompare(labelB, 'ar');
+  return labelA.localeCompare(labelB, 'ar') || a.localeCompare(b);
 }
 
 let textMeasureContext: CanvasRenderingContext2D | null | undefined;
@@ -639,7 +640,11 @@ function buildNodeMeta(
   return nodeMeta;
 }
 
-function buildAutoLayout(rows: Map<number, string[]>, nodeMeta: Map<string, NodeMeta>): AutoLayout {
+function buildAutoLayout(
+  rows: Map<number, string[]>,
+  nodeMeta: Map<string, NodeMeta>,
+  edges: Array<{ source: string; target: string }>,
+): AutoLayout {
   const rowIndices = Array.from(rows.keys()).sort((a, b) => a - b);
   const rowCenterY = new Map<number, number>();
   let yCursor = PADDING_Y;
@@ -655,8 +660,16 @@ function buildAutoLayout(rows: Map<number, string[]>, nodeMeta: Map<string, Node
   let autoWidth = DEFAULT_GRAPH_WIDTH;
   const autoX = new Map<string, number>();
 
-  for (const rowIndex of rowIndices) {
-    const rowNodes = rows.get(rowIndex) ?? [];
+  const orderedRows = orderLayers(rowIndices.map((rowIndex) => ({
+    y: rowCenterY.get(rowIndex) ?? PADDING_Y,
+    nodes: (rows.get(rowIndex) ?? []).map((id) => ({
+      id,
+      width: nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
+      height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
+    })),
+  })), edges, HORIZONTAL_GAP);
+
+  for (const rowNodes of orderedRows) {
     let xCursor = PADDING_X;
     for (const id of rowNodes) {
       const meta = nodeMeta.get(id);
@@ -838,7 +851,7 @@ export function buildRenderableGraph(
 
   const topology = buildGraphTopology(indexedGraph);
   const nodeMeta = buildNodeMeta(indexedGraph.nodesById, nodeWidths, normalizedFontSizes, highlightLegendById);
-  const autoLayout = buildAutoLayout(topology.rows, nodeMeta);
+  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()]);
   const narratorNodes = buildNarratorNodes(indexedGraph, topology, nodeMeta, autoLayout, nodePositions);
   const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, narratorNodes);
   const nodeById = new Map<string, GraphNode>([...narratorNodes, ...matnNodes].map((node) => [node.id, node]));
