@@ -294,6 +294,14 @@ function App() {
     selectedSet,
   ]);
 
+  const handleSelectReport = useCallback((reportId: string): void => {
+    if (isBoxSelecting || isDragging || isResizing) {
+      return;
+    }
+
+    reportEditor.selectReportFromMatnNode(getMatnNodeIdForReport(reportId));
+  }, [isBoxSelecting, isDragging, isResizing, reportEditor]);
+
   const loadBundleIntoApp = useCallback((nextBundle: HadithBundle, successMessage: string): void => {
     setBundle(nextBundle);
     reportEditor.resetEditor();
@@ -561,11 +569,13 @@ function App() {
                 selectionBox={selectionBox}
                 selectedSet={selectedSet}
                 selectedEdgeSet={selectedEdgeSet}
+                selectedReportId={reportEditor.editingReport?.id}
                 isDragging={isDragging}
                 isResizing={isResizing}
                 onCanvasPointerDown={handleCanvasPointerDown}
                 onNodePointerDown={handleNodePointerDown}
                 onResizePointerDown={handleResizePointerDown}
+                onSelectReport={handleSelectReport}
               />
               {selectedReportNoteOverlay && reportEditor.editingReport ? (
                 <ReportNoteCard
@@ -580,6 +590,7 @@ function App() {
           </div>
           <div className="graph-footer">
             <div className="graph-key" aria-label="Graph legend">
+              <span><i className="graph-key-authority" aria-hidden="true" /> Attribution authority</span>
               <span><i className="graph-key-narrator" aria-hidden="true" /> Narrator</span>
               <span><i className="graph-key-matn" aria-hidden="true" /> Matn</span>
             </div>

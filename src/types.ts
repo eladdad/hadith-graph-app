@@ -61,12 +61,19 @@ export interface GraphTextLine {
   segments: GraphTextSegment[];
 }
 
+export interface GraphReportReference {
+  id: string;
+  number: number;
+}
+
 export interface GraphNode {
   id: string;
   label: string;
   labelLines: string[];
   matnLines?: string[];
   matnLineSegments?: GraphTextLine[];
+  report?: GraphReportReference;
+  attributedReports?: GraphReportReference[];
   type: GraphNodeType;
   x: number;
   y: number;
@@ -80,6 +87,7 @@ export interface GraphEdge {
   target: string;
   path: string;
   label?: string;
+  reports?: GraphReportReference[];
   labelX: number;
   labelY: number;
 }

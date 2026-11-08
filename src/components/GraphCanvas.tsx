@@ -1,7 +1,15 @@
-import { PointerEvent as ReactPointerEvent, RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MATN_NODE_HEADER_HEIGHT, MATN_NODE_SIDE_PADDING } from '../graph';
+import { Fragment, PointerEvent as ReactPointerEvent, RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  AUTHORITY_REPORT_GAP,
+  AUTHORITY_REPORT_LINE_HEIGHT,
+  AUTHORITY_REPORTS_PER_ROW,
+  getAuthorityReportMetrics,
+  MATN_NODE_HEADER_HEIGHT,
+  MATN_NODE_SIDE_PADDING,
+} from '../graph';
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
+import { ReportNumberLink } from './ReportNumberLink';
 
 const MARKER_HIGHLIGHT_ZOOM_THRESHOLD = 0.3;
 
@@ -15,11 +23,13 @@ interface GraphCanvasProps {
   selectionBox: SelectionBox | null;
   selectedSet: Set<string>;
   selectedEdgeSet: Set<string>;
+  selectedReportId?: string | null;
   isDragging: boolean;
   isResizing: boolean;
   onCanvasPointerDown: (event: ReactPointerEvent<SVGSVGElement>) => void;
   onNodePointerDown: (event: ReactPointerEvent<SVGGElement>, nodeId: string) => void;
   onResizePointerDown: (event: ReactPointerEvent<SVGRectElement>, node: GraphNode, edge: 'left' | 'right') => void;
+  onSelectReport?: (reportId: string) => void;
 }
 
 interface MeasuredMatnHighlightOverlay {
@@ -99,11 +109,13 @@ export function GraphCanvas({
   selectionBox,
   selectedSet,
   selectedEdgeSet,
+  selectedReportId,
   isDragging,
   isResizing,
   onCanvasPointerDown,
   onNodePointerDown,
   onResizePointerDown,
+  onSelectReport,
 }: GraphCanvasProps) {
   const showHighlightMarkers = zoom <= MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
   const highlightSegmentRefs = useRef(new Map<string, SVGTSpanElement>());
@@ -208,7 +220,14 @@ export function GraphCanvas({
               y={edge.labelY}
               className={selectedEdgeSet.has(edge.id) ? 'edge-label selected' : 'edge-label'}
             >
-              {edge.label}
+              {edge.reports?.length && onSelectReport ? edge.reports.map((report, index) => (
+                <Fragment key={report.id}>
+                  {index > 0 ? ', ' : null}
+                  <ReportNumberLink report={report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
+                    {`#${report.number}`}
+                  </ReportNumberLink>
+                </Fragment>
+              )) : edge.label}
             </text>
           ) : null}
         </g>
@@ -228,6 +247,7 @@ export function GraphCanvas({
         const selected = selectedSet.has(node.id);
         const className = [
           'node-group',
+          node.attributedReports?.length ? 'authority' : '',
           selected ? 'selected' : '',
           isDragging && selected ? 'dragging' : '',
           isResizing && selected ? 'resizing' : '',
@@ -243,6 +263,7 @@ export function GraphCanvas({
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
         const collapsedMatnMarkers = node.type === 'matn' ? getCollapsedMatnMarkers(node) : [];
+        const authorityReports = getAuthorityReportMetrics(node.attributedReports);
 
         return (
           <g
@@ -281,7 +302,11 @@ export function GraphCanvas({
                   textAnchor="end"
                   className="matn-report-label"
                 >
-                  {node.label}
+                  {node.report && onSelectReport ? (
+                    <ReportNumberLink report={node.report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
+                      {node.label}
+                    </ReportNumberLink>
+                  ) : node.label}
                 </text>
                 {selected ? (
                   <>
@@ -399,6 +424,24 @@ export function GraphCanvas({
                 ))}
               </text>
             )}
+            {node.attributedReports?.length ? (
+              <g className="authority-report-links">
+                {node.attributedReports.map((report, index) => (
+                  <text
+                    key={report.id}
+                    x={node.width / 2 + AUTHORITY_REPORT_GAP + (index % AUTHORITY_REPORTS_PER_ROW) * authorityReports.slotWidth}
+                    y={-authorityReports.height / 2 + 15 + Math.floor(index / AUTHORITY_REPORTS_PER_ROW) * AUTHORITY_REPORT_LINE_HEIGHT}
+                    className="authority-report-number"
+                  >
+                    {onSelectReport ? (
+                      <ReportNumberLink report={report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
+                        {`#${report.number}`}
+                      </ReportNumberLink>
+                    ) : `#${report.number}`}
+                  </text>
+                ))}
+              </g>
+            ) : null}
           </g>
         );
       })}

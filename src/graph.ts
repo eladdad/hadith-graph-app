@@ -2,6 +2,7 @@
 import type {
   GraphEdge,
   GraphNode,
+  GraphReportReference,
   GraphTextLine,
   GraphTextSegment,
   HadithFontSizes,
@@ -22,6 +23,9 @@ const MATN_NODE_PREFIX = 'm:';
 const NARRATOR_NODE_WIDTH = 190;
 const NARRATOR_MIN_HEIGHT = 56;
 const NARRATOR_SIDE_PADDING = 16;
+export const AUTHORITY_REPORT_GAP = 12;
+export const AUTHORITY_REPORT_LINE_HEIGHT = 22;
+export const AUTHORITY_REPORTS_PER_ROW = 4;
 
 const MATN_NODE_DEFAULT_WIDTH = 360;
 export const MATN_NODE_MIN_WIDTH = 220;
@@ -44,6 +48,26 @@ const HORIZONTAL_GAP = 70;
 const VERTICAL_GAP = 120;
 const PADDING_X = 96;
 const PADDING_Y = 72;
+
+export function getAuthorityReportMetrics(reports: GraphReportReference[] = []): {
+  columns: number;
+  rows: number;
+  slotWidth: number;
+  width: number;
+  height: number;
+} {
+  const columns = Math.min(AUTHORITY_REPORTS_PER_ROW, reports.length);
+  const rows = Math.ceil(reports.length / AUTHORITY_REPORTS_PER_ROW);
+  const digits = reports.reduce((largest, report) => Math.max(largest, String(report.number).length), 1);
+  const slotWidth = Math.max(30, digits * 8 + 18);
+  return {
+    columns,
+    rows,
+    slotWidth,
+    width: columns * slotWidth,
+    height: rows * AUTHORITY_REPORT_LINE_HEIGHT,
+  };
+}
 
 export function clampFontSize(value: number, fallback: number): number {
   if (!Number.isFinite(value)) {
@@ -377,12 +401,14 @@ type IndexedGraphNode = {
   matn?: string;
   matnHighlights?: HadithReport['matnHighlights'];
   matnAnchorId?: string;
+  report?: GraphReportReference;
+  attributedReports?: GraphReportReference[];
 };
 
 type IndexedGraphEdge = {
   source: string;
   target: string;
-  reportNumbers: Set<number>;
+  reports: Map<string, GraphReportReference>;
 };
 
 type IndexedGraph = {
@@ -394,6 +420,7 @@ type IndexedGraph = {
 
 type NodeMeta = {
   width: number;
+  layoutWidth?: number;
   height: number;
   labelLines: string[];
   matnLines?: string[];
@@ -502,6 +529,7 @@ function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
   };
 
   reports.forEach((report, index) => {
+    const reportReference = { id: report.id, number: index + 1 };
     const matnId = matnNodeId(report.id);
     ensureNode({
       id: matnId,
@@ -509,17 +537,24 @@ function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
       type: 'matn',
       matn: report.matn,
       matnHighlights: report.matnHighlights,
+      report: reportReference,
       matnAnchorId: report.isnad.length > 0
         ? getNarratorNodeIdForReport(report, report.isnad.length - 1)
         : undefined,
     });
 
     report.isnad.forEach((narratorName, narratorIndex) => {
+      const narratorId = getNarratorNodeIdForReport(report, narratorIndex);
       ensureNode({
-        id: getNarratorNodeIdForReport(report, narratorIndex),
+        id: narratorId,
         label: narratorName,
         type: 'narrator',
       });
+      if (narratorIndex === 0) {
+        const narrator = nodesById.get(narratorId)!;
+        narrator.attributedReports ??= [];
+        narrator.attributedReports.push(reportReference);
+      }
     });
 
     for (let i = 0; i < report.isnad.length - 1; i += 1) {
@@ -527,8 +562,8 @@ function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
       const target = getNarratorNodeIdForReport(report, i + 1);
       addDirectedEdge(adjacency, indegree, source, target);
       const edgeId = `${source}->${target}`;
-      const edge = edgesById.get(edgeId) ?? { source, target, reportNumbers: new Set<number>() };
-      edge.reportNumbers.add(index + 1);
+      const edge = edgesById.get(edgeId) ?? { source, target, reports: new Map<string, GraphReportReference>() };
+      edge.reports.set(report.id, reportReference);
       edgesById.set(edgeId, edge);
     }
   });
@@ -642,9 +677,19 @@ function buildNodeMeta(
       Math.max(MIN_TEXT_WRAP_WIDTH, NARRATOR_NODE_WIDTH - NARRATOR_SIDE_PADDING * 2),
       fontSizes.narrator,
     );
-    const height = Math.max(NARRATOR_MIN_HEIGHT, NARRATOR_BASE_HEIGHT + labelLines.length * lineHeight(fontSizes.narrator));
+    const authorityReports = getAuthorityReportMetrics(node.attributedReports);
+    const height = Math.max(
+      NARRATOR_MIN_HEIGHT,
+      NARRATOR_BASE_HEIGHT + labelLines.length * lineHeight(fontSizes.narrator),
+      authorityReports.height,
+    );
     nodeMeta.set(node.id, {
       width: NARRATOR_NODE_WIDTH,
+      // Keep the narrator's visible rectangle and edge ports unchanged while
+      // reserving the adjacent report links in automatic row spacing.
+      layoutWidth: NARRATOR_NODE_WIDTH + (authorityReports.width > 0
+        ? 2 * (AUTHORITY_REPORT_GAP + authorityReports.width)
+        : 0),
       height,
       labelLines,
     });
@@ -678,7 +723,7 @@ function buildAutoLayout(
     y: rowCenterY.get(rowIndex) ?? PADDING_Y,
     nodes: (rows.get(rowIndex) ?? []).map((id) => ({
       id,
-      width: nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
+      width: nodeMeta.get(id)?.layoutWidth ?? nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
       height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
     })),
   }));
@@ -692,7 +737,8 @@ function buildAutoLayout(
   for (const [id, position] of positions) {
     const x = PADDING_X + position.x;
     autoX.set(id, x);
-    autoWidth = Math.max(autoWidth, x + (nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH) / 2 + PADDING_X);
+    const meta = nodeMeta.get(id);
+    autoWidth = Math.max(autoWidth, x + (meta?.layoutWidth ?? meta?.width ?? NARRATOR_NODE_WIDTH) / 2 + PADDING_X);
   }
 
   const autoHeight = rowIndices.length > 0
@@ -732,6 +778,7 @@ function buildNarratorNodes(
       labelLines: meta?.labelLines ?? [node?.label ?? id],
       matnLines: meta?.matnLines,
       matnLineSegments: meta?.matnLineSegments,
+      attributedReports: node?.attributedReports,
       type: node?.type ?? 'narrator',
       width: meta?.width ?? NARRATOR_NODE_WIDTH,
       height: meta?.height ?? NARRATOR_MIN_HEIGHT,
@@ -766,6 +813,7 @@ function buildMatnNodes(
       labelLines: meta?.labelLines ?? [node?.label ?? id],
       matnLines: meta?.matnLines,
       matnLineSegments: meta?.matnLineSegments,
+      report: node?.report,
       type: node?.type ?? 'matn',
       width,
       height,
@@ -838,7 +886,8 @@ function buildEdges(indexedGraph: IndexedGraph, nodes: GraphNode[]): GraphEdge[]
       source: edge.source,
       target: edge.target,
       path: `M ${source.x} ${sourceY} L ${target.x} ${targetY}`,
-      label: showReports ? [...edge.reportNumbers].map((number) => `#${number}`).join(', ') : undefined,
+      label: showReports ? [...edge.reports.values()].map((report) => `#${report.number}`).join(', ') : undefined,
+      reports: [...edge.reports.values()],
       labelX: source.x + (target.x - source.x) / 2,
       labelY: source.y + dy / 2 - verticalDirection * 10,
     });
@@ -900,7 +949,10 @@ export function buildRenderableGraph(
     .filter((node): node is GraphNode => node !== undefined);
   const { shiftX, shiftY } = shiftNodesIntoBounds(nodes);
   const edges = buildEdges(indexedGraph, nodes);
-  const maxX = Math.max(...nodes.map((node) => node.x + node.width / 2));
+  const maxX = Math.max(...nodes.map((node) => {
+    const authorityWidth = getAuthorityReportMetrics(node.attributedReports).width;
+    return node.x + node.width / 2 + (authorityWidth > 0 ? AUTHORITY_REPORT_GAP + authorityWidth : 0);
+  }));
   const maxY = Math.max(...nodes.map((node) => node.y + node.height / 2));
 
   return {

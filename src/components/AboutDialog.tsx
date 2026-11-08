@@ -64,6 +64,7 @@ export function AboutDialog({
               <li>Drag with the middle or right mouse button to pan the canvas.</li>
               <li>Click a node to select it. Use Shift, Ctrl, or Cmd to add to the selection, or drag on empty space to box-select multiple nodes.</li>
               <li>Click a matn node to select the whole report, load it into the editor, and show its report note card.</li>
+              <li>Attribution authorities have a distinct colour. Click a report number beside an authority, on an edge, or above a matn to select that report.</li>
             </ul>
           </div>
           <p>
