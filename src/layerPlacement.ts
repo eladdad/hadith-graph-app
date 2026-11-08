@@ -1,3 +1,5 @@
+import { alignVerticalChains } from './verticalAlignment';
+
 interface LayoutNode {
   id: string;
   width: number;
@@ -96,5 +98,5 @@ export function positionLayers(layers: LayoutLayer[], edges: LayoutEdge[], gap: 
     const xs = separateNodes(layer.nodes, targets, gap);
     layer.nodes.forEach((node, index) => centers.set(node.id, { x: xs[index], y: layer.y }));
   }
-  return centers;
+  return alignVerticalChains(layers, edges, centers, gap);
 }
