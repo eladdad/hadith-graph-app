@@ -12,7 +12,7 @@ import type {
   RenderableGraph,
 } from './types';
 import { orderLayers } from './layerOrdering';
-import { positionLayers } from './layerPlacement';
+import { positionLayers, separateRowNodes } from './layerPlacement';
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
@@ -740,7 +740,7 @@ function buildMatnNodes(
   const matnTopY = narratorBottom + VERTICAL_GAP;
   const narratorNodeById = new Map(narratorNodes.map((node) => [node.id, node]));
 
-  return topology.matnNodeIds.map((id) => {
+  const nodes = topology.matnNodeIds.map((id): GraphNode => {
     const node = indexedGraph.nodesById.get(id);
     const meta = nodeMeta.get(id);
     const width = meta?.width ?? MATN_NODE_DEFAULT_WIDTH;
@@ -761,6 +761,17 @@ function buildMatnNodes(
       y: matnTopY + height / 2,
     };
   });
+
+  // Collectors can sit on different ranks or share a column. Lay out the full
+  // text row independently, keeping collector order even when widths change.
+  const ordered = [...nodes].sort((a, b) => {
+    const anchorA = narratorNodeById.get(indexedGraph.nodesById.get(a.id)?.matnAnchorId ?? '');
+    const anchorB = narratorNodeById.get(indexedGraph.nodesById.get(b.id)?.matnAnchorId ?? '');
+    return (anchorA?.x ?? PADDING_X) - (anchorB?.x ?? PADDING_X) || a.id.localeCompare(b.id);
+  });
+  const xs = separateRowNodes(ordered, ordered.map((node) => node.x), HORIZONTAL_GAP);
+  ordered.forEach((node, index) => { node.x = xs[index]; });
+  return nodes;
 }
 
 function shiftNodesIntoBounds(nodes: GraphNode[]): { shiftX: number; shiftY: number } {

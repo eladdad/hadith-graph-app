@@ -28,8 +28,8 @@ interface Block {
   count: number;
 }
 
-/** Keep row order and minimum spacing while staying close to parent centers. */
-function separateNodes(nodes: LayoutNode[], targets: number[], gap: number): number[] {
+/** Keep row order and minimum spacing while staying close to target centers. */
+export function separateRowNodes(nodes: { width: number }[], targets: number[], gap: number): number[] {
   const offsets = [0];
   const blocks: Block[] = [];
   for (let i = 0; i < nodes.length; i += 1) {
@@ -95,7 +95,7 @@ export function positionLayers(layers: LayoutLayer[], edges: LayoutEdge[], gap: 
       fallbackX += node.width + gap;
       return target;
     });
-    const xs = separateNodes(layer.nodes, targets, gap);
+    const xs = separateRowNodes(layer.nodes, targets, gap);
     layer.nodes.forEach((node, index) => centers.set(node.id, { x: xs[index], y: layer.y }));
   }
   return alignVerticalChains(layers, edges, centers, gap);
