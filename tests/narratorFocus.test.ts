@@ -75,7 +75,10 @@ describe('narrator focus', () => {
     expect(graph.nodes.map((node) => node.label).sort()).toEqual(['Shared narrator', 'Student', 'Teacher']);
     expect(graph.nodes.find((node) => node.label === 'Shared narrator')?.isAuthority).toBe(true);
     expect(graph.nodes.find((node) => node.label === 'Teacher')?.isAuthority).toBe(false);
-    expect(graph.nodes.every((node) => node.attributedReports === undefined)).toBe(true);
+    expect(graph.nodes.find((node) => node.label === 'Shared narrator')?.attributedReports)
+      .toEqual([{ id: 'only', number: 3 }]);
+    expect(graph.nodes.filter((node) => node.label !== 'Shared narrator')
+      .every((node) => node.attributedReports === undefined)).toBe(true);
     expect(graph.edges).toHaveLength(2);
     expect(edgeReports(graph, 'Teacher', 'Shared narrator')).toEqual([{ id: 'last', number: 2 }]);
     expect(edgeReports(graph, 'Shared narrator', 'Student')).toEqual([{ id: 'first', number: 1 }]);
@@ -90,16 +93,20 @@ describe('narrator focus', () => {
     expect(graph.nodes.every((node) => node.type === 'narrator')).toBe(true);
     for (const label of ['Teacher A', 'Teacher B']) {
       const source = graph.nodes.find((node) => node.label === label)!;
-      expect(source.x + source.width / 2).toBeLessThan(center.x - center.width / 2);
+      expect(source.y + source.height / 2).toBeLessThan(center.y - center.height / 2);
     }
     for (const label of ['Student A', 'Student B']) {
       const student = graph.nodes.find((node) => node.label === label)!;
-      expect(student.x - student.width / 2).toBeGreaterThan(center.x + center.width / 2);
+      expect(student.y - student.height / 2).toBeGreaterThan(center.y + center.height / 2);
     }
     expect(edgeReports(graph, 'Teacher A', 'Shared narrator'))
       .toEqual([{ id: 'a', number: 2 }, { id: 'c', number: 4 }, { id: 'd', number: 5 }]);
     expect(edgeReports(graph, 'Shared narrator', 'Student B'))
       .toEqual([{ id: 'b', number: 3 }, { id: 'c', number: 4 }]);
+    for (const edge of graph.edges) {
+      expect(edge.label).toBe(edge.reports!.map((report) => `#${report.number}`).join(', '));
+      expect(edge.reportLines?.flat() ?? edge.reports).toEqual(edge.reports);
+    }
     expect(graph.hasCycle).toBe(false);
     expect(graph.nodes.every((node) => [node.x, node.y, node.width, node.height].every(Number.isFinite))).toBe(true);
   });
@@ -146,6 +153,13 @@ describe('narrator focus', () => {
     const localGraph = buildNarratorFocusGraph(focus);
     expect(localGraph.nodes.length).toBeLessThan(51);
     expect(localGraph.nodes.some((node) => node.type === 'matn')).toBe(false);
+    const visibleReports = new Set(localGraph.edges.flatMap((edge) => edge.reports!.map((report) => report.id)));
+    expect(visibleReports).toEqual(new Set(expected.map((report) => report.id)));
+    expect(localGraph.edges.some((edge) => (edge.reportLines?.length ?? 0) > 1)).toBe(true);
+    for (const edge of localGraph.edges) {
+      expect(edge.label).toBe(edge.reports!.map((report) => `#${report.number}`).join(', '));
+      expect(edge.reportLines?.flat() ?? edge.reports).toEqual(edge.reports);
+    }
     expect(JSON.stringify(allReports)).toBe(before);
   });
 });

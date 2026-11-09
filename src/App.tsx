@@ -13,7 +13,7 @@ import {
 } from './bundle';
 import { AboutDialog } from './components/AboutDialog';
 import { GraphCanvas } from './components/GraphCanvas';
-import { NarratorFocusControls, NarratorFocusReport, NarratorFocusTable } from './components/NarratorFocusPanel';
+import { NarratorFocusControls, NarratorFocusReport } from './components/NarratorFocusPanel';
 import { ReportEditorPanel } from './components/ReportEditorPanel';
 import { ReportNoteCard } from './components/ReportNoteCard';
 import { ReportNoteDialog } from './components/ReportNoteDialog';
@@ -400,8 +400,8 @@ function App() {
     if (focusedNarrator) {
       const anchor = graph.nodes.find((node) => node.type === 'narrator' && node.label === focusedNarrator);
       if (anchor) {
-        const width = viewport.graphScrollRef.current?.clientWidth ?? 1000;
-        viewport.centerOnNode(anchor, isLocalFocus ? Math.min(1, Math.max(0.2, (width - 48) / graph.width)) : 0.75);
+        const height = viewport.graphScrollRef.current?.clientHeight ?? 700;
+        viewport.centerOnNode(anchor, isLocalFocus ? Math.min(0.9, Math.max(0.6, (height - 48) / graph.height)) : 0.75);
       }
     } else if (fullGraphViewport.current) {
       const saved = fullGraphViewport.current;
@@ -668,7 +668,9 @@ function App() {
             />
           ) : null}
           </div>
-          <div className={isLocalFocus ? 'graph-workspace local-focus-workspace' : 'graph-workspace'}>
+          <div className={isLocalFocus
+            ? `graph-workspace local-focus-workspace${focus?.reportReferences.some((report) => report.id === reportEditor.editingReport?.id) ? ' with-local-report' : ''}`
+            : 'graph-workspace'}>
           <div
             ref={viewport.graphScrollRef}
             className={viewport.isPanning ? 'graph-scroll panning' : 'graph-scroll'}
@@ -728,13 +730,7 @@ function App() {
             </div>
           </div>
           {isLocalFocus && focus ? (
-            <div className={focus.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)
-              ? 'focus-details with-selected-report' : 'focus-details'}>
-              <NarratorFocusTable
-                focus={focus}
-                selectedReportId={reportEditor.editingReport?.id}
-                onSelectReport={handleSelectReport}
-              />
+            <div className="focus-details">
               <NarratorFocusReport
                 report={focus.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)
                   ? reportEditor.editingReport : null}

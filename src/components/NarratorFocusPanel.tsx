@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState } from 'react';
 import { buildMatnTextSegments, colorWithAlpha } from '../matnHighlights';
-import type { NarratorFocus, NarratorFocusMode, NarratorOption } from '../narratorFocus';
+import type { NarratorFocusMode, NarratorOption } from '../narratorFocus';
 import type { HadithReport, HighlightLegendItem } from '../types';
 import { ReportNoteCard } from './ReportNoteCard';
 import '../narratorFocus.css';
@@ -98,80 +98,6 @@ export function NarratorFocusControls({
   );
 }
 
-interface NarratorFocusTableProps {
-  focus: NarratorFocus;
-  selectedReportId?: string | null;
-  onSelectReport: (reportId: string) => void;
-}
-
-function pairKey(source: string | null, student: string | null): string {
-  return JSON.stringify([source, student]);
-}
-
-export function NarratorFocusTable({ focus, selectedReportId, onSelectReport }: NarratorFocusTableProps) {
-  const sources: Array<string | null> = focus.sources.map((source) => source.name);
-  const students: Array<string | null> = focus.students.map((student) => student.name);
-  if (focus.cells.some((cell) => cell.source === null)) sources.unshift(null);
-  if (focus.cells.some((cell) => cell.student === null)) students.push(null);
-  const cells = new Map(focus.cells.map((cell) => [pairKey(cell.source, cell.student), cell.reports]));
-
-  return (
-    <section className="narrator-focus-matrix" aria-label="Source and student report table">
-      <div className="narrator-focus-section-heading">
-        <h3>Reports by source and student</h3>
-        <p>Each number identifies a report with that source–student pairing. An empty cell has no report in this bundle.</p>
-      </div>
-      <div className="narrator-focus-table-scroll" role="region" aria-label="Scrollable source and student table" tabIndex={0}>
-        <table>
-          <caption className="focus-visually-hidden">Sources and students of {focus.name}</caption>
-          <thead>
-            <tr>
-              <th scope="col">Source ↓ / Student →</th>
-              {students.map((student) => (
-                <th scope="col" key={student ?? 'recording-source'}>
-                  {student ? <bdi>{student}</bdi> : <>Recording source<small>No later named student</small></>}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sources.map((source) => (
-              <tr key={source ?? 'attribution-authority'}>
-                <th scope="row">
-                  {source ? <bdi>{source}</bdi> : <>Attribution authority<small>No earlier named source</small></>}
-                </th>
-                {students.map((student) => {
-                  const reports = cells.get(pairKey(source, student)) ?? [];
-                  return (
-                    <td key={student ?? 'recording-source'}>
-                      {reports.length > 0 ? (
-                        <div className="focus-report-number-list">
-                          {reports.map((report) => (
-                            <button
-                              key={report.id}
-                              type="button"
-                              className="focus-report-number"
-                              aria-label={`Select report #${report.number}`}
-                              aria-pressed={report.id === selectedReportId}
-                              onClick={() => onSelectReport(report.id)}
-                            >
-                              #{report.number}
-                            </button>
-                          ))}
-                        </div>
-                      ) : <span className="focus-empty-cell" aria-label="No reports">—</span>}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
-
 interface NarratorFocusReportProps {
   report: HadithReport | null;
   reportNumber: number;
@@ -188,7 +114,7 @@ export function NarratorFocusReport({ report, reportNumber, highlightLegend, mat
   ) : [], [report, highlightLegend]);
 
   if (!report) {
-    return <p className="narrator-focus-report-empty">Choose a report number to read its wording and source notes.</p>;
+    return <p className="narrator-focus-report-empty">Choose a report number on the graph to read its wording and source notes.</p>;
   }
 
   return (

@@ -37,7 +37,28 @@ function nodeTransforms(container: HTMLElement): Record<string, string | null> {
 }
 
 function reportButton(number: number): HTMLElement {
-  return within(screen.getByRole('table')).getByRole('button', { name: `Select report #${number}` });
+  const graph = document.querySelector('.graph-svg');
+  if (!graph) throw new Error('Graph not found.');
+  return within(graph as unknown as HTMLElement).getAllByRole('button', { name: `Select report #${number}` })[0];
+}
+
+function edgeNumberScope(container: HTMLElement, source: string, target: string): HTMLElement {
+  const scope = container.querySelector(`g[data-edge-id="focus:source:${source}->focus:center:${target}"] .edge-label`);
+  if (!scope) throw new Error(`Source edge ${source} → ${target} not found.`);
+  return scope as unknown as HTMLElement;
+}
+
+function outgoingNumberScope(container: HTMLElement, source: string, target: string): HTMLElement {
+  const scope = container.querySelector(`g[data-edge-id="focus:center:${source}->focus:student:${target}"] .edge-label`);
+  if (!scope) throw new Error(`Student edge ${source} → ${target} not found.`);
+  return scope as unknown as HTMLElement;
+}
+
+function nodeY(container: HTMLElement, id: string): number {
+  const transform = getGraphNode(container, id).getAttribute('transform');
+  const match = transform?.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+  if (!match) throw new Error(`Invalid node position ${id}`);
+  return Number(match[2]);
 }
 
 function expectSelectedReport(number: number): void {
@@ -46,30 +67,52 @@ function expectSelectedReport(number: number): void {
 }
 
 describe('narrator focus views', () => {
-  it('shows source/student report pairings across authorities and switches to complete chains without renumbering', async () => {
+  it('keeps a standalone attribution selectable when its focus has no edges', async () => {
+    const user = userEvent.setup();
+    const standalone = { ...makeReport('standalone', ['Sole authority'], 'Standalone wording.'), note: 'No continuous chain supplied.' };
+    const { container } = render(<App />);
+    await importJson(container, bundleToJson(makeBundle([reports[1], standalone])));
+    await waitFor(() => expect(container.querySelector('[data-node-id="m:standalone"]')).not.toBeNull());
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Focus narrator' }), 'Sole authority');
+
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(container.querySelectorAll('.graph-svg [data-node-id]')).toHaveLength(1);
+    expect(container.querySelectorAll('.graph-svg path.graph-edge')).toHaveLength(0);
+    await user.click(within(getGraphNode(container, 'focus:center:Sole authority'))
+      .getByRole('button', { name: 'Select report #2' }));
+    expect(screen.getByRole('heading', { name: 'Edit Report #2' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('The report statement')).toHaveValue('Standalone wording.');
+    const details = screen.getByRole('region', { name: 'Report #2 details' });
+    expect(within(details).getByText('Standalone wording.')).toBeInTheDocument();
+    expect(within(details).getByText('No continuous chain supplied.')).toBeInTheDocument();
+  });
+  it('shows clickable report numbers on top-to-bottom source/student edges and switches to complete chains without renumbering', async () => {
     const user = userEvent.setup();
     const { container } = await renderReports();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Focus narrator' }), 'Shared narrator');
 
     expect(screen.getByRole('button', { name: 'Sources & students', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    const table = screen.getByRole('table');
-    expect(within(table).getByText('Source A')).toBeInTheDocument();
-    expect(within(table).getByText('Source B')).toBeInTheDocument();
-    expect(within(table).getByText('Student A')).toBeInTheDocument();
-    expect(within(table).getByText('Student B')).toBeInTheDocument();
-    expect(within(table).getAllByRole('button')).toHaveLength(2);
-    expect(within(table).queryByRole('button', { name: 'Select report #2' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(container.querySelectorAll('.graph-svg [data-node-type="matn"]')).toHaveLength(0);
     expect(container.querySelectorAll('.graph-svg [data-node-id]')).toHaveLength(5);
+    const centerY = nodeY(container, 'focus:center:Shared narrator');
+    expect(nodeY(container, 'focus:source:Source A')).toBeLessThan(centerY);
+    expect(nodeY(container, 'focus:source:Source B')).toBeLessThan(centerY);
+    expect(nodeY(container, 'focus:student:Student A')).toBeGreaterThan(centerY);
+    expect(nodeY(container, 'focus:student:Student B')).toBeGreaterThan(centerY);
 
-    const sourceARow = within(table).getByText('Source A').closest('tr')!;
-    const sourceBRow = within(table).getByText('Source B').closest('tr')!;
-    expect(within(sourceARow).getByRole('button', { name: 'Select report #1' })).toBeInTheDocument();
-    expect(within(sourceARow).queryByRole('button', { name: 'Select report #3' })).not.toBeInTheDocument();
-    expect(within(sourceBRow).getByRole('button', { name: 'Select report #3' })).toBeInTheDocument();
-    expect(within(sourceBRow).queryByRole('button', { name: 'Select report #1' })).not.toBeInTheDocument();
+    const sourceA = edgeNumberScope(container, 'Source A', 'Shared narrator');
+    const sourceB = edgeNumberScope(container, 'Source B', 'Shared narrator');
+    expect(within(sourceA).getByRole('button', { name: 'Select report #1' })).toBeInTheDocument();
+    expect(within(sourceA).queryByRole('button', { name: 'Select report #3' })).not.toBeInTheDocument();
+    expect(within(sourceB).getByRole('button', { name: 'Select report #3' })).toBeInTheDocument();
+    expect(within(sourceB).queryByRole('button', { name: 'Select report #1' })).not.toBeInTheDocument();
+    expect(container.querySelector('.graph-svg [data-report-id="outside"]')).not.toBeInTheDocument();
 
-    await user.click(reportButton(3));
+    await user.click(within(sourceA).getByRole('button', { name: 'Select report #1' }));
+    expectSelectedReport(1);
+    await user.click(within(outgoingNumberScope(container, 'Shared narrator', 'Student B'))
+      .getByRole('button', { name: 'Select report #3' }));
     expectSelectedReport(3);
     const wording = screen.getByRole('region', { name: 'Report #3 details' });
     expect(within(wording).getByText('Third wording.')).toBeInTheDocument();
@@ -141,7 +184,8 @@ describe('narrator focus views', () => {
     fireEvent.doubleClick(getGraphNode(container, 'n:Shared narrator'));
     const narrator = screen.getByRole('combobox', { name: 'Focus narrator' });
     expect(narrator).toHaveValue('Shared narrator');
-    expect(screen.getByRole('table', { name: 'Sources and students of Shared narrator' })).toBeInTheDocument();
+    expect(getGraphNode(container, 'focus:center:Shared narrator')).toBeInTheDocument();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'All reports', exact: true }));
     expect(nodeTransforms(container)).toEqual(originalPositions);
@@ -150,7 +194,7 @@ describe('narrator focus views', () => {
     expect(within(narrator).getByRole('option', { name: 'Source B (1)' })).toBeInTheDocument();
     expect(within(narrator).queryByRole('option', { name: 'Source A (1)' })).not.toBeInTheDocument();
     await user.selectOptions(narrator, 'Source B');
-    expect(screen.getByRole('table', { name: 'Sources and students of Source B' })).toBeInTheDocument();
+    expect(getGraphNode(container, 'focus:center:Source B')).toBeInTheDocument();
     await user.click(reportButton(3));
     expectSelectedReport(3);
 
@@ -163,7 +207,7 @@ describe('narrator focus views', () => {
   it('honors unsaved edits when a different narrator would exclude the selected report', async () => {
     const user = userEvent.setup();
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-    await renderReports();
+    const { container } = await renderReports();
     const narrator = screen.getByRole('combobox', { name: 'Focus narrator' });
     await user.selectOptions(narrator, 'Shared narrator');
     await user.click(reportButton(3));
@@ -187,7 +231,9 @@ describe('narrator focus views', () => {
     await user.selectOptions(narrator, 'Outside authority');
     expect(narrator).toHaveValue('Outside authority');
     expect(screen.queryByRole('heading', { name: 'Edit Report #3' })).not.toBeInTheDocument();
-    expect(within(screen.getByRole('table')).getAllByRole('button')).toHaveLength(1);
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(new Set(Array.from(container.querySelectorAll('.graph-svg .report-number-link'))
+      .map((button) => button.getAttribute('data-report-id')))).toEqual(new Set(['outside']));
     await user.click(reportButton(2));
     expectSelectedReport(2);
   });

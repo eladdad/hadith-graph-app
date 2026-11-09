@@ -707,12 +707,14 @@ textarea:focus {
 }
 
 .local-focus-workspace {
-  grid-template-rows: minmax(230px, 1fr) minmax(180px, 0.85fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.local-focus-workspace.with-local-report {
+  grid-template-rows: minmax(260px, 1fr) minmax(180px, 0.55fr);
 }
 
 .focus-details {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
   min-height: 0;
   min-width: 0;
   overflow: auto;
@@ -720,34 +722,9 @@ textarea:focus {
   background: var(--panel);
 }
 
-.focus-details.with-selected-report {
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.focus-details > .narrator-focus-matrix {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  border-top: 0;
-}
-
-.focus-details .narrator-focus-table-scroll {
-  min-height: 0;
-  flex: 1 1 auto;
-}
-
 .focus-details > .narrator-focus-report {
   overflow: auto;
   border-top: 0;
-  border-left: 1px solid var(--line);
-}
-
-@media (max-width: 1100px) {
-  .focus-details.with-selected-report {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(180px, 1fr) minmax(160px, 1fr);
-  }
 }
 
 .node-group.focused-narrator .node-narrator {

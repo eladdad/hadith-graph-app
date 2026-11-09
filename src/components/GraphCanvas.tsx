@@ -10,6 +10,7 @@ import {
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
 import { ReportNumberLink } from './ReportNumberLink';
+import { FOCUS_REPORT_LINE_HEIGHT } from '../narratorFocus';
 
 const MARKER_HIGHLIGHT_ZOOM_THRESHOLD = 0.3;
 
@@ -224,7 +225,20 @@ export function GraphCanvas({
               y={edge.labelY}
               className={selectedEdgeSet.has(edge.id) ? 'edge-label selected' : 'edge-label'}
             >
-              {edge.reports?.length && onSelectReport ? edge.reports.map((report, index) => (
+              {edge.reportLines?.length ? edge.reportLines.map((line, rowIndex) => (
+                <tspan key={rowIndex} x={edge.labelX} dy={rowIndex === 0 ? 0 : FOCUS_REPORT_LINE_HEIGHT}>
+                  {line.map((report, index) => (
+                    <Fragment key={report.id}>
+                      {index > 0 ? ', ' : null}
+                      {onSelectReport ? (
+                        <ReportNumberLink report={report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
+                          {`#${report.number}`}
+                        </ReportNumberLink>
+                      ) : `#${report.number}`}
+                    </Fragment>
+                  ))}
+                </tspan>
+              )) : edge.reports?.length && onSelectReport ? edge.reports.map((report, index) => (
                 <Fragment key={report.id}>
                   {index > 0 ? ', ' : null}
                   <ReportNumberLink report={report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
