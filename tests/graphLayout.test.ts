@@ -11,18 +11,25 @@ function cross(a: Point, b: Point, c: Point): number {
   return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
 }
 
-// Count only intersections inside both visible edge segments: touching a shared
-// endpoint, passing through an endpoint, and collinear overlaps are not crossings.
-function countProperCrossings(graph: RenderableGraph): number {
-  const segments = graph.edges.map((edge) => {
-    const coordinates = edge.path.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi)!.map(Number);
-    expect(coordinates).toHaveLength(4);
+function sampleEdge(path: string): Point[] {
+  const coordinates = path.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi)!.map(Number);
+  expect(path).toMatch(/^M .* C /);
+  expect(coordinates).toHaveLength(8);
+  const [x0, y0, x1, y1, x2, y2, x3, y3] = coordinates;
+  return Array.from({ length: 41 }, (_, index) => {
+    const t = index / 40;
+    const u = 1 - t;
     return {
-      edge,
-      start: { x: coordinates[0], y: coordinates[1] },
-      end: { x: coordinates[2], y: coordinates[3] },
+      x: u ** 3 * x0 + 3 * u ** 2 * t * x1 + 3 * u * t ** 2 * x2 + t ** 3 * x3,
+      y: u ** 3 * y0 + 3 * u ** 2 * t * y1 + 3 * u * t ** 2 * y2 + t ** 3 * y3,
     };
   });
+}
+
+// Approximate the actual visible Bezier curves with short segments. Count each
+// intersecting pair once, excluding shared endpoints and collinear overlap.
+function countProperCrossings(graph: RenderableGraph): number {
+  const segments = graph.edges.map((edge) => ({ edge, points: sampleEdge(edge.path) }));
   let count = 0;
   for (let i = 0; i < segments.length; i += 1) {
     const a = segments[i];
@@ -31,8 +38,15 @@ function countProperCrossings(graph: RenderableGraph): number {
       if ([a.edge.source, a.edge.target].some((id) => id === b.edge.source || id === b.edge.target)) {
         continue;
       }
-      if (cross(a.start, a.end, b.start) * cross(a.start, a.end, b.end) < -1e-6
-        && cross(b.start, b.end, a.start) * cross(b.start, b.end, a.end) < -1e-6) {
+      const intersects = a.points.slice(1).some((aEnd, aIndex) => {
+        const aStart = a.points[aIndex];
+        return b.points.slice(1).some((bEnd, bIndex) => {
+          const bStart = b.points[bIndex];
+          return cross(aStart, aEnd, bStart) * cross(aStart, aEnd, bEnd) < -1e-6
+            && cross(bStart, bEnd, aStart) * cross(bStart, bEnd, aEnd) < -1e-6;
+        });
+      });
+      if (intersects) {
         count += 1;
       }
     }
@@ -53,6 +67,32 @@ function node(graph: RenderableGraph, id: string): GraphNode {
 }
 
 describe('automatic graph layout', () => {
+  it('attaches curved edges to outward ports after normal, reversed and same-level manual placement', () => {
+    const report = makeReport('route', ['Source', 'Collector'], 'Wording.');
+    for (const [sourceY, targetY] of [[100, 400], [400, 100], [100, 100]]) {
+      const graph = buildRenderableGraph([report], {
+        'n:Source': { x: 200, y: sourceY },
+        'c:route': { x: 600, y: targetY },
+      });
+      const source = node(graph, 'n:Source');
+      const target = node(graph, 'c:route');
+      const edge = graph.edges[0];
+      const points = sampleEdge(edge.path);
+      const direction = sourceY <= targetY ? 1 : -1;
+      const [, , control1X, control1Y, control2X, control2Y] = edge.path.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi)!.map(Number);
+
+      expect(points[0]).toEqual({ x: source.x, y: source.y + direction * source.height / 2 });
+      expect(points.at(-1)).toEqual({ x: target.x, y: target.y - direction * target.height / 2 });
+      expect(points.every((point) => Number.isFinite(point.x) && Number.isFinite(point.y))).toBe(true);
+      expect(control1X).toBe(source.x);
+      expect(control2X).toBe(target.x);
+      expect((control1Y - points[0].y) * direction).toBeGreaterThan(0);
+      expect((points.at(-1)!.y - control2Y) * direction).toBeGreaterThan(0);
+      expect(edge.labelX).toBeCloseTo(points[20].x, 6);
+      expect(edge.labelY).toBeCloseTo(points[20].y, 6);
+    }
+  });
+
   it('uncrosses independent branches whose alphabetical row orders conflict', () => {
     const graph = buildRenderableGraph([
       makeReport('r1', ['A', 'Z', 'Collector 1'], 'First report'),

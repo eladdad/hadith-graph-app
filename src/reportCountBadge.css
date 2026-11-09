@@ -1,0 +1,115 @@
+.report-count-badge {
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.report-count-badge circle {
+  fill: var(--graph-bg);
+  stroke: var(--edge-label);
+  stroke-width: 1.25;
+  paint-order: normal;
+  pointer-events: all;
+}
+
+.report-count-badge text {
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  fill: var(--edge-label);
+  stroke: none;
+  paint-order: normal;
+  pointer-events: none;
+}
+
+.report-count-badge.selected circle,
+.report-count-badge:hover circle,
+.report-count-badge:focus-visible circle,
+.report-count-badge[aria-expanded='true'] circle {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+  stroke-width: 1.8;
+}
+
+.report-count-badge.selected text,
+.report-count-badge:hover text,
+.report-count-badge:focus-visible text,
+.report-count-badge[aria-expanded='true'] text {
+  fill: var(--accent);
+}
+
+.report-count-badge:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 50%;
+}
+
+.report-count-popover {
+  position: fixed;
+  z-index: 40;
+  width: min(340px, calc(100vw - 24px));
+  max-height: min(380px, calc(100dvh - 24px));
+  display: flex;
+  flex-direction: column;
+  padding: 0.85rem;
+  gap: 0.85rem;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px var(--panel-shadow);
+}
+
+.report-count-popover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+}
+
+.report-count-popover-header > div {
+  min-width: 0;
+}
+
+.report-count-popover-header h3 {
+  font-size: 0.85rem;
+}
+
+.report-count-popover-header p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+}
+
+.report-count-popover-header > button {
+  flex: 0 0 auto;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  font-size: 1.1rem;
+}
+
+.report-count-popover-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-height: 0;
+  overflow: auto;
+  padding: 2px;
+  overscroll-behavior: contain;
+}
+
+.report-count-popover-list button {
+  min-width: 2.5rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.report-count-popover-list button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
+}

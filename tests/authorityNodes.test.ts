@@ -90,7 +90,7 @@ describe('attribution authorities', () => {
     expect(node(graph, 'n:شعبة بن الحجاج').attributedReports).toBeUndefined();
   });
 
-  it('reserves wrapped authority numbers without overlapping neighboring nodes or detaching matns', () => {
+  it('reserves compact count badges without overlapping neighboring nodes or detaching matns', () => {
     const reports = Array.from({ length: 20 }, (_, index) => makeReport(
       `r${index}`,
       [index < 17 ? 'Authority A' : 'Authority B', `Student ${index}`, `Collector ${index}`],
@@ -101,7 +101,10 @@ describe('attribution authorities', () => {
     const b = node(graph, 'n:Authority B');
     const [left, right] = [a, b].sort((one, another) => one.x - another.x);
 
-    expect(getAuthorityReportMetrics(a.attributedReports).rows).toBeGreaterThan(2);
+    expect(getAuthorityReportMetrics(a.attributedReports).rows).toBe(1);
+    expect(getAuthorityReportMetrics(a.attributedReports).width)
+      .toBe(getAuthorityReportMetrics(b.attributedReports).width);
+    expect(a.height).toBe(b.height);
     expect(a.height).toBeGreaterThanOrEqual(getAuthorityReportMetrics(a.attributedReports).height);
     expect(occupiedRight(left)).toBeLessThan(right.x - right.width / 2);
     for (const narrator of graph.nodes.filter((candidate) => candidate.type === 'narrator')) {

@@ -1,4 +1,5 @@
 import { AUTHORITY_REPORT_GAP, getAuthorityReportMetrics, getNormalizedFontSizes, wrapTextToWidth } from './graph';
+import { buildVerticalCurve } from './edgeGeometry';
 import type { GraphEdge, GraphNode, GraphReportReference, HadithFontSizes, HadithReport, RenderableGraph } from './types';
 
 export type NarratorFocusMode = 'local' | 'reports';
@@ -104,9 +105,7 @@ const LOCAL_NODE_WIDTH = 220;
 const LOCAL_NODE_GAP = 70;
 const LOCAL_PADDING_X = 72;
 const LOCAL_PADDING_Y = 64;
-const LOCAL_CONNECTOR_GAP = 72;
-export const FOCUS_REPORT_LINE_HEIGHT = 18;
-export const FOCUS_REPORT_LABEL_WIDTH = 220;
+const LOCAL_CONNECTOR_GAP = 140;
 
 function makeLocalNode(id: string, name: string, fontSize: number): GraphNode {
   const labelLines = wrapTextToWidth(name, LOCAL_NODE_WIDTH - 32, fontSize);
@@ -135,52 +134,24 @@ function positionRow(nodes: GraphNode[], y: number, width: number): void {
   }
 }
 
-function reportLines(reports: GraphReportReference[]): GraphReportReference[][] {
-  const lines: GraphReportReference[][] = [];
-  let line: GraphReportReference[] = [];
-  let width = 0;
-  for (const report of reports) {
-    // Conservative character widths keep labels within their node's slot.
-    // Their links use the normal graph's 12.5px label font.
-    const referenceWidth = (`#${report.number}`).length * 8;
-    const separatorWidth = line.length > 0 ? 16 : 0;
-    if (line.length > 0 && width + separatorWidth + referenceWidth > FOCUS_REPORT_LABEL_WIDTH) {
-      lines.push(line);
-      line = [];
-      width = 0;
-    }
-    width += (line.length > 0 ? 16 : 0) + referenceWidth;
-    line.push(report);
-  }
-  if (line.length > 0) lines.push(line);
-  return lines;
-}
-
 function localEdge(
   source: GraphNode,
   target: GraphNode,
   reports: GraphReportReference[],
-  lines: GraphReportReference[][],
-  joinY: number,
-  labelX: number,
-  labelY: number,
   incoming: boolean,
 ): GraphEdge {
   const fromY = source.y + source.height / 2;
   const toY = target.y - target.height / 2;
-  const joinX = incoming ? source.x : target.x;
+  const curve = buildVerticalCurve({ x: source.x, y: fromY }, { x: target.x, y: toY }, 1, incoming ? 0.2 : 0.8);
   return {
     id: `${source.id}->${target.id}`,
     source: source.id,
     target: target.id,
-    // Keep the numbered segment vertical beside the outer narrator; the
-    // unlabelled segment joins the focused narrator without label collisions.
-    path: `M ${source.x} ${fromY} L ${joinX} ${joinY} L ${target.x} ${toY}`,
+    path: curve.path,
     label: reports.map((report) => `#${report.number}`).join(', '),
     reports,
-    reportLines: lines,
-    labelX,
-    labelY,
+    labelX: curve.labelX,
+    labelY: curve.labelY,
   };
 }
 
@@ -201,28 +172,20 @@ export function buildNarratorFocusGraph(focus: NarratorFocus, fontSizes?: Partia
     ? 2 * (AUTHORITY_REPORT_GAP + centerAnnotation.width) : 0);
   const sources = focus.sources.map((source) => makeLocalNode(`focus:source:${source.name}`, source.name, fontSize));
   const students = focus.students.map((student) => makeLocalNode(`focus:student:${student.name}`, student.name, fontSize));
-  const sourceLines = focus.sources.map((source) => reportLines(source.reports));
-  const studentLines = focus.students.map((student) => reportLines(student.reports));
   const sourceHeight = Math.max(0, ...sources.map((source) => source.height));
   const studentHeight = Math.max(0, ...students.map((student) => student.height));
-  const sourceLabelsHeight = Math.max(0, ...sourceLines.map((lines) => lines.length * FOCUS_REPORT_LINE_HEIGHT));
-  const studentLabelsHeight = Math.max(0, ...studentLines.map((lines) => lines.length * FOCUS_REPORT_LINE_HEIGHT));
   const width = Math.max(900, Math.max(rowWidth(sources), rowWidth(students), centerFootprintWidth) + LOCAL_PADDING_X * 2);
   const sourceBottom = LOCAL_PADDING_Y + sourceHeight;
-  const sourceJoinY = sourceBottom + sourceLabelsHeight + 32;
-  const centerTop = sources.length > 0 ? sourceJoinY + LOCAL_CONNECTOR_GAP : LOCAL_PADDING_Y;
-  const studentJoinY = centerTop + center.height + LOCAL_CONNECTOR_GAP;
-  const studentTop = studentJoinY + studentLabelsHeight + 36;
+  const centerTop = sources.length > 0 ? sourceBottom + LOCAL_CONNECTOR_GAP : LOCAL_PADDING_Y;
+  const studentTop = centerTop + center.height + LOCAL_CONNECTOR_GAP;
   positionRow(sources, LOCAL_PADDING_Y + sourceHeight / 2, width);
   positionRow([center], centerTop + center.height / 2, width);
   positionRow(students, studentTop + studentHeight / 2, width);
   const height = Math.max(420,
     (students.length > 0 ? studentTop + studentHeight : centerTop + center.height) + LOCAL_PADDING_Y);
   const edges = [
-    ...sources.map((source, index) => localEdge(source, center, focus.sources[index].reports,
-      sourceLines[index], sourceJoinY, source.x, sourceBottom + 24, true)),
-    ...students.map((student, index) => localEdge(center, student, focus.students[index].reports,
-      studentLines[index], studentJoinY, student.x, studentJoinY + 16, false)),
+    ...sources.map((source, index) => localEdge(source, center, focus.sources[index].reports, true)),
+    ...students.map((student, index) => localEdge(center, student, focus.students[index].reports, false)),
   ];
   const authorityNames = new Set(focus.reports.map((report) => report.isnad[0]));
   const nodes = [...sources, center, ...students];

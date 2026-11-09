@@ -105,7 +105,8 @@ describe('narrator focus', () => {
       .toEqual([{ id: 'b', number: 3 }, { id: 'c', number: 4 }]);
     for (const edge of graph.edges) {
       expect(edge.label).toBe(edge.reports!.map((report) => `#${report.number}`).join(', '));
-      expect(edge.reportLines?.flat() ?? edge.reports).toEqual(edge.reports);
+      expect(edge.path).toMatch(/^M .* C /);
+      expect(edge).not.toHaveProperty('reportLines');
     }
     expect(graph.hasCycle).toBe(false);
     expect(graph.nodes.every((node) => [node.x, node.y, node.width, node.height].every(Number.isFinite))).toBe(true);
@@ -155,10 +156,11 @@ describe('narrator focus', () => {
     expect(localGraph.nodes.some((node) => node.type === 'matn')).toBe(false);
     const visibleReports = new Set(localGraph.edges.flatMap((edge) => edge.reports!.map((report) => report.id)));
     expect(visibleReports).toEqual(new Set(expected.map((report) => report.id)));
-    expect(localGraph.edges.some((edge) => (edge.reportLines?.length ?? 0) > 1)).toBe(true);
+    expect(localGraph.edges.some((edge) => edge.reports!.length > 1)).toBe(true);
     for (const edge of localGraph.edges) {
       expect(edge.label).toBe(edge.reports!.map((report) => `#${report.number}`).join(', '));
-      expect(edge.reportLines?.flat() ?? edge.reports).toEqual(edge.reports);
+      expect(edge.path).toMatch(/^M .* C /);
+      expect(edge).not.toHaveProperty('reportLines');
     }
     expect(JSON.stringify(allReports)).toBe(before);
   });

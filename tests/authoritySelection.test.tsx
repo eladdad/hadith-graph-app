@@ -42,8 +42,13 @@ function matnHeading(container: HTMLElement, reportId: string): SVGElement {
   return heading;
 }
 
-function numberButton(scope: Element, number: number): HTMLElement {
-  return within(scope as HTMLElement).getByRole('button', { name: `Select report #${number}` });
+function countButton(scope: Element): HTMLElement {
+  return within(scope as HTMLElement).getByRole('button');
+}
+
+async function selectNumber(user: ReturnType<typeof userEvent.setup>, scope: Element, number: number): Promise<void> {
+  await user.click(countButton(scope));
+  await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: `Select report #${number}` }));
 }
 
 function expectReportSelected(container: HTMLElement, number: number): void {
@@ -60,9 +65,7 @@ function expectReportSelected(container: HTMLElement, number: number): void {
   expect(getGraphNode(container, `m:${report.id}`)).toHaveClass('selected');
   expect(getGraphEdge(container, `n:Shared student->c:${report.id}`)).toHaveClass('selected');
 
-  for (const link of container.querySelectorAll('.report-number-link')) {
-    expect(link).toHaveAttribute('aria-pressed', String(link.getAttribute('data-report-id') === report.id));
-  }
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 }
 
 function transforms(container: HTMLElement): Record<string, string | null> {
@@ -76,24 +79,29 @@ describe('report number selection', () => {
     const { container } = await renderReports();
     const initialTransforms = transforms(container);
     const authority = authorityLinks(container, 'Authority A');
-    expect(within(authority as unknown as HTMLElement).getAllByRole('button')).toHaveLength(2);
-    expect(within(authority as unknown as HTMLElement).queryByRole('button', { name: 'Select report #2' }))
-      .not.toBeInTheDocument();
+    expect(countButton(authority)).toHaveAttribute('data-report-count', '2');
+    expect(countButton(authority)).toHaveTextContent('2');
+    expect(container.querySelector('.report-number-link')).not.toBeInTheDocument();
 
-    const thirdNumber = numberButton(authority, 3);
+    const authorityCount = countButton(authority);
     // A number is an action rather than a node-drag target, even if the pointer
     // moves before it is released.
-    fireEvent.pointerDown(thirdNumber, { button: 0, clientX: 100, clientY: 100 });
+    fireEvent.pointerDown(authorityCount, { button: 0, clientX: 100, clientY: 100 });
     fireEvent.pointerMove(window, { clientX: 170, clientY: 160 });
     fireEvent.pointerUp(window, { clientX: 170, clientY: 160 });
-    fireEvent.click(thirdNumber);
+    fireEvent.click(authorityCount);
+    const listed = screen.getByRole('dialog');
+    expect(within(listed).getByRole('button', { name: 'Select report #1' })).toBeInTheDocument();
+    expect(within(listed).queryByRole('button', { name: 'Select report #2' })).not.toBeInTheDocument();
+    await user.click(within(listed).getByRole('button', { name: 'Select report #3' }));
     expectReportSelected(container, 3);
 
-    await user.click(numberButton(edgeLinks(container), 1));
+    await selectNumber(user, edgeLinks(container), 1);
     expectReportSelected(container, 1);
-    await user.click(numberButton(edgeLinks(container), 3));
+    await selectNumber(user, edgeLinks(container), 3);
     expectReportSelected(container, 3);
-    await user.click(numberButton(matnHeading(container, 'r2'), 2));
+    expect(countButton(matnHeading(container, 'r2'))).toHaveAttribute('data-report-count', '1');
+    await selectNumber(user, matnHeading(container, 'r2'), 2);
     expectReportSelected(container, 2);
     expect(transforms(container)).toEqual(initialTransforms);
   });
@@ -102,10 +110,10 @@ describe('report number selection', () => {
     const user = userEvent.setup();
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const { container } = await renderReports();
-    await user.click(numberButton(authorityLinks(container, 'Authority A'), 1));
+    await selectNumber(user, authorityLinks(container, 'Authority A'), 1);
     await user.type(screen.getByPlaceholderText('The report statement'), ' Unsaved draft.');
 
-    await user.click(numberButton(authorityLinks(container, 'Authority B'), 2));
+    await selectNumber(user, authorityLinks(container, 'Authority B'), 2);
     expect(confirm).toHaveBeenCalledTimes(1);
     expect(confirm).toHaveBeenLastCalledWith('Discard unsaved report changes?');
     expect(screen.getByRole('heading', { name: 'Edit Report #1' })).toBeInTheDocument();
@@ -114,31 +122,41 @@ describe('report number selection', () => {
     expect(getGraphNode(container, 'm:r2')).not.toHaveClass('selected');
 
     confirm.mockReturnValue(true);
-    await user.click(numberButton(edgeLinks(container), 3));
+    await selectNumber(user, edgeLinks(container), 3);
     expect(confirm).toHaveBeenCalledTimes(2);
     expectReportSelected(container, 3);
     // Switching back reads the saved wording, confirming the abandoned draft
     // was not written into a report by its number control.
-    await user.click(numberButton(matnHeading(container, 'r1'), 1));
+    await selectNumber(user, matnHeading(container, 'r1'), 1);
     expectReportSelected(container, 1);
   });
 
   it('activates authority, edge, and matn numbers with Enter and Space', async () => {
+    const user = userEvent.setup();
     const { container } = await renderReports();
-    const authorityNumber = numberButton(authorityLinks(container, 'Authority A'), 3);
-    expect(authorityNumber).toHaveAttribute('tabindex', '0');
-    authorityNumber.focus();
-    fireEvent.keyDown(authorityNumber, { key: 'Enter' });
+    const authorityCount = countButton(authorityLinks(container, 'Authority A'));
+    expect(authorityCount).toHaveAttribute('tabindex', '0');
+    authorityCount.focus();
+    fireEvent.keyDown(authorityCount, { key: 'Enter' });
+    const third = within(screen.getByRole('dialog')).getByRole('button', { name: 'Select report #3' });
+    third.focus();
+    await user.keyboard('{Enter}');
     expectReportSelected(container, 3);
 
-    const edgeNumber = numberButton(edgeLinks(container), 1);
-    edgeNumber.focus();
-    fireEvent.keyDown(edgeNumber, { key: ' ' });
+    const edgeCount = countButton(edgeLinks(container));
+    edgeCount.focus();
+    fireEvent.keyDown(edgeCount, { key: ' ' });
+    const first = within(screen.getByRole('dialog')).getByRole('button', { name: 'Select report #1' });
+    first.focus();
+    await user.keyboard(' ');
     expectReportSelected(container, 1);
 
-    const matnNumber = numberButton(matnHeading(container, 'r2'), 2);
-    matnNumber.focus();
-    fireEvent.keyDown(matnNumber, { key: 'Enter' });
+    const matnCount = countButton(matnHeading(container, 'r2'));
+    matnCount.focus();
+    fireEvent.keyDown(matnCount, { key: 'Enter' });
+    const second = within(screen.getByRole('dialog')).getByRole('button', { name: 'Select report #2' });
+    second.focus();
+    await user.keyboard('{Enter}');
     expectReportSelected(container, 2);
   });
 });

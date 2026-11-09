@@ -942,31 +942,6 @@ textarea:focus {
   fill: var(--authority-label);
 }
 
-.authority-report-number {
-  font-size: 12px;
-  font-weight: 700;
-  fill: var(--authority-label);
-}
-
-.report-number-link {
-  cursor: pointer;
-  pointer-events: all;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.report-number-link[aria-pressed='true'],
-.report-number-link:hover,
-.report-number-link:focus-visible {
-  fill: var(--accent);
-  text-decoration-thickness: 2px;
-}
-
-.report-number-link:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-}
-
 .node-group.dragging {
   opacity: 0.96;
 }

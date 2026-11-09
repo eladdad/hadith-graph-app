@@ -15,6 +15,7 @@ import type {
 import { orderLayers } from './layerOrdering';
 import { positionLayers } from './layerPlacement';
 import type { LayoutFootprint } from './layerPlacement';
+import { buildVerticalCurve, getReportCountBadgeRadius } from './edgeGeometry';
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
@@ -24,8 +25,6 @@ const NARRATOR_NODE_WIDTH = 190;
 const NARRATOR_MIN_HEIGHT = 56;
 const NARRATOR_SIDE_PADDING = 16;
 export const AUTHORITY_REPORT_GAP = 12;
-export const AUTHORITY_REPORT_LINE_HEIGHT = 22;
-export const AUTHORITY_REPORTS_PER_ROW = 4;
 
 const MATN_NODE_DEFAULT_WIDTH = 360;
 export const MATN_NODE_MIN_WIDTH = 220;
@@ -56,16 +55,14 @@ export function getAuthorityReportMetrics(reports: GraphReportReference[] = []):
   width: number;
   height: number;
 } {
-  const columns = Math.min(AUTHORITY_REPORTS_PER_ROW, reports.length);
-  const rows = Math.ceil(reports.length / AUTHORITY_REPORTS_PER_ROW);
-  const digits = reports.reduce((largest, report) => Math.max(largest, String(report.number).length), 1);
-  const slotWidth = Math.max(30, digits * 8 + 18);
+  const count = new Set(reports.map((report) => report.id)).size;
+  const diameter = count > 0 ? getReportCountBadgeRadius(count) * 2 : 0;
   return {
-    columns,
-    rows,
-    slotWidth,
-    width: columns * slotWidth,
-    height: rows * AUTHORITY_REPORT_LINE_HEIGHT,
+    columns: count > 0 ? 1 : 0,
+    rows: count > 0 ? 1 : 0,
+    slotWidth: diameter,
+    width: diameter,
+    height: diameter,
   };
 }
 
@@ -876,6 +873,7 @@ function buildEdges(indexedGraph: IndexedGraph, nodes: GraphNode[]): GraphEdge[]
     const verticalDirection = dy >= 0 ? 1 : -1;
     const sourceY = source.y + verticalDirection * (source.height / 2);
     const targetY = target.y - verticalDirection * (target.height / 2);
+    const curve = buildVerticalCurve({ x: source.x, y: sourceY }, { x: target.x, y: targetY }, verticalDirection);
     // Label both sides of a merge to identify which source each student's
     // reports use, even when several reports share the same visible edge.
     const showReports = (indexedGraph.indegree.get(edge.source) ?? 0) > 1
@@ -885,11 +883,11 @@ function buildEdges(indexedGraph: IndexedGraph, nodes: GraphNode[]): GraphEdge[]
       id: edgeId,
       source: edge.source,
       target: edge.target,
-      path: `M ${source.x} ${sourceY} L ${target.x} ${targetY}`,
+      path: curve.path,
       label: showReports ? [...edge.reports.values()].map((report) => `#${report.number}`).join(', ') : undefined,
       reports: [...edge.reports.values()],
-      labelX: source.x + (target.x - source.x) / 2,
-      labelY: source.y + dy / 2 - verticalDirection * 10,
+      labelX: curve.labelX,
+      labelY: curve.labelY,
     });
   }
 

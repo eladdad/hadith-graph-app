@@ -114,7 +114,7 @@ export function NarratorFocusReport({ report, reportNumber, highlightLegend, mat
   ) : [], [report, highlightLegend]);
 
   if (!report) {
-    return <p className="narrator-focus-report-empty">Choose a report number on the graph to read its wording and source notes.</p>;
+    return <p className="narrator-focus-report-empty">Open a report-count badge, then choose a report number to read its wording and source notes.</p>;
   }
 
   return (

@@ -1,16 +1,14 @@
-import { Fragment, PointerEvent as ReactPointerEvent, RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { PointerEvent as ReactPointerEvent, RefObject, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   AUTHORITY_REPORT_GAP,
-  AUTHORITY_REPORT_LINE_HEIGHT,
-  AUTHORITY_REPORTS_PER_ROW,
   getAuthorityReportMetrics,
   MATN_NODE_HEADER_HEIGHT,
   MATN_NODE_SIDE_PADDING,
 } from '../graph';
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
-import { ReportNumberLink } from './ReportNumberLink';
-import { FOCUS_REPORT_LINE_HEIGHT } from '../narratorFocus';
+import { ReportCountBadge } from './ReportCountBadge';
+import { REPORT_COUNT_BADGE_RADIUS } from '../edgeGeometry';
 
 const MARKER_HIGHLIGHT_ZOOM_THRESHOLD = 0.3;
 
@@ -176,6 +174,8 @@ export function GraphCanvas({
     () => new Map(measuredHighlightOverlays.map((overlay) => [overlay.key, overlay])),
     [measuredHighlightOverlays],
   );
+  const badgeRevision = useMemo(() => ({ graph, zoom }), [graph, zoom]);
+  const nodeLabels = useMemo(() => new Map(graph.nodes.map((node) => [node.id, node.label])), [graph.nodes]);
 
   return (
     <svg
@@ -212,42 +212,13 @@ export function GraphCanvas({
       </defs>
 
       {graph.edges.map((edge) => (
-        <g key={edge.id} data-edge-id={edge.id}>
+        <g key={edge.id} data-edge-path-id={edge.id}>
           <path
             d={edge.path}
             data-edge-id={edge.id}
             className={selectedEdgeSet.has(edge.id) ? 'graph-edge selected' : 'graph-edge'}
             markerEnd={selectedEdgeSet.has(edge.id) ? 'url(#arrow-selected)' : 'url(#arrow)'}
           />
-          {edge.label ? (
-            <text
-              x={edge.labelX}
-              y={edge.labelY}
-              className={selectedEdgeSet.has(edge.id) ? 'edge-label selected' : 'edge-label'}
-            >
-              {edge.reportLines?.length ? edge.reportLines.map((line, rowIndex) => (
-                <tspan key={rowIndex} x={edge.labelX} dy={rowIndex === 0 ? 0 : FOCUS_REPORT_LINE_HEIGHT}>
-                  {line.map((report, index) => (
-                    <Fragment key={report.id}>
-                      {index > 0 ? ', ' : null}
-                      {onSelectReport ? (
-                        <ReportNumberLink report={report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
-                          {`#${report.number}`}
-                        </ReportNumberLink>
-                      ) : `#${report.number}`}
-                    </Fragment>
-                  ))}
-                </tspan>
-              )) : edge.reports?.length && onSelectReport ? edge.reports.map((report, index) => (
-                <Fragment key={report.id}>
-                  {index > 0 ? ', ' : null}
-                  <ReportNumberLink report={report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
-                    {`#${report.number}`}
-                  </ReportNumberLink>
-                </Fragment>
-              )) : edge.label}
-            </text>
-          ) : null}
         </g>
       ))}
 
@@ -293,7 +264,7 @@ export function GraphCanvas({
             className={className}
             onPointerDown={(event) => onNodePointerDown(event, node.id)}
             onDoubleClick={(event) => {
-              if (node.type === 'narrator' && !(event.target as Element).closest('.report-number-link')) {
+              if (node.type === 'narrator' && !(event.target as Element).closest('.report-count-badge')) {
                 event.preventDefault();
                 event.stopPropagation();
                 onFocusNarrator?.(node.label);
@@ -323,18 +294,20 @@ export function GraphCanvas({
 
             {node.type === 'matn' ? (
               <>
-                <text
-                  x={matnNodeTextX}
-                  y={-node.height / 2 + 18}
-                  textAnchor="end"
-                  className="matn-report-label"
-                >
-                  {node.report && onSelectReport ? (
-                    <ReportNumberLink report={node.report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
-                      {node.label}
-                    </ReportNumberLink>
-                  ) : node.label}
-                </text>
+                {node.report ? (
+                  <g className="matn-report-label">
+                    <ReportCountBadge
+                      reports={[node.report]}
+                      x={matnNodeTextX - REPORT_COUNT_BADGE_RADIUS}
+                      y={-node.height / 2 + REPORT_COUNT_BADGE_RADIUS + 1}
+                      label="Matn wording"
+                      selectedReportId={selectedReportId}
+                      className={selected ? 'selected' : undefined}
+                      onSelectReport={onSelectReport}
+                      revision={badgeRevision}
+                    />
+                  </g>
+                ) : null}
                 {selected ? (
                   <>
                     <rect
@@ -453,25 +426,38 @@ export function GraphCanvas({
             )}
             {node.attributedReports?.length ? (
               <g className="authority-report-links">
-                {node.attributedReports.map((report, index) => (
-                  <text
-                    key={report.id}
-                    x={node.width / 2 + AUTHORITY_REPORT_GAP + (index % AUTHORITY_REPORTS_PER_ROW) * authorityReports.slotWidth}
-                    y={-authorityReports.height / 2 + 15 + Math.floor(index / AUTHORITY_REPORTS_PER_ROW) * AUTHORITY_REPORT_LINE_HEIGHT}
-                    className="authority-report-number"
-                  >
-                    {onSelectReport ? (
-                      <ReportNumberLink report={report} selectedReportId={selectedReportId} onSelectReport={onSelectReport}>
-                        {`#${report.number}`}
-                      </ReportNumberLink>
-                    ) : `#${report.number}`}
-                  </text>
-                ))}
+                <ReportCountBadge
+                  reports={node.attributedReports}
+                  x={node.width / 2 + AUTHORITY_REPORT_GAP + authorityReports.width / 2}
+                  y={0}
+                  label={`${node.label} attributions`}
+                  selectedReportId={selectedReportId}
+                  className={selected ? 'selected' : undefined}
+                  onSelectReport={onSelectReport}
+                  revision={badgeRevision}
+                />
               </g>
             ) : null}
           </g>
         );
       })}
+      {/* Keep badges above every path and node so crossings cannot intercept clicks. */}
+      {graph.edges.filter((edge) => edge.label && edge.reports?.length).map((edge) => (
+        <g key={`badge:${edge.id}`} data-edge-id={edge.id}>
+          <g className={selectedEdgeSet.has(edge.id) ? 'edge-label selected' : 'edge-label'}>
+            <ReportCountBadge
+              reports={edge.reports!}
+              x={edge.labelX}
+              y={edge.labelY}
+              label={`${nodeLabels.get(edge.source) ?? edge.source} → ${nodeLabels.get(edge.target) ?? edge.target}`}
+              selectedReportId={selectedReportId}
+              className={selectedEdgeSet.has(edge.id) ? 'selected' : undefined}
+              onSelectReport={onSelectReport}
+              revision={badgeRevision}
+            />
+          </g>
+        </g>
+      ))}
     </svg>
   );
 }

@@ -89,7 +89,6 @@ export interface GraphEdge {
   path: string;
   label?: string;
   reports?: GraphReportReference[];
-  reportLines?: GraphReportReference[][];
   labelX: number;
   labelY: number;
 }
