@@ -1,5 +1,6 @@
 import { ChangeEvent, RefObject, useState } from 'react';
 import { MAX_FONT_SIZE, MIN_FONT_SIZE } from '../graph';
+import { MAX_VERTICAL_SPACING, MIN_VERTICAL_SPACING, normalizeVerticalSpacing } from '../layoutSettings';
 import type { HadithBundle } from '../types';
 
 type ThemeMode = 'light' | 'dark';
@@ -16,6 +17,7 @@ interface SidebarControlsProps {
   onOpenAbout: () => void;
   onToggleTheme: () => void;
   onFontSizeChange: (key: 'narrator' | 'matn', rawValue: string) => void;
+  onVerticalSpacingChange: (rawValue: string) => void;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
   onRemoveHighlightLegend: (legendId: string) => void;
 }
@@ -32,6 +34,7 @@ export function SidebarControls({
   onOpenAbout,
   onToggleTheme,
   onFontSizeChange,
+  onVerticalSpacingChange,
   onImport,
   onRemoveHighlightLegend,
 }: SidebarControlsProps) {
@@ -99,6 +102,18 @@ export function SidebarControls({
                   step={1}
                   value={bundle.fontSizes.matn}
                   onChange={(event) => onFontSizeChange('matn', event.target.value)}
+                />
+              </label>
+              <label className="font-control">
+                <span>Vertical spacing {normalizeVerticalSpacing(bundle.verticalSpacing)}px</span>
+                <input
+                  type="range"
+                  aria-label="Vertical spacing"
+                  min={MIN_VERTICAL_SPACING}
+                  max={MAX_VERTICAL_SPACING}
+                  step={10}
+                  value={normalizeVerticalSpacing(bundle.verticalSpacing)}
+                  onChange={(event) => onVerticalSpacingChange(event.target.value)}
                 />
               </label>
             </div>

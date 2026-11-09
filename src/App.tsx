@@ -24,7 +24,8 @@ import { useGraphViewport } from './hooks/useGraphViewport';
 import { useNodeDrag } from './hooks/useNodeDrag';
 import { useNodeResize } from './hooks/useNodeResize';
 import { useReportEditor } from './hooks/useReportEditor';
-import { buildNarratorFocusGraph, getNarratorFocus, getNarratorOptions } from './narratorFocus';
+import { buildNarratorFocusGraph, getNarratorFocus, getNarratorOptions, getStudentFocus } from './narratorFocus';
+import { normalizeVerticalSpacing } from './layoutSettings';
 import type { NarratorFocusMode } from './narratorFocus';
 import type { GraphNode, HadithBundle, NodePositionMap } from './types';
 import khosrowDaughterExample from '../drawio_graph_conversion/khosrow_daughter.hadith-graph.json';
@@ -83,6 +84,7 @@ function App() {
   const [focusedNarrator, setFocusedNarrator] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState<NarratorFocusMode>('local');
   const [focusPositions, setFocusPositions] = useState<Record<string, NodePositionMap>>({});
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fullGraphViewport = useRef<{ zoom: number; scrollLeft: number; scrollTop: number } | null>(null);
@@ -92,21 +94,29 @@ function App() {
     [bundle.reports, focusedNarrator],
   );
   const isLocalFocus = focus !== null && focusMode === 'local';
+  const studentFocus = useMemo(
+    () => isLocalFocus && focus && selectedStudent ? getStudentFocus(focus, selectedStudent) : null,
+    [focus, isLocalFocus, selectedStudent],
+  );
+  const studentReportIds = useMemo(
+    () => studentFocus ? new Set(studentFocus.reports.map((report) => report.id)) : undefined,
+    [studentFocus],
+  );
   const reportNumbers = useMemo(
     () => new Map(bundle.reports.map((report, index) => [report.id, index + 1])),
     [bundle.reports],
   );
 
   const graph = useMemo(
-    () => isLocalFocus && focus ? buildNarratorFocusGraph(focus, bundle.fontSizes) : buildRenderableGraph(
+    () => isLocalFocus && focus ? buildNarratorFocusGraph(focus, bundle.fontSizes, { verticalSpacing: bundle.verticalSpacing }) : buildRenderableGraph(
       focus?.reports ?? bundle.reports,
       focus ? focusPositions[focus.name] ?? {} : bundle.nodePositions,
       bundle.nodeWidths,
       bundle.fontSizes,
       bundle.highlightLegend,
-      { reportNumbers },
+      { reportNumbers, verticalSpacing: bundle.verticalSpacing },
     ),
-    [bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend, focus, isLocalFocus, focusPositions, reportNumbers],
+    [bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend, bundle.verticalSpacing, focus, isLocalFocus, focusPositions, reportNumbers],
   );
 
   const selectedSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -133,6 +143,12 @@ function App() {
       setFocusedNarrator(null);
     }
   }, [focusedNarrator, narratorOptions]);
+
+  useEffect(() => {
+    if (!isLocalFocus || !focus?.students.some((student) => student.name === selectedStudent)) {
+      setSelectedStudent(null);
+    }
+  }, [focus, isLocalFocus, selectedStudent]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -211,9 +227,10 @@ function App() {
 
   const selectedEdgeSet = useMemo(
     () => new Set(isLocalFocus
-      ? graph.edges.filter((edge) => edge.reports?.some((report) => report.id === reportEditor.editingReport?.id)).map((edge) => edge.id)
+      ? graph.edges.filter((edge) => edge.reports?.some((report) => studentReportIds
+        ? studentReportIds.has(report.id) : report.id === reportEditor.editingReport?.id)).map((edge) => edge.id)
       : reportEditor.editingReport ? getEdgeIdsForReport(reportEditor.editingReport) : []),
-    [graph.edges, isLocalFocus, reportEditor.editingReport],
+    [graph.edges, isLocalFocus, reportEditor.editingReport, studentReportIds],
   );
 
   const visibleSelectedSet = useMemo(() => {
@@ -222,11 +239,15 @@ function App() {
     }
     const selected = new Set(graph.edges.filter((edge) => selectedEdgeSet.has(edge.id))
       .flatMap((edge) => [edge.source, edge.target]));
-    if (focus?.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)) {
+    if (studentFocus || focus?.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)) {
       graph.nodes.filter((node) => node.id.startsWith('focus:center:')).forEach((node) => selected.add(node.id));
     }
     return selected;
-  }, [focus, graph.edges, graph.nodes, isLocalFocus, reportEditor.editingReport, selectedEdgeSet, selectedSet]);
+  }, [focus, graph.edges, graph.nodes, isLocalFocus, reportEditor.editingReport, selectedEdgeSet, selectedSet, studentFocus]);
+
+  const localSelectedReport = focus?.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)
+    && (!studentReportIds || studentReportIds.has(reportEditor.editingReport?.id ?? ''))
+    ? reportEditor.editingReport : null;
 
   const selectedMatnNode = useMemo(() => {
     if (!reportEditor.editingReport) {
@@ -307,6 +328,7 @@ function App() {
     }
 
     if (isLocalFocus) {
+      setSelectedStudent(null);
       setSelectedNodeIds([]);
       event.preventDefault();
       return;
@@ -323,11 +345,24 @@ function App() {
     viewport.handleGraphPointerDown(event);
   }, [isBoxSelecting, isDragging, isResizing, viewport]);
 
+  const handleSelectStudent = useCallback((name: string): void => {
+    if (!isLocalFocus || isDragging || isResizing || isBoxSelecting || !focus?.students.some((student) => student.name === name)) {
+      return;
+    }
+    const next = selectedStudent === name ? null : name;
+    setSelectedStudent(next);
+    setMessage(next ? `Highlighted sources reported by ${name}. Choose a report-count badge to inspect individual reports.` : 'Student source highlight cleared.');
+  }, [focus, isLocalFocus, isDragging, isResizing, isBoxSelecting, selectedStudent]);
+
   const handleNodePointerDown = useCallback((event: ReactPointerEvent<SVGGElement>, nodeId: string): void => {
     if (isBoxSelecting || isResizing) {
       return;
     }
     if (isLocalFocus && event.button === 0) {
+      const student = graph.nodes.find((node) => node.id === nodeId && node.id.startsWith('focus:student:'));
+      if (student) {
+        handleSelectStudent(student.label);
+      }
       event.preventDefault();
       event.stopPropagation();
       return;
@@ -355,6 +390,8 @@ function App() {
     isBoxSelecting,
     isResizing,
     isLocalFocus,
+    graph.nodes,
+    handleSelectStudent,
     onNodePointerDownRaw,
     reportEditor,
     selectedNodeIds,
@@ -366,7 +403,7 @@ function App() {
       return;
     }
 
-    reportEditor.selectReportFromMatnNode(getMatnNodeIdForReport(reportId));
+    reportEditor.selectReportFromMatnNode(getMatnNodeIdForReport(reportId), () => setSelectedStudent(null));
   }, [isBoxSelecting, isDragging, isResizing, reportEditor]);
 
   const handleFocusNarrator = useCallback((name: string | null): void => {
@@ -387,8 +424,14 @@ function App() {
       };
     }
     resetBoxSelection();
+    setSelectedStudent(null);
     setFocusedNarrator(name);
   }, [isDragging, isResizing, isBoxSelecting, reportEditor, resetBoxSelection, focusedNarrator, viewport]);
+
+  const handleFocusModeChange = useCallback((mode: NarratorFocusMode): void => {
+    setSelectedStudent(null);
+    setFocusMode(mode);
+  }, []);
 
   const focusViewportKey = useRef('');
   useEffect(() => {
@@ -419,6 +462,7 @@ function App() {
   const loadBundleIntoApp = useCallback((nextBundle: HadithBundle, successMessage: string): void => {
     setBundle(nextBundle);
     setFocusedNarrator(null);
+    setSelectedStudent(null);
     setFocusPositions({});
     fullGraphViewport.current = null;
     reportEditor.resetEditor();
@@ -440,6 +484,7 @@ function App() {
     const nextBundle = createEmptyBundle(title);
     setBundle(nextBundle);
     setFocusedNarrator(null);
+    setSelectedStudent(null);
     setFocusPositions({});
     fullGraphViewport.current = null;
     reportEditor.resetEditor();
@@ -480,6 +525,12 @@ function App() {
       };
     });
   }, [bundle.fontSizes]);
+
+  const handleVerticalSpacingChange = useCallback((rawValue: string): void => {
+    const verticalSpacing = normalizeVerticalSpacing(Number(rawValue));
+    setBundle((previous) => normalizeVerticalSpacing(previous.verticalSpacing) === verticalSpacing
+      ? previous : { ...previous, verticalSpacing, updatedAt: new Date().toISOString() });
+  }, []);
 
   const handleImport = useCallback(async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
@@ -619,6 +670,7 @@ function App() {
               onOpenAbout={() => setIsAboutOpen(true)}
               onToggleTheme={() => setTheme((current) => (current === 'light' ? 'dark' : 'light'))}
               onFontSizeChange={handleFontSizeChange}
+              onVerticalSpacingChange={handleVerticalSpacingChange}
               onImport={handleImport}
               onRemoveHighlightLegend={handleRemoveHighlightLegend}
             />
@@ -662,14 +714,24 @@ function App() {
               narrator={focusedNarrator}
               mode={focusMode}
               onNarratorChange={handleFocusNarrator}
-              onModeChange={setFocusMode}
+              onModeChange={handleFocusModeChange}
               matchingReportCount={focus?.reports.length ?? bundle.reports.length}
               totalReportCount={bundle.reports.length}
             />
           ) : null}
+          {studentFocus && focus ? (
+            <div className="student-focus-summary" role="status" aria-label="Student source highlight">
+              <span>
+                <bdi>{studentFocus.student}</bdi>: {studentFocus.reports.length} report{studentFocus.reports.length === 1 ? '' : 's'}.
+                {' '}Sources: {studentFocus.sources.map((source) => <bdi key={source} className="student-focus-source">{source}</bdi>)}
+                {studentFocus.includesFocusedAuthority ? <span className="student-focus-source"><bdi>{focus.name}</bdi> (attribution ends here)</span> : null}
+              </span>
+              <button type="button" onClick={() => setSelectedStudent(null)}>Clear student highlight</button>
+            </div>
+          ) : null}
           </div>
           <div className={isLocalFocus
-            ? `graph-workspace local-focus-workspace${focus?.reportReferences.some((report) => report.id === reportEditor.editingReport?.id) ? ' with-local-report' : ''}`
+            ? `graph-workspace local-focus-workspace${localSelectedReport ? ' with-local-report' : ''}`
             : 'graph-workspace'}>
           <div
             ref={viewport.graphScrollRef}
@@ -709,6 +771,7 @@ function App() {
                 selectedSet={visibleSelectedSet}
                 selectedEdgeSet={selectedEdgeSet}
                 selectedReportId={reportEditor.editingReport?.id}
+                highlightedReportIds={studentReportIds}
                 isDragging={isDragging}
                 isResizing={isResizing}
                 onCanvasPointerDown={handleCanvasPointerDown}
@@ -717,6 +780,8 @@ function App() {
                 onSelectReport={handleSelectReport}
                 onFocusNarrator={handleFocusNarrator}
                 focusedNarrator={focusedNarrator}
+                selectedStudent={selectedStudent}
+                onSelectStudent={isLocalFocus ? handleSelectStudent : undefined}
               />
               {selectedReportNoteOverlay && reportEditor.editingReport ? (
                 <ReportNoteCard
@@ -732,8 +797,7 @@ function App() {
           {isLocalFocus && focus ? (
             <div className="focus-details">
               <NarratorFocusReport
-                report={focus.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)
-                  ? reportEditor.editingReport : null}
+                report={localSelectedReport}
                 reportNumber={reportEditor.editingReportIndex + 1}
                 highlightLegend={bundle.highlightLegend}
                 matnFontSize={bundle.fontSizes.matn}
@@ -748,7 +812,7 @@ function App() {
               <span><i className="graph-key-narrator" aria-hidden="true" /> Narrator</span>
               <span><i className="graph-key-matn" aria-hidden="true" /> Matn</span>
             </div>
-            <span className="graph-hint">{isLocalFocus ? 'Double-click a narrator to focus' : 'Drag nodes to arrange · Double-click a narrator to focus'} <span aria-hidden="true">·</span> Ctrl + scroll to zoom</span>
+            <span className="graph-hint">{isLocalFocus ? 'Click a student to highlight sources · Double-click a narrator to focus' : 'Drag nodes to arrange · Double-click a narrator to focus'} <span aria-hidden="true">·</span> Ctrl + scroll to zoom</span>
             <span className="graph-zoom">{Math.round(viewport.zoom * 100)}%</span>
           </div>
         </section>

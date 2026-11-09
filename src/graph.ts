@@ -16,6 +16,7 @@ import { orderLayers } from './layerOrdering';
 import { positionLayers } from './layerPlacement';
 import type { LayoutFootprint } from './layerPlacement';
 import { buildVerticalCurve, getReportCountBadgeRadius } from './edgeGeometry';
+import { normalizeVerticalSpacing } from './layoutSettings';
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
@@ -44,7 +45,6 @@ const LINE_HEIGHT_PADDING = 4;
 const TEXT_MEASURE_FONT_FAMILY = "'IBM Plex Sans', 'Noto Naskh Arabic', 'Trebuchet MS', sans-serif";
 const NARRATOR_BASE_HEIGHT = 24;
 const HORIZONTAL_GAP = 70;
-const VERTICAL_GAP = 120;
 const PADDING_X = 96;
 const PADDING_Y = 72;
 
@@ -700,6 +700,7 @@ function buildAutoLayout(
   nodeMeta: Map<string, NodeMeta>,
   edges: Array<{ source: string; target: string }>,
   footprints: LayoutFootprint[],
+  verticalGap: number,
 ): AutoLayout {
   const rowIndices = Array.from(rows.keys()).sort((a, b) => a - b);
   const rowCenterY = new Map<number, number>();
@@ -710,7 +711,7 @@ function buildAutoLayout(
     const rowHeight = Math.max(...rowNodes.map((id) => nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT));
     const centerY = yCursor + rowHeight / 2;
     rowCenterY.set(rowIndex, centerY);
-    yCursor += rowHeight + VERTICAL_GAP;
+    yCursor += rowHeight + verticalGap;
   }
 
   let autoWidth = DEFAULT_GRAPH_WIDTH;
@@ -739,7 +740,7 @@ function buildAutoLayout(
   }
 
   const autoHeight = rowIndices.length > 0
-    ? Math.max(DEFAULT_GRAPH_HEIGHT, yCursor - VERTICAL_GAP + PADDING_Y)
+    ? Math.max(DEFAULT_GRAPH_HEIGHT, yCursor - verticalGap + PADDING_Y)
     : DEFAULT_GRAPH_HEIGHT;
 
   return {
@@ -790,11 +791,12 @@ function buildMatnNodes(
   topology: GraphTopology,
   nodeMeta: Map<string, NodeMeta>,
   narratorNodes: GraphNode[],
+  verticalGap: number,
 ): GraphNode[] {
   const narratorBottom = narratorNodes.length > 0
     ? Math.max(...narratorNodes.map((node) => node.y + node.height / 2))
     : PADDING_Y;
-  const matnTopY = narratorBottom + VERTICAL_GAP;
+  const matnTopY = narratorBottom + verticalGap;
   const narratorNodeById = new Map(narratorNodes.map((node) => [node.id, node]));
 
   const nodes = topology.matnNodeIds.map((id): GraphNode => {
@@ -919,6 +921,7 @@ export function hasNarratorCycle(reports: HadithReport[]): boolean {
 
 export interface GraphBuildOptions {
   reportNumbers?: ReadonlyMap<string, number>;
+  verticalSpacing?: number;
 }
 
 export function buildRenderableGraph(
@@ -930,6 +933,7 @@ export function buildRenderableGraph(
   options: GraphBuildOptions = {},
 ): RenderableGraph {
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
+  const verticalGap = normalizeVerticalSpacing(options.verticalSpacing);
   const highlightLegendById = new Map(highlightLegend.map((entry) => [entry.id, entry]));
   const indexedGraph = buildIndexedGraph(reports, options.reportNumbers);
 
@@ -943,9 +947,9 @@ export function buildRenderableGraph(
     const anchor = indexedGraph.nodesById.get(id)?.matnAnchorId;
     return anchor ? [{ anchor, width: nodeMeta.get(id)?.width ?? MATN_NODE_DEFAULT_WIDTH }] : [];
   });
-  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()], footprints);
+  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()], footprints, verticalGap);
   const narratorNodes = buildNarratorNodes(indexedGraph, topology, nodeMeta, autoLayout, nodePositions);
-  const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, narratorNodes);
+  const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, narratorNodes, verticalGap);
   const nodeById = new Map<string, GraphNode>([...narratorNodes, ...matnNodes].map((node) => [node.id, node]));
   const nodes = Array.from(indexedGraph.nodesById.keys())
     .map((id) => nodeById.get(id))

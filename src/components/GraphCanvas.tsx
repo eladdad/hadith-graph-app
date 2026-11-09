@@ -23,6 +23,7 @@ interface GraphCanvasProps {
   selectedSet: Set<string>;
   selectedEdgeSet: Set<string>;
   selectedReportId?: string | null;
+  highlightedReportIds?: ReadonlySet<string>;
   isDragging: boolean;
   isResizing: boolean;
   onCanvasPointerDown: (event: ReactPointerEvent<SVGSVGElement>) => void;
@@ -31,6 +32,8 @@ interface GraphCanvasProps {
   onSelectReport?: (reportId: string) => void;
   onFocusNarrator?: (name: string) => void;
   focusedNarrator?: string | null;
+  selectedStudent?: string | null;
+  onSelectStudent?: (name: string) => void;
 }
 
 interface MeasuredMatnHighlightOverlay {
@@ -111,6 +114,7 @@ export function GraphCanvas({
   selectedSet,
   selectedEdgeSet,
   selectedReportId,
+  highlightedReportIds,
   isDragging,
   isResizing,
   onCanvasPointerDown,
@@ -119,6 +123,8 @@ export function GraphCanvas({
   onSelectReport,
   onFocusNarrator,
   focusedNarrator,
+  selectedStudent,
+  onSelectStudent,
 }: GraphCanvasProps) {
   const showHighlightMarkers = zoom <= MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
   const highlightSegmentRefs = useRef(new Map<string, SVGTSpanElement>());
@@ -234,10 +240,12 @@ export function GraphCanvas({
 
       {graph.nodes.map((node) => {
         const selected = selectedSet.has(node.id);
+        const isStudent = Boolean(onSelectStudent && node.id.startsWith('focus:student:'));
         const className = [
           'node-group',
           node.isAuthority || node.attributedReports?.length ? 'authority' : '',
           node.type === 'narrator' && node.label === focusedNarrator ? 'focused-narrator' : '',
+          isStudent ? 'student-node' : '',
           selected ? 'selected' : '',
           isDragging && selected ? 'dragging' : '',
           isResizing && selected ? 'resizing' : '',
@@ -262,7 +270,18 @@ export function GraphCanvas({
             data-node-id={node.id}
             data-node-type={node.type}
             className={className}
+            role={isStudent ? 'button' : undefined}
+            tabIndex={isStudent ? 0 : undefined}
+            aria-label={isStudent ? `Highlight sources reported by ${node.label}` : undefined}
+            aria-pressed={isStudent ? selectedStudent === node.label : undefined}
             onPointerDown={(event) => onNodePointerDown(event, node.id)}
+            onKeyDown={(event) => {
+              if (isStudent && event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                event.stopPropagation();
+                onSelectStudent?.(node.label);
+              }
+            }}
             onDoubleClick={(event) => {
               if (node.type === 'narrator' && !(event.target as Element).closest('.report-count-badge')) {
                 event.preventDefault();
@@ -302,7 +321,8 @@ export function GraphCanvas({
                       y={-node.height / 2 + REPORT_COUNT_BADGE_RADIUS + 1}
                       label="Matn wording"
                       selectedReportId={selectedReportId}
-                      className={selected ? 'selected' : undefined}
+                      highlightedReportIds={highlightedReportIds}
+                      className={!highlightedReportIds && selected ? 'selected' : undefined}
                       onSelectReport={onSelectReport}
                       revision={badgeRevision}
                     />
@@ -432,7 +452,8 @@ export function GraphCanvas({
                   y={0}
                   label={`${node.label} attributions`}
                   selectedReportId={selectedReportId}
-                  className={selected ? 'selected' : undefined}
+                  highlightedReportIds={highlightedReportIds}
+                  className={!highlightedReportIds && !selectedReportId && selected ? 'selected' : undefined}
                   onSelectReport={onSelectReport}
                   revision={badgeRevision}
                 />
@@ -451,6 +472,7 @@ export function GraphCanvas({
               y={edge.labelY}
               label={`${nodeLabels.get(edge.source) ?? edge.source} → ${nodeLabels.get(edge.target) ?? edge.target}`}
               selectedReportId={selectedReportId}
+              highlightedReportIds={highlightedReportIds}
               className={selectedEdgeSet.has(edge.id) ? 'selected' : undefined}
               onSelectReport={onSelectReport}
               revision={badgeRevision}

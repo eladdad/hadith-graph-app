@@ -59,7 +59,7 @@ export interface ReportEditorController {
   clearActiveReportSelection: () => boolean;
   startNewReport: () => void;
   selectReport: (report: HadithReport) => void;
-  selectReportFromMatnNode: (nodeId: string) => boolean;
+  selectReportFromMatnNode: (nodeId: string, onSelected?: () => void) => boolean;
   useReportAsTemplate: (report: HadithReport) => void;
   setMatn: (value: string) => void;
   changeNarrator: (index: number, value: string) => void;
@@ -286,11 +286,13 @@ export function useReportEditor({
   }, [confirmDiscardEditorChanges, resetBoxSelection, resetEditor, setMessage, setSelectedNodeIds]);
 
   const selectReport = useCallback((report: HadithReport): void => {
-    if (editingReportId !== report.id && !confirmDiscardEditorChanges()) {
-      return;
+    if (editingReportId !== report.id) {
+      if (!confirmDiscardEditorChanges()) {
+        return;
+      }
+      populateEditorFromReport(report, report.id);
     }
 
-    populateEditorFromReport(report, report.id);
     setSelectedNodeIds(getNodeIdsForReport(report));
     resetBoxSelection();
     setMessage('Editing selected report. Save changes to update the graph.');
@@ -303,7 +305,7 @@ export function useReportEditor({
     setSelectedNodeIds,
   ]);
 
-  const selectReportFromMatnNode = useCallback((nodeId: string): boolean => {
+  const selectReportFromMatnNode = useCallback((nodeId: string, onSelected?: () => void): boolean => {
     const reportId = getReportIdForMatnNode(nodeId);
     if (!reportId) {
       return false;
@@ -314,14 +316,17 @@ export function useReportEditor({
       return false;
     }
 
-    if (editingReportId !== report.id && !confirmDiscardEditorChanges()) {
-      return true;
+    if (editingReportId !== report.id) {
+      if (!confirmDiscardEditorChanges()) {
+        return true;
+      }
+      populateEditorFromReport(report, report.id);
     }
 
-    populateEditorFromReport(report, report.id);
     setSelectedNodeIds(getNodeIdsForReport(report));
     resetBoxSelection();
     setMessage('Editing selected report. Save changes to update the graph.');
+    onSelected?.();
     return true;
   }, [
     bundle.reports,

@@ -66,6 +66,8 @@ export function AboutDialog({
               <li>Click a matn node to select the whole report, load it into the editor, and show its report note card.</li>
               <li>Attribution authorities have a distinct colour. Circular badges show report counts beside authorities, on labelled edges, and above matns. Click a badge to reveal the individual report numbers, then choose one to select that report.</li>
               <li>Search for a narrator or double-click their node to focus. Sources &amp; students places sources above the narrator and students below, with report-count badges on curved edges. Complete reports shows every full chain and matn containing that narrator, across authorities. All reports restores the full graph.</li>
+              <li>In Sources &amp; students, click a student to highlight the sources used in their reports. The focused narrator's attribution badge highlights when those reports end at that narrator. Click the student again or use Clear student highlight to reset.</li>
+              <li>Options includes Vertical spacing for automatic narrator levels in every view. Export saves this setting; manually positioned narrators keep their saved coordinates.</li>
               <li>Focus views retain the original report numbers. Their node arrangements are separate from the saved full graph layout; exporting JSON always includes the whole bundle.</li>
             </ul>
           </div>

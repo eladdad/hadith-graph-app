@@ -253,7 +253,9 @@ describe('narrator focus views', () => {
     expect(narrator).toHaveValue('Outside authority');
     expect(screen.queryByRole('heading', { name: 'Edit Report #3' })).not.toBeInTheDocument();
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
-    expect(container.querySelectorAll('.graph-svg .report-count-badge')).toHaveLength(1);
+    expect(container.querySelectorAll('.graph-svg .report-count-badge')).toHaveLength(2);
+    expect(getGraphNode(container, 'focus:center:Outside authority').querySelector('.authority-report-links .report-count-badge'))
+      .toHaveAttribute('data-report-count', '1');
     await selectNumber(user, 2);
     expectSelectedReport(2);
   });

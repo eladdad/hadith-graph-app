@@ -76,7 +76,7 @@ describe('narrator focus', () => {
     expect(graph.nodes.find((node) => node.label === 'Shared narrator')?.isAuthority).toBe(true);
     expect(graph.nodes.find((node) => node.label === 'Teacher')?.isAuthority).toBe(false);
     expect(graph.nodes.find((node) => node.label === 'Shared narrator')?.attributedReports)
-      .toEqual([{ id: 'only', number: 3 }]);
+      .toEqual([{ id: 'first', number: 1 }, { id: 'only', number: 3 }]);
     expect(graph.nodes.filter((node) => node.label !== 'Shared narrator')
       .every((node) => node.attributedReports === undefined)).toBe(true);
     expect(graph.edges).toHaveLength(2);

@@ -6,6 +6,7 @@
   hasNarratorCycle,
 } from './graph';
 import { sanitizeHighlightLegend, sanitizeMatnHighlights } from './matnHighlights';
+import { DEFAULT_VERTICAL_SPACING, normalizeVerticalSpacing } from './layoutSettings';
 import type {
   HadithBundle,
   HadithFontSizes,
@@ -293,6 +294,7 @@ export function createEmptyBundle(title = 'Untitled Bundle'): HadithBundle {
     highlightLegend: [],
     nodePositions: {},
     nodeWidths: {},
+    verticalSpacing: DEFAULT_VERTICAL_SPACING,
     fontSizes: {
       narrator: DEFAULT_NARRATOR_FONT_SIZE,
       matn: DEFAULT_MATN_FONT_SIZE,
@@ -586,6 +588,7 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       nodePositions: normalizeLegacyMatnNodeIds(parsedNodePositions.positions) as NodePositionMap,
       nodeWidths: normalizeLegacyMatnNodeIds(parsedNodeWidths.widths) as NodeWidthMap,
       fontSizes: parsedFontSizes.fontSizes,
+      verticalSpacing: normalizeVerticalSpacing(parsed.verticalSpacing),
     },
   };
 }

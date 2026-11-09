@@ -10,6 +10,7 @@ interface ReportCountBadgeProps {
   y: number;
   label: string;
   selectedReportId?: string | null;
+  highlightedReportIds?: ReadonlySet<string>;
   onSelectReport?: (reportId: string) => void;
   revision?: unknown;
   className?: string;
@@ -23,6 +24,7 @@ export function ReportCountBadge({
   y,
   label,
   selectedReportId,
+  highlightedReportIds,
   onSelectReport,
   revision,
   className,
@@ -36,7 +38,9 @@ export function ReportCountBadge({
   const anchorPositionRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const popupId = useId();
-  const selected = references.some((report) => report.id === selectedReportId);
+  const isHighlighted = (report: GraphReportReference) => highlightedReportIds
+    ? highlightedReportIds.has(report.id) : report.id === selectedReportId;
+  const selected = references.some(isHighlighted);
 
   const close = useCallback((restoreFocus = false): void => {
     setOpen(false);
@@ -208,7 +212,7 @@ export function ReportCountBadge({
                 data-report-id={report.id}
                 className="report-count-option"
                 aria-label={`Select report #${report.number}`}
-                aria-pressed={report.id === selectedReportId}
+                aria-pressed={isHighlighted(report)}
                 disabled={!onSelectReport}
                 onClick={() => {
                   onSelectReport?.(report.id);

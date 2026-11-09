@@ -733,6 +733,47 @@ textarea:focus {
   stroke-dasharray: 6 3;
 }
 
+.node-group.student-node {
+  cursor: pointer;
+}
+
+.node-group.student-node:focus-visible .node-narrator {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.student-focus-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1.5rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--accent-soft);
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.student-focus-summary button {
+  flex: 0 0 auto;
+}
+
+.student-focus-summary > span {
+  min-width: 0;
+}
+
+.student-focus-source {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0.15rem 0 0.15rem 0.35rem;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+}
+
 .shared-legend {
   display: grid;
   gap: 0.55rem;

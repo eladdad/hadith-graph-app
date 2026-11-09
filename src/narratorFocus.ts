@@ -1,5 +1,6 @@
 import { AUTHORITY_REPORT_GAP, getAuthorityReportMetrics, getNormalizedFontSizes, wrapTextToWidth } from './graph';
 import { buildVerticalCurve } from './edgeGeometry';
+import { normalizeVerticalSpacing } from './layoutSettings';
 import type { GraphEdge, GraphNode, GraphReportReference, HadithFontSizes, HadithReport, RenderableGraph } from './types';
 
 export type NarratorFocusMode = 'local' | 'reports';
@@ -29,6 +30,13 @@ export interface NarratorFocus {
   cells: FocusCell[];
 }
 
+export interface StudentFocus {
+  student: string;
+  reports: GraphReportReference[];
+  sources: string[];
+  includesFocusedAuthority: boolean;
+}
+
 export function getNarratorOptions(reports: HadithReport[]): NarratorOption[] {
   const counts = new Map<string, number>();
   for (const report of reports) {
@@ -37,7 +45,8 @@ export function getNarratorOptions(reports: HadithReport[]): NarratorOption[] {
     }
   }
   return [...counts].map(([name, reportCount]) => ({ name, reportCount }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+    .sort((a, b) => b.reportCount - a.reportCount || a.name.localeCompare(b.name, 'ar')
+      || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
 function addNeighbor(neighbors: Map<string, FocusNeighbor>, name: string | null, reference: GraphReportReference): void {
@@ -101,11 +110,23 @@ export function getNarratorFocus(reports: HadithReport[], name: string): Narrato
   };
 }
 
+/** The sources attested in this student's reports, including a terminal attribution. */
+export function getStudentFocus(focus: NarratorFocus, studentName: string): StudentFocus {
+  const cells = focus.cells.filter((cell) => cell.student === studentName);
+  const reportIds = new Set(cells.flatMap((cell) => cell.reports.map((report) => report.id)));
+  const sourceNames = new Set(cells.flatMap((cell) => cell.source === null ? [] : [cell.source]));
+  return {
+    student: studentName,
+    reports: focus.reportReferences.filter((report) => reportIds.has(report.id)),
+    sources: focus.sources.filter((source) => sourceNames.has(source.name)).map((source) => source.name),
+    includesFocusedAuthority: cells.some((cell) => cell.source === null),
+  };
+}
+
 const LOCAL_NODE_WIDTH = 220;
 const LOCAL_NODE_GAP = 70;
 const LOCAL_PADDING_X = 72;
 const LOCAL_PADDING_Y = 64;
-const LOCAL_CONNECTOR_GAP = 140;
 
 function makeLocalNode(id: string, name: string, fontSize: number): GraphNode {
   const labelLines = wrapTextToWidth(name, LOCAL_NODE_WIDTH - 32, fontSize);
@@ -155,16 +176,24 @@ function localEdge(
   };
 }
 
-export function buildNarratorFocusGraph(focus: NarratorFocus, fontSizes?: Partial<HadithFontSizes>): RenderableGraph {
+export function buildNarratorFocusGraph(
+  focus: NarratorFocus,
+  fontSizes?: Partial<HadithFontSizes>,
+  options: { verticalSpacing?: number } = {},
+): RenderableGraph {
   if (focus.reports.length === 0) {
     return { nodes: [], edges: [], width: 900, height: 420, hasCycle: false, shiftX: 0, shiftY: 0 };
   }
   const fontSize = getNormalizedFontSizes(fontSizes).narrator;
+  const verticalGap = normalizeVerticalSpacing(options.verticalSpacing);
   const center = makeLocalNode(`focus:center:${focus.name}`, focus.name, fontSize);
-  const standaloneReports = focus.cells.find((cell) => cell.source === null && cell.student === null)?.reports;
-  if (standaloneReports?.length) {
-    // An isolated attribution has no edge on which to display its number.
-    center.attributedReports = standaloneReports;
+  const terminalIds = new Set(focus.cells.filter((cell) => cell.source === null)
+    .flatMap((cell) => cell.reports.map((report) => report.id)));
+  const terminalReports = focus.reportReferences.filter((report) => terminalIds.has(report.id));
+  if (terminalReports.length > 0) {
+    // These reports end at the focused authority. Keep that evidence on the
+    // centre node rather than inventing an authority-to-itself transmission.
+    center.attributedReports = terminalReports;
   }
   const centerAnnotation = getAuthorityReportMetrics(center.attributedReports);
   center.height = Math.max(center.height, centerAnnotation.height);
@@ -176,8 +205,8 @@ export function buildNarratorFocusGraph(focus: NarratorFocus, fontSizes?: Partia
   const studentHeight = Math.max(0, ...students.map((student) => student.height));
   const width = Math.max(900, Math.max(rowWidth(sources), rowWidth(students), centerFootprintWidth) + LOCAL_PADDING_X * 2);
   const sourceBottom = LOCAL_PADDING_Y + sourceHeight;
-  const centerTop = sources.length > 0 ? sourceBottom + LOCAL_CONNECTOR_GAP : LOCAL_PADDING_Y;
-  const studentTop = centerTop + center.height + LOCAL_CONNECTOR_GAP;
+  const centerTop = sources.length > 0 ? sourceBottom + verticalGap : LOCAL_PADDING_Y;
+  const studentTop = centerTop + center.height + verticalGap;
   positionRow(sources, LOCAL_PADDING_Y + sourceHeight / 2, width);
   positionRow([center], centerTop + center.height / 2, width);
   positionRow(students, studentTop + studentHeight / 2, width);

@@ -44,6 +44,7 @@ export interface HadithBundle {
   nodePositions: NodePositionMap;
   nodeWidths: NodeWidthMap;
   fontSizes: HadithFontSizes;
+  verticalSpacing?: number;
 }
 
 export type GraphNodeType = 'narrator' | 'matn';
