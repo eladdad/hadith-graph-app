@@ -30,6 +30,8 @@ interface GraphCanvasProps {
   onNodePointerDown: (event: ReactPointerEvent<SVGGElement>, nodeId: string) => void;
   onResizePointerDown: (event: ReactPointerEvent<SVGRectElement>, node: GraphNode, edge: 'left' | 'right') => void;
   onSelectReport?: (reportId: string) => void;
+  onFocusNarrator?: (name: string) => void;
+  focusedNarrator?: string | null;
 }
 
 interface MeasuredMatnHighlightOverlay {
@@ -116,6 +118,8 @@ export function GraphCanvas({
   onNodePointerDown,
   onResizePointerDown,
   onSelectReport,
+  onFocusNarrator,
+  focusedNarrator,
 }: GraphCanvasProps) {
   const showHighlightMarkers = zoom <= MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
   const highlightSegmentRefs = useRef(new Map<string, SVGTSpanElement>());
@@ -247,7 +251,8 @@ export function GraphCanvas({
         const selected = selectedSet.has(node.id);
         const className = [
           'node-group',
-          node.attributedReports?.length ? 'authority' : '',
+          node.isAuthority || node.attributedReports?.length ? 'authority' : '',
+          node.type === 'narrator' && node.label === focusedNarrator ? 'focused-narrator' : '',
           selected ? 'selected' : '',
           isDragging && selected ? 'dragging' : '',
           isResizing && selected ? 'resizing' : '',
@@ -273,7 +278,15 @@ export function GraphCanvas({
             data-node-type={node.type}
             className={className}
             onPointerDown={(event) => onNodePointerDown(event, node.id)}
+            onDoubleClick={(event) => {
+              if (node.type === 'narrator' && !(event.target as Element).closest('.report-number-link')) {
+                event.preventDefault();
+                event.stopPropagation();
+                onFocusNarrator?.(node.label);
+              }
+            }}
           >
+            {node.type === 'narrator' && onFocusNarrator ? <title>{node.label} — double-click to focus on this narrator</title> : null}
             {node.type === 'narrator' ? (
               <rect
                 x={-node.width / 2}

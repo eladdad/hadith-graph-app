@@ -74,6 +74,7 @@ export interface GraphNode {
   matnLineSegments?: GraphTextLine[];
   report?: GraphReportReference;
   attributedReports?: GraphReportReference[];
+  isAuthority?: boolean;
   type: GraphNodeType;
   x: number;
   y: number;

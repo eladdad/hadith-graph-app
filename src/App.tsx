@@ -1,4 +1,4 @@
-import { ChangeEvent, PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, Dispatch, PointerEvent as ReactPointerEvent, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './styles.css';
 import {
   bundleToJson,
@@ -13,6 +13,7 @@ import {
 } from './bundle';
 import { AboutDialog } from './components/AboutDialog';
 import { GraphCanvas } from './components/GraphCanvas';
+import { NarratorFocusControls, NarratorFocusReport, NarratorFocusTable } from './components/NarratorFocusPanel';
 import { ReportEditorPanel } from './components/ReportEditorPanel';
 import { ReportNoteCard } from './components/ReportNoteCard';
 import { ReportNoteDialog } from './components/ReportNoteDialog';
@@ -23,7 +24,9 @@ import { useGraphViewport } from './hooks/useGraphViewport';
 import { useNodeDrag } from './hooks/useNodeDrag';
 import { useNodeResize } from './hooks/useNodeResize';
 import { useReportEditor } from './hooks/useReportEditor';
-import type { GraphNode, HadithBundle } from './types';
+import { buildNarratorFocusGraph, getNarratorFocus, getNarratorOptions } from './narratorFocus';
+import type { NarratorFocusMode } from './narratorFocus';
+import type { GraphNode, HadithBundle, NodePositionMap } from './types';
 import khosrowDaughterExample from '../drawio_graph_conversion/khosrow_daughter.hadith-graph.json';
 
 const THEME_STORAGE_KEY = 'hadith-graph-theme';
@@ -77,18 +80,33 @@ function App() {
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
+  const [focusedNarrator, setFocusedNarrator] = useState<string | null>(null);
+  const [focusMode, setFocusMode] = useState<NarratorFocusMode>('local');
+  const [focusPositions, setFocusPositions] = useState<Record<string, NodePositionMap>>({});
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fullGraphViewport = useRef<{ zoom: number; scrollLeft: number; scrollTop: number } | null>(null);
+  const narratorOptions = useMemo(() => getNarratorOptions(bundle.reports), [bundle.reports]);
+  const focus = useMemo(
+    () => focusedNarrator ? getNarratorFocus(bundle.reports, focusedNarrator) : null,
+    [bundle.reports, focusedNarrator],
+  );
+  const isLocalFocus = focus !== null && focusMode === 'local';
+  const reportNumbers = useMemo(
+    () => new Map(bundle.reports.map((report, index) => [report.id, index + 1])),
+    [bundle.reports],
+  );
 
   const graph = useMemo(
-    () => buildRenderableGraph(
-      bundle.reports,
-      bundle.nodePositions,
+    () => isLocalFocus && focus ? buildNarratorFocusGraph(focus, bundle.fontSizes) : buildRenderableGraph(
+      focus?.reports ?? bundle.reports,
+      focus ? focusPositions[focus.name] ?? {} : bundle.nodePositions,
       bundle.nodeWidths,
       bundle.fontSizes,
       bundle.highlightLegend,
+      { reportNumbers },
     ),
-    [bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend],
+    [bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend, focus, isLocalFocus, focusPositions, reportNumbers],
   );
 
   const selectedSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -103,12 +121,18 @@ function App() {
   }, [bundle.reports]);
 
   useEffect(() => {
-    const validNodeIds = new Set(graph.nodes.map((node) => node.id));
+    const validNodeIds = new Set(bundle.reports.flatMap(getNodeIdsForReport));
     setSelectedNodeIds((previous) => {
       const filtered = previous.filter((id) => validNodeIds.has(id));
       return filtered.length === previous.length ? previous : filtered;
     });
-  }, [graph.nodes]);
+  }, [bundle.reports]);
+
+  useEffect(() => {
+    if (focusedNarrator && !narratorOptions.some((option) => option.name === focusedNarrator)) {
+      setFocusedNarrator(null);
+    }
+  }, [focusedNarrator, narratorOptions]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -120,6 +144,23 @@ function App() {
     graphHeight: graph.height,
   });
 
+  const setGraphLayoutBundle: Dispatch<SetStateAction<HadithBundle>> = useCallback((action) => {
+    if (!focusedNarrator) {
+      setBundle(action);
+      return;
+    }
+    if (isLocalFocus) {
+      return;
+    }
+    // Focus coordinates belong to a view; they must not overwrite the saved
+    // positions of shared narrators in the full corpus.
+    setFocusPositions((previous) => {
+      const viewBundle = { ...bundle, nodePositions: previous[focusedNarrator] ?? {} };
+      const next = typeof action === 'function' ? action(viewBundle) : action;
+      return { ...previous, [focusedNarrator]: next.nodePositions };
+    });
+  }, [bundle, focusedNarrator, isLocalFocus]);
+
   const { isDragging, handleNodePointerDown: onNodePointerDownRaw } = useNodeDrag({
     graphNodes: graph.nodes,
     graphShiftX: graph.shiftX ?? 0,
@@ -127,13 +168,13 @@ function App() {
     selectedNodeIds,
     setSelectedNodeIds,
     clientPointToSvg: viewport.clientPointToSvg,
-    setBundle,
+    setBundle: setGraphLayoutBundle,
     onDragCommitted: (movedCount, snapped) => {
-      setMessage(
+      setMessage(focusedNarrator ? 'Arranged this narrator focus view. The full graph layout is preserved.' : (
         snapped
           ? `Moved ${movedCount} selected node(s) and aligned them to nearby anchor lines. Export JSON to save this layout.`
-          : `Moved ${movedCount} selected node(s). Export JSON to save this layout.`,
-      );
+          : `Moved ${movedCount} selected node(s). Export JSON to save this layout.`
+      ));
     },
   });
 
@@ -169,9 +210,23 @@ function App() {
   });
 
   const selectedEdgeSet = useMemo(
-    () => new Set(reportEditor.editingReport ? getEdgeIdsForReport(reportEditor.editingReport) : []),
-    [reportEditor.editingReport],
+    () => new Set(isLocalFocus
+      ? graph.edges.filter((edge) => edge.reports?.some((report) => report.id === reportEditor.editingReport?.id)).map((edge) => edge.id)
+      : reportEditor.editingReport ? getEdgeIdsForReport(reportEditor.editingReport) : []),
+    [graph.edges, isLocalFocus, reportEditor.editingReport],
   );
+
+  const visibleSelectedSet = useMemo(() => {
+    if (!isLocalFocus) {
+      return selectedSet;
+    }
+    const selected = new Set(graph.edges.filter((edge) => selectedEdgeSet.has(edge.id))
+      .flatMap((edge) => [edge.source, edge.target]));
+    if (focus?.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)) {
+      graph.nodes.filter((node) => node.id.startsWith('focus:center:')).forEach((node) => selected.add(node.id));
+    }
+    return selected;
+  }, [focus, graph.edges, graph.nodes, isLocalFocus, reportEditor.editingReport, selectedEdgeSet, selectedSet]);
 
   const selectedMatnNode = useMemo(() => {
     if (!reportEditor.editingReport) {
@@ -186,7 +241,7 @@ function App() {
   const graphContentBaseHeight = Math.round(graph.height * viewport.zoom);
 
   const selectedReportNoteOverlay = useMemo(() => {
-    if (!reportEditor.editingReport || !selectedMatnNode) {
+    if (!reportEditor.editingReport || !selectedMatnNode || viewport.zoom <= 0.3) {
       return null;
     }
 
@@ -251,8 +306,14 @@ function App() {
       return;
     }
 
+    if (isLocalFocus) {
+      setSelectedNodeIds([]);
+      event.preventDefault();
+      return;
+    }
+
     onCanvasPointerDownRaw(event);
-  }, [onCanvasPointerDownRaw, reportEditor]);
+  }, [isLocalFocus, onCanvasPointerDownRaw, reportEditor]);
 
   const handleGraphPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>): void => {
     if (isDragging || isResizing || isBoxSelecting) {
@@ -264,6 +325,11 @@ function App() {
 
   const handleNodePointerDown = useCallback((event: ReactPointerEvent<SVGGElement>, nodeId: string): void => {
     if (isBoxSelecting || isResizing) {
+      return;
+    }
+    if (isLocalFocus && event.button === 0) {
+      event.preventDefault();
+      event.stopPropagation();
       return;
     }
 
@@ -288,6 +354,7 @@ function App() {
   }, [
     isBoxSelecting,
     isResizing,
+    isLocalFocus,
     onNodePointerDownRaw,
     reportEditor,
     selectedNodeIds,
@@ -302,8 +369,58 @@ function App() {
     reportEditor.selectReportFromMatnNode(getMatnNodeIdForReport(reportId));
   }, [isBoxSelecting, isDragging, isResizing, reportEditor]);
 
+  const handleFocusNarrator = useCallback((name: string | null): void => {
+    if (isDragging || isResizing || isBoxSelecting) {
+      return;
+    }
+    if (name && reportEditor.editingReport && !reportEditor.editingReport.isnad.includes(name)) {
+      if (!reportEditor.clearActiveReportSelection()) {
+        return;
+      }
+      setSelectedNodeIds([]);
+    }
+    if (name && !focusedNarrator) {
+      fullGraphViewport.current = {
+        zoom: viewport.zoom,
+        scrollLeft: viewport.graphScrollRef.current?.scrollLeft ?? 0,
+        scrollTop: viewport.graphScrollRef.current?.scrollTop ?? 0,
+      };
+    }
+    resetBoxSelection();
+    setFocusedNarrator(name);
+  }, [isDragging, isResizing, isBoxSelecting, reportEditor, resetBoxSelection, focusedNarrator, viewport]);
+
+  const focusViewportKey = useRef('');
+  useEffect(() => {
+    const key = `${focusedNarrator ?? ''}:${focusMode}`;
+    if (focusViewportKey.current === key) {
+      return;
+    }
+    focusViewportKey.current = key;
+    if (focusedNarrator) {
+      const anchor = graph.nodes.find((node) => node.type === 'narrator' && node.label === focusedNarrator);
+      if (anchor) {
+        const width = viewport.graphScrollRef.current?.clientWidth ?? 1000;
+        viewport.centerOnNode(anchor, isLocalFocus ? Math.min(1, Math.max(0.2, (width - 48) / graph.width)) : 0.75);
+      }
+    } else if (fullGraphViewport.current) {
+      const saved = fullGraphViewport.current;
+      const container = viewport.graphScrollRef.current;
+      if (container) {
+        viewport.centerOnNode({
+          x: (saved.scrollLeft + container.clientWidth / 2) / saved.zoom,
+          y: (saved.scrollTop + container.clientHeight / 2) / saved.zoom,
+        }, saved.zoom);
+      }
+      fullGraphViewport.current = null;
+    }
+  }, [focusedNarrator, focusMode, graph, isLocalFocus, viewport]);
+
   const loadBundleIntoApp = useCallback((nextBundle: HadithBundle, successMessage: string): void => {
     setBundle(nextBundle);
+    setFocusedNarrator(null);
+    setFocusPositions({});
+    fullGraphViewport.current = null;
     reportEditor.resetEditor();
     setSelectedNodeIds([]);
     resetBoxSelection();
@@ -322,6 +439,9 @@ function App() {
 
     const nextBundle = createEmptyBundle(title);
     setBundle(nextBundle);
+    setFocusedNarrator(null);
+    setFocusPositions({});
+    fullGraphViewport.current = null;
     reportEditor.resetEditor();
     setSelectedNodeIds([]);
     resetBoxSelection();
@@ -511,15 +631,18 @@ function App() {
         ) : null}
 
         <section className="graph-card" aria-label="Transmission graph">
+          <div className="graph-header">
           <div className="graph-toolbar">
             <div className="graph-title-block">
               <h2>Transmission graph</h2>
               <p>
-                {bundle.reports.length} report{bundle.reports.length === 1 ? '' : 's'}
+                {focus ? `${focus.reports.length} of ${bundle.reports.length}` : bundle.reports.length} report{bundle.reports.length === 1 ? '' : 's'}
                 {' '}<span aria-hidden="true">·</span>{' '}
                 {graph.nodes.length} node{graph.nodes.length === 1 ? '' : 's'}
               </p>
             </div>
+            <div className="graph-toolbar-actions">
+            <button type="button" onClick={viewport.fitGraph} disabled={graph.nodes.length === 0}>Fit graph</button>
             <button
               type="button"
               className="graph-toolbar-button"
@@ -531,7 +654,21 @@ function App() {
               </svg>
               {isLeftSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}
             </button>
+            </div>
           </div>
+          {bundle.reports.length > 0 ? (
+            <NarratorFocusControls
+              options={narratorOptions}
+              narrator={focusedNarrator}
+              mode={focusMode}
+              onNarratorChange={handleFocusNarrator}
+              onModeChange={setFocusMode}
+              matchingReportCount={focus?.reports.length ?? bundle.reports.length}
+              totalReportCount={bundle.reports.length}
+            />
+          ) : null}
+          </div>
+          <div className={isLocalFocus ? 'graph-workspace local-focus-workspace' : 'graph-workspace'}>
           <div
             ref={viewport.graphScrollRef}
             className={viewport.isPanning ? 'graph-scroll panning' : 'graph-scroll'}
@@ -567,7 +704,7 @@ function App() {
                 matnFontSize={bundle.fontSizes.matn}
                 isBoxSelecting={isBoxSelecting}
                 selectionBox={selectionBox}
-                selectedSet={selectedSet}
+                selectedSet={visibleSelectedSet}
                 selectedEdgeSet={selectedEdgeSet}
                 selectedReportId={reportEditor.editingReport?.id}
                 isDragging={isDragging}
@@ -576,6 +713,8 @@ function App() {
                 onNodePointerDown={handleNodePointerDown}
                 onResizePointerDown={handleResizePointerDown}
                 onSelectReport={handleSelectReport}
+                onFocusNarrator={handleFocusNarrator}
+                focusedNarrator={focusedNarrator}
               />
               {selectedReportNoteOverlay && reportEditor.editingReport ? (
                 <ReportNoteCard
@@ -588,13 +727,32 @@ function App() {
               ) : null}
             </div>
           </div>
+          {isLocalFocus && focus ? (
+            <div className={focus.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)
+              ? 'focus-details with-selected-report' : 'focus-details'}>
+              <NarratorFocusTable
+                focus={focus}
+                selectedReportId={reportEditor.editingReport?.id}
+                onSelectReport={handleSelectReport}
+              />
+              <NarratorFocusReport
+                report={focus.reportReferences.some((report) => report.id === reportEditor.editingReport?.id)
+                  ? reportEditor.editingReport : null}
+                reportNumber={reportEditor.editingReportIndex + 1}
+                highlightLegend={bundle.highlightLegend}
+                matnFontSize={bundle.fontSizes.matn}
+                onEditNote={handleOpenNoteEditor}
+              />
+            </div>
+          ) : null}
+          </div>
           <div className="graph-footer">
             <div className="graph-key" aria-label="Graph legend">
               <span><i className="graph-key-authority" aria-hidden="true" /> Attribution authority</span>
               <span><i className="graph-key-narrator" aria-hidden="true" /> Narrator</span>
               <span><i className="graph-key-matn" aria-hidden="true" /> Matn</span>
             </div>
-            <span className="graph-hint">Drag nodes to arrange <span aria-hidden="true">·</span> Ctrl + scroll to zoom</span>
+            <span className="graph-hint">{isLocalFocus ? 'Double-click a narrator to focus' : 'Drag nodes to arrange · Double-click a narrator to focus'} <span aria-hidden="true">·</span> Ctrl + scroll to zoom</span>
             <span className="graph-zoom">{Math.round(viewport.zoom * 100)}%</span>
           </div>
         </section>

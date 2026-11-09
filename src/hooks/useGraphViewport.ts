@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { logDragDebug } from '../debug';
 
-const MIN_ZOOM = 0.15;
+const MIN_ZOOM = 0.005;
 const MAX_ZOOM = 2.8;
 
 interface PanState {
@@ -39,6 +39,8 @@ interface UseGraphViewportResult {
   clientPointToSvg: (clientX: number, clientY: number) => { x: number; y: number } | null;
   handleGraphPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
   handleGraphContextMenu: (event: ReactMouseEvent<HTMLDivElement>) => void;
+  fitGraph: () => void;
+  centerOnNode: (node: { x: number; y: number }, zoom?: number) => void;
 }
 
 export function useGraphViewport({
@@ -52,6 +54,7 @@ export function useGraphViewport({
   const panStateRef = useRef<PanState | null>(null);
   const viewportRef = useRef<ViewportState>({ zoom: 1, scrollLeft: 0, scrollTop: 0 });
   const pendingZoomViewportRef = useRef<ViewportState | null>(null);
+  const committedZoomRef = useRef(zoom);
 
   useEffect(() => {
     if (!isPanning) {
@@ -94,6 +97,7 @@ export function useGraphViewport({
   }, [isPanning]);
 
   useLayoutEffect(() => {
+    committedZoomRef.current = zoom;
     const scrollContainer = graphScrollRef.current;
     if (!scrollContainer) {
       return;
@@ -103,7 +107,11 @@ export function useGraphViewport({
     if (pendingViewport && Math.abs(pendingViewport.zoom - zoom) < 0.0001) {
       scrollContainer.scrollLeft = pendingViewport.scrollLeft;
       scrollContainer.scrollTop = pendingViewport.scrollTop;
-      viewportRef.current = pendingViewport;
+      viewportRef.current = {
+        zoom,
+        scrollLeft: scrollContainer.scrollLeft,
+        scrollTop: scrollContainer.scrollTop,
+      };
       pendingZoomViewportRef.current = null;
       return;
     }
@@ -114,6 +122,60 @@ export function useGraphViewport({
       scrollTop: scrollContainer.scrollTop,
     };
   }, [graphHeight, graphWidth, zoom]);
+
+  const applyViewport = useCallback((nextViewport: ViewportState): void => {
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer) {
+      return;
+    }
+
+    // A same-zoom move does not trigger React's layout effect, so apply its
+    // scroll immediately. A zoom change waits until the SVG dimensions commit.
+    if (Math.abs(nextViewport.zoom - committedZoomRef.current) < 0.0001) {
+      scrollContainer.scrollLeft = nextViewport.scrollLeft;
+      scrollContainer.scrollTop = nextViewport.scrollTop;
+      viewportRef.current = {
+        zoom: nextViewport.zoom,
+        scrollLeft: scrollContainer.scrollLeft,
+        scrollTop: scrollContainer.scrollTop,
+      };
+      pendingZoomViewportRef.current = null;
+    } else {
+      pendingZoomViewportRef.current = nextViewport;
+      viewportRef.current = nextViewport;
+    }
+    setZoom(nextViewport.zoom);
+  }, []);
+
+  const fitGraph = useCallback((): void => {
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer || scrollContainer.clientWidth <= 0 || scrollContainer.clientHeight <= 0) {
+      return;
+    }
+
+    const nextZoom = Math.min(1, Math.max(MIN_ZOOM, Math.min(
+      Math.max(1, scrollContainer.clientWidth - 48) / Math.max(1, graphWidth),
+      Math.max(1, scrollContainer.clientHeight - 48) / Math.max(1, graphHeight),
+    )));
+    applyViewport({ zoom: nextZoom, scrollLeft: 0, scrollTop: 0 });
+  }, [applyViewport, graphHeight, graphWidth]);
+
+  const centerOnNode = useCallback((node: { x: number; y: number }, requestedZoom?: number): void => {
+    const scrollContainer = graphScrollRef.current;
+    if (!scrollContainer || !Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+      return;
+    }
+
+    const candidateZoom = requestedZoom ?? viewportRef.current.zoom;
+    const nextZoom = Number.isFinite(candidateZoom)
+      ? Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, candidateZoom))
+      : viewportRef.current.zoom;
+    applyViewport({
+      zoom: nextZoom,
+      scrollLeft: Math.max(0, node.x * nextZoom - scrollContainer.clientWidth / 2),
+      scrollTop: Math.max(0, node.y * nextZoom - scrollContainer.clientHeight / 2),
+    });
+  }, [applyViewport]);
 
   const clientPointToSvg = useCallback((clientX: number, clientY: number): { x: number; y: number } | null => {
     const svg = svgRef.current;
@@ -255,5 +317,7 @@ export function useGraphViewport({
     clientPointToSvg,
     handleGraphPointerDown,
     handleGraphContextMenu,
+    fitGraph,
+    centerOnNode,
   };
 }

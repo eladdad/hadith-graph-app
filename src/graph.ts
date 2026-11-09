@@ -151,7 +151,7 @@ function measureTextWidth(text: string, fontSize: number): number {
   return context.measureText(text).width;
 }
 
-function wrapTextToWidth(text: string, maxWidth: number, fontSize: number): string[] {
+export function wrapTextToWidth(text: string, maxWidth: number, fontSize: number): string[] {
   const splitWordToWidth = (word: string): string[] => {
     const segments: string[] = [];
     let segment = '';
@@ -513,7 +513,7 @@ function topologicalSort(
   return order;
 }
 
-function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
+function buildIndexedGraph(reports: HadithReport[], reportNumbers?: ReadonlyMap<string, number>): IndexedGraph {
   const nodesById = new Map<string, IndexedGraphNode>();
   const adjacency = new Map<string, Set<string>>();
   const indegree = new Map<string, number>();
@@ -529,11 +529,11 @@ function buildIndexedGraph(reports: HadithReport[]): IndexedGraph {
   };
 
   reports.forEach((report, index) => {
-    const reportReference = { id: report.id, number: index + 1 };
+    const reportReference = { id: report.id, number: reportNumbers?.get(report.id) ?? index + 1 };
     const matnId = matnNodeId(report.id);
     ensureNode({
       id: matnId,
-      label: `Report #${index + 1}`,
+      label: `Report #${reportReference.number}`,
       type: 'matn',
       matn: report.matn,
       matnHighlights: report.matnHighlights,
@@ -919,16 +919,21 @@ export function hasNarratorCycle(reports: HadithReport[]): boolean {
   return topologicalSort(narratorIds, adjacency, indegree, (a, b) => a.localeCompare(b, 'ar')).length !== narratorIds.length;
 }
 
+export interface GraphBuildOptions {
+  reportNumbers?: ReadonlyMap<string, number>;
+}
+
 export function buildRenderableGraph(
   reports: HadithReport[],
   nodePositions: NodePositionMap = {},
   nodeWidths: NodeWidthMap = {},
   fontSizes?: Partial<HadithFontSizes>,
   highlightLegend: HighlightLegendItem[] = [],
+  options: GraphBuildOptions = {},
 ): RenderableGraph {
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
   const highlightLegendById = new Map(highlightLegend.map((entry) => [entry.id, entry]));
-  const indexedGraph = buildIndexedGraph(reports);
+  const indexedGraph = buildIndexedGraph(reports, options.reportNumbers);
 
   if (indexedGraph.nodesById.size === 0) {
     return createEmptyRenderableGraph();
