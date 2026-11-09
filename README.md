@@ -27,6 +27,7 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 - Add to the selection with `Ctrl`/`Cmd`/`Shift` + left click.
 - Add to the selection with `Ctrl`/`Cmd`/`Shift` + box drag on empty canvas.
 - Drag any selected node to move the full selection together.
+- Use Auto-arrange to replace saved positions in the current graph view with the automatic layout. Restore saved layout brings the previous arrangement back.
 - Zoom in or out with `Ctrl` + mouse wheel.
 - Scroll the canvas with the mouse wheel.
 - Pan by holding the right mouse button. Middle mouse button panning is also supported.
@@ -131,6 +132,11 @@ positions, the existing SVG renderer, and collector-aligned matn cards. Graphviz
 chooses horizontal placement; the app enforces node clearance and vertical
 alignment of unbranched chains. The local narrator focus view keeps its compact
 source/student layout.
+
+Report paths keep matn groups in branch order after routes rejoin at a shared
+narrator, including in the Complete reports focus view. Imported coordinates
+remain in use until Auto-arrange is selected; arranging a focused view leaves
+the full graph's saved coordinates intact.
 
 ```bash
 cd hadith-graph-app

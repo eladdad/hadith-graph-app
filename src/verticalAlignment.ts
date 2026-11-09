@@ -37,6 +37,114 @@ function isAcyclic(graph: Map<string, Set<string>>): boolean {
   return order.length === indegree.size;
 }
 
+/** Preserve report provenance when distinct incoming paths later merge. */
+function prepareReportOrder(
+  layers: LayoutLayer[],
+  preferred: Map<string, Point>,
+  rank: Map<string, number>,
+  gap: number,
+  footprints: LayoutFootprint[],
+): { layers: LayoutLayer[]; constraints: Separation[] } {
+  if (!footprints.some((footprint) => footprint.path?.length)) {
+    return { layers, constraints: [] };
+  }
+
+  const compareNodes = (a: string, b: string): number => (
+    preferred.get(a)!.x - preferred.get(b)!.x
+    || rank.get(a)! - rank.get(b)! || a.localeCompare(b)
+  );
+  const comparePaths = (a: string[], b: string[]): number => {
+    for (let index = 0; index < Math.min(a.length, b.length); index += 1) {
+      if (a[index] !== b[index]) return compareNodes(a[index], b[index]);
+    }
+    return a.length - b.length;
+  };
+  const columnsByAnchor = new Map<string, { anchor: string; width: number; path: string[] }>();
+  for (const footprint of footprints) {
+    if (!rank.has(footprint.anchor)) continue;
+    const path = (footprint.path ?? []).filter((id) => rank.has(id));
+    if (path.at(-1) !== footprint.anchor) path.push(footprint.anchor);
+    const previous = columnsByAnchor.get(footprint.anchor);
+    columnsByAnchor.set(footprint.anchor, {
+      anchor: footprint.anchor,
+      width: Math.max(previous?.width ?? 0, footprint.width),
+      path: previous && comparePaths(previous.path, path) <= 0 ? previous.path : path,
+    });
+  }
+  const columns = [...columnsByAnchor.values()].sort((a, b) => (
+    comparePaths(a.path, b.path) || a.anchor.localeCompare(b.anchor)
+  ));
+  const precedence = new Map([...rank.keys()].map((id) => [id, new Set<string>()]));
+  const constraints: Separation[] = [];
+  const addPrecedence = (left: string, right: string): boolean => {
+    if (left === right || reaches(precedence, right, left)) return false;
+    precedence.get(left)!.add(right);
+    return true;
+  };
+
+  // Report columns take precedence over a collector row order chosen without
+  // knowledge of which incoming narrator path each collector continues.
+  for (let index = 1; index < columns.length; index += 1) {
+    const left = columns[index - 1];
+    const right = columns[index];
+    addPrecedence(left.anchor, right.anchor);
+    constraints.push({
+      left: left.anchor,
+      right: right.anchor,
+      distance: (left.width + right.width) / 2 + gap,
+    });
+  }
+
+  // Adjacent lexicographic paths cover each boundary between incoming branch
+  // groups. Retain their direction during compaction too. Equal-x branches may
+  // stay aligned, but must not separate in the opposite order afterward.
+  for (let index = 1; index < columns.length; index += 1) {
+    const leftPath = columns[index - 1].path;
+    const rightPath = columns[index].path;
+    let fork = 0;
+    while (fork < Math.min(leftPath.length, rightPath.length)
+      && leftPath[fork] === rightPath[fork]) fork += 1;
+    const left = leftPath[fork];
+    const right = rightPath[fork];
+    if (left === undefined || right === undefined) continue;
+    const delta = preferred.get(right)!.x - preferred.get(left)!.x;
+    if (delta >= -1e-6 && addPrecedence(left, right)) {
+      constraints.push({ left, right, distance: Math.min(1, Math.max(0, delta)) });
+    }
+  }
+
+  // Keep Graphviz's row order where it agrees with the report constraints.
+  // A topological extension then gives every rank a compatible ordering before
+  // private chains are contracted into shared horizontal columns.
+  for (const layer of layers) {
+    for (let index = 1; index < layer.nodes.length; index += 1) {
+      addPrecedence(layer.nodes[index - 1].id, layer.nodes[index].id);
+    }
+  }
+  const indegree = new Map([...rank.keys()].map((id) => [id, 0]));
+  for (const neighbors of precedence.values()) {
+    for (const id of neighbors) indegree.set(id, indegree.get(id)! + 1);
+  }
+  const pending = [...rank.keys()].filter((id) => indegree.get(id) === 0);
+  const order = new Map<string, number>();
+  while (pending.length > 0) {
+    pending.sort(compareNodes);
+    const id = pending.shift()!;
+    order.set(id, order.size);
+    for (const next of precedence.get(id)!) {
+      indegree.set(next, indegree.get(next)! - 1);
+      if (indegree.get(next) === 0) pending.push(next);
+    }
+  }
+  return {
+    layers: layers.map((layer) => ({
+      ...layer,
+      nodes: [...layer.nodes].sort((a, b) => order.get(a.id)! - order.get(b.id)!),
+    })),
+    constraints,
+  };
+}
+
 /** Make room for crowded ranks by moving whole private chains together. */
 export function alignVerticalChains(
   layers: LayoutLayer[],
@@ -58,11 +166,12 @@ export function alignVerticalChains(
     children.get(source)!.add(target);
   }
 
-  const separations: Separation[] = layers.flatMap((layer) => layer.nodes.slice(1).map((node, index) => ({
+  const reportOrder = prepareReportOrder(layers, preferred, rank, gap, footprints);
+  const separations: Separation[] = reportOrder.layers.flatMap((layer) => layer.nodes.slice(1).map((node, index) => ({
     left: layer.nodes[index].id,
     right: node.id,
     distance: (layer.nodes[index].width + node.width) / 2 + gap,
-  })));
+  }))).concat(reportOrder.constraints);
   let groups = new Map([...rank.keys()].map((id) => [id, id]));
   const root = (id: string): string => {
     let result = id;
@@ -91,9 +200,10 @@ export function alignVerticalChains(
 
   const spacingGraph = (): Map<string, Set<string>> => {
     const ordered = new Map<string, Set<string>>();
-    for (const { left, right } of separations) {
+    for (const { left, right, distance } of separations) {
       const l = root(left);
       const r = root(right);
+      if (l === r && distance === 0) continue;
       if (!ordered.has(l)) ordered.set(l, new Set());
       ordered.get(l)!.add(r);
     }
@@ -127,6 +237,7 @@ export function alignVerticalChains(
   for (const { left, right, distance } of separations) {
     const a = root(left);
     const b = root(right);
+    if (a === b && distance === 0) continue;
     const neighbors = outgoing.get(a)!;
     if (!neighbors.has(b)) indegree.set(b, indegree.get(b)! + 1);
     neighbors.set(b, Math.max(neighbors.get(b) ?? 0, distance));

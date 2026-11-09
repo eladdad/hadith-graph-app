@@ -397,6 +397,7 @@ type IndexedGraphNode = {
   matn?: string;
   matnHighlights?: HadithReport['matnHighlights'];
   matnAnchorId?: string;
+  matnPath?: string[];
   report?: GraphReportReference;
   attributedReports?: GraphReportReference[];
 };
@@ -537,6 +538,7 @@ function buildIndexedGraph(reports: HadithReport[], reportNumbers?: ReadonlyMap<
       matnAnchorId: report.isnad.length > 0
         ? getNarratorNodeIdForReport(report, report.isnad.length - 1)
         : undefined,
+      matnPath: report.isnad.map((_, narratorIndex) => getNarratorNodeIdForReport(report, narratorIndex)),
     });
 
     report.isnad.forEach((narratorName, narratorIndex) => {
@@ -938,8 +940,9 @@ export function buildRenderableGraph(
   const topology = buildGraphTopology(indexedGraph);
   const nodeMeta = buildNodeMeta(indexedGraph.nodesById, nodeWidths, normalizedFontSizes, highlightLegendById);
   const footprints = topology.matnNodeIds.flatMap((id) => {
-    const anchor = indexedGraph.nodesById.get(id)?.matnAnchorId;
-    return anchor ? [{ anchor, width: nodeMeta.get(id)?.width ?? MATN_NODE_DEFAULT_WIDTH }] : [];
+    const node = indexedGraph.nodesById.get(id);
+    const anchor = node?.matnAnchorId;
+    return anchor ? [{ anchor, width: nodeMeta.get(id)?.width ?? MATN_NODE_DEFAULT_WIDTH, path: node?.matnPath }] : [];
   });
   const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()], footprints, verticalGap);
   const narratorNodes = buildNarratorNodes(indexedGraph, topology, nodeMeta, autoLayout, nodePositions);

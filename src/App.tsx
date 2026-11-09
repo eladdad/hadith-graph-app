@@ -34,6 +34,12 @@ const THEME_STORAGE_KEY = 'hadith-graph-theme';
 
 type ThemeMode = 'light' | 'dark';
 
+interface SavedLayoutRestore {
+  positions: NodePositionMap;
+  scope: string | null;
+  reports: HadithBundle['reports'];
+}
+
 function idSetsEqual(left: string[], right: string[]): boolean {
   if (left.length !== right.length) {
     return false;
@@ -85,9 +91,11 @@ function App() {
   const [focusMode, setFocusMode] = useState<NarratorFocusMode>('local');
   const [focusPositions, setFocusPositions] = useState<Record<string, NodePositionMap>>({});
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [savedLayoutRestore, setSavedLayoutRestore] = useState<SavedLayoutRestore | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fullGraphViewport = useRef<{ zoom: number; scrollLeft: number; scrollTop: number } | null>(null);
+  const fitLayoutAfterUpdate = useRef(false);
   const narratorOptions = useMemo(() => getNarratorOptions(bundle.reports), [bundle.reports]);
   const focus = useMemo(
     () => focusedNarrator ? getNarratorFocus(bundle.reports, focusedNarrator) : null,
@@ -160,6 +168,17 @@ function App() {
     graphHeight: graph.height,
   });
 
+  useEffect(() => {
+    setSavedLayoutRestore((previous) => previous && previous.reports !== bundle.reports ? null : previous);
+  }, [bundle.reports]);
+
+  useEffect(() => {
+    if (fitLayoutAfterUpdate.current) {
+      fitLayoutAfterUpdate.current = false;
+      viewport.fitGraph();
+    }
+  }, [graph, viewport.fitGraph]);
+
   const setGraphLayoutBundle: Dispatch<SetStateAction<HadithBundle>> = useCallback((action) => {
     if (!focusedNarrator) {
       setBundle(action);
@@ -176,6 +195,33 @@ function App() {
       return { ...previous, [focusedNarrator]: next.nodePositions };
     });
   }, [bundle, focusedNarrator, isLocalFocus]);
+
+  const currentSavedPositions = focusedNarrator ? focusPositions[focusedNarrator] ?? {} : bundle.nodePositions;
+  const canAutoArrange = !isLocalFocus && Object.keys(currentSavedPositions).length > 0;
+  const canRestoreSavedLayout = savedLayoutRestore !== null
+    && savedLayoutRestore.scope === focusedNarrator && savedLayoutRestore.reports === bundle.reports;
+
+  const handleAutoArrange = useCallback((): void => {
+    if (!canAutoArrange) return;
+    setSavedLayoutRestore({ positions: currentSavedPositions, scope: focusedNarrator, reports: bundle.reports });
+    fitLayoutAfterUpdate.current = true;
+    setGraphLayoutBundle((previous) => ({ ...previous, nodePositions: {}, updatedAt: new Date().toISOString() }));
+    setMessage(focusedNarrator
+      ? 'Automatically arranged this narrator focus view. The full graph layout is preserved.'
+      : 'Automatically arranged the graph. Export JSON to save it, or restore the saved layout.');
+  }, [canAutoArrange, currentSavedPositions, focusedNarrator, bundle.reports, setGraphLayoutBundle]);
+
+  const handleRestoreSavedLayout = useCallback((): void => {
+    if (!canRestoreSavedLayout || isLocalFocus || !savedLayoutRestore) return;
+    fitLayoutAfterUpdate.current = true;
+    setGraphLayoutBundle((previous) => ({
+      ...previous, nodePositions: savedLayoutRestore.positions, updatedAt: new Date().toISOString(),
+    }));
+    setSavedLayoutRestore(null);
+    setMessage(focusedNarrator
+      ? 'Restored the saved layout for this narrator focus view. The full graph layout is preserved.'
+      : 'Restored the saved graph layout.');
+  }, [canRestoreSavedLayout, isLocalFocus, savedLayoutRestore, setGraphLayoutBundle, focusedNarrator]);
 
   const { isDragging, handleNodePointerDown: onNodePointerDownRaw } = useNodeDrag({
     graphNodes: graph.nodes,
@@ -695,6 +741,10 @@ function App() {
             </div>
             <div className="graph-toolbar-actions">
             <button type="button" onClick={viewport.fitGraph} disabled={graph.nodes.length === 0}>Fit graph</button>
+            <button type="button" onClick={handleAutoArrange} disabled={!canAutoArrange}>Auto-arrange</button>
+            {canRestoreSavedLayout ? (
+              <button type="button" onClick={handleRestoreSavedLayout} disabled={isLocalFocus}>Restore saved layout</button>
+            ) : null}
             <button
               type="button"
               className="graph-toolbar-button"

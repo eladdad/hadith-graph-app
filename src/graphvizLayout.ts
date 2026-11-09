@@ -63,13 +63,20 @@ export function layoutGraphvizLayers(
     .map((edge) => ({ source: edge.source, target: edge.target }))
     .sort((a, b) => a.source.localeCompare(b.source) || a.target.localeCompare(b.target));
   const footprintWidths = new Map<string, number>();
-  for (const { anchor, width } of inputFootprints) {
+  const footprintPaths = new Map<string, string[]>();
+  for (const { anchor, width, path } of inputFootprints) {
     if (dotIds.has(anchor)) {
       footprintWidths.set(anchor, Math.max(footprintWidths.get(anchor) ?? 0, width));
+      if (path?.length && path.at(-1) === anchor && path.every((id) => dotIds.has(id))) {
+        const previous = footprintPaths.get(anchor);
+        if (!previous || JSON.stringify(path) < JSON.stringify(previous)) {
+          footprintPaths.set(anchor, [...path]);
+        }
+      }
     }
   }
   const footprints = [...footprintWidths].sort(([a], [b]) => a.localeCompare(b))
-    .map(([anchor, width]) => ({ anchor, width }));
+    .map(([anchor, width]) => ({ anchor, width, path: footprintPaths.get(anchor) }));
   const key = JSON.stringify([layers, edges, gap, footprints]);
   const cached = cachedLayouts.get(key);
   if (cached) {
