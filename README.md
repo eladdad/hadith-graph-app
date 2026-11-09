@@ -118,6 +118,20 @@ The converter reads the same bundle schema and carries over saved node positions
 
 ## Run Locally
 
+### Graphviz experiment
+
+The `experiment/graphviz-layout` branch uses Graphviz's `dot` engine through
+[`@viz-js/viz`](https://github.com/mdaines/viz-js) for automatic graph layout.
+Graphviz runs locally in the browser as WebAssembly; reports are not sent to a
+layout service. The engine loads once before the editor opens, and unchanged
+layouts are cached during dragging and selection.
+
+The experiment preserves narrator levels, the vertical spacing control, saved
+positions, the existing SVG renderer, and collector-aligned matn cards. Graphviz
+chooses horizontal placement; the app enforces node clearance and vertical
+alignment of unbranched chains. The local narrator focus view keeps its compact
+source/student layout.
+
 ```bash
 cd hadith-graph-app
 npm install

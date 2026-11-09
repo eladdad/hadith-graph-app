@@ -12,8 +12,7 @@ import type {
   NodeWidthMap,
   RenderableGraph,
 } from './types';
-import { orderLayers } from './layerOrdering';
-import { positionLayers } from './layerPlacement';
+import { layoutGraphvizLayers } from './graphvizLayout';
 import type { LayoutFootprint } from './layerPlacement';
 import { buildVerticalCurve, getReportCountBadgeRadius } from './edgeGeometry';
 import { normalizeVerticalSpacing } from './layoutSettings';
@@ -725,12 +724,7 @@ function buildAutoLayout(
       height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
     })),
   }));
-  const orderedRows = orderLayers(layers, edges, HORIZONTAL_GAP, footprints);
-  const layoutNodeById = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node] as const)));
-  const positions = positionLayers(layers.map((layer, index) => ({
-    ...layer,
-    nodes: orderedRows[index].map((id) => layoutNodeById.get(id)!),
-  })), edges, HORIZONTAL_GAP, footprints);
+  const positions = layoutGraphvizLayers(layers, edges, HORIZONTAL_GAP, footprints);
 
   for (const [id, position] of positions) {
     const x = PADDING_X + position.x;

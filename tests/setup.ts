@@ -1,6 +1,11 @@
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { afterEach } from 'vitest';
+import { afterEach, beforeAll } from 'vitest';
+import { initializeGraphvizLayout } from '../src/graphvizLayout';
+
+beforeAll(async () => {
+  await initializeGraphvizLayout();
+});
 
 afterEach(() => {
   cleanup();
