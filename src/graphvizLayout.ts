@@ -1,9 +1,16 @@
 import type { Viz } from '@viz-js/viz';
-import type { LayoutEdge, LayoutFootprint, LayoutLayer, Point } from './layerPlacement';
-import { alignVerticalChains } from './verticalAlignment';
+import type { LayoutEdge, Point } from './layerPlacement';
 
 const POINTS_PER_INCH = 72;
 const MAX_CACHED_LAYOUTS = 8;
+
+export interface GraphvizLayoutNode {
+  id: string;
+  width: number;
+  height: number;
+  type: 'narrator' | 'matn';
+  anchorId?: string;
+}
 
 let viz: Viz | undefined;
 let initialization: Promise<void> | undefined;
@@ -39,45 +46,43 @@ interface GraphvizOutput {
 }
 
 /**
- * Let dot choose the horizontal layout, then enforce the app's exact spacing
- * and private-chain alignment. Vertical levels remain the caller's measured
- * ranks, so changing level spacing does not change the horizontal arrangement.
+ * Lay out the complete graph, including actual measured matn nodes. Both axes
+ * come directly from dot; the application can translate the whole graph into
+ * its canvas, but does not compact ranks or reposition text cards afterward.
  */
-export function layoutGraphvizLayers(
-  layers: LayoutLayer[],
-  inputEdges: LayoutEdge[],
-  gap: number,
-  inputFootprints: LayoutFootprint[] = [],
+export function layoutGraphvizGraph(
+  inputNodes: GraphvizLayoutNode[],
+  narratorEdges: LayoutEdge[],
+  horizontalGap: number,
+  verticalGap: number,
 ): Map<string, Point> {
   if (!viz) {
     throw new Error('Graphviz layout has not been initialized.');
   }
+  if (inputNodes.length === 0) return new Map();
 
-  const nodes = layers.flatMap((layer) => layer.nodes);
-  if (nodes.length === 0) return new Map();
-
-  // Only generated identifiers enter DOT; narrator names can contain quotes,
-  // Unicode, newlines, or other characters with meaning in the DOT language.
+  const nodes = inputNodes.map(({ id, width, height, type, anchorId }) => ({
+    id, width, height, type, anchorId,
+  })).sort((a, b) => a.id.localeCompare(b.id));
+  // The encoded id attribute is retained in Graphviz JSON for inspection, while
+  // generated DOT identifiers keep arbitrary user text out of DOT syntax.
   const dotIds = new Map(nodes.map((node, index) => [node.id, `n${index}`]));
-  const edges = inputEdges.filter((edge) => dotIds.has(edge.source) && dotIds.has(edge.target))
-    .map((edge) => ({ source: edge.source, target: edge.target }))
-    .sort((a, b) => a.source.localeCompare(b.source) || a.target.localeCompare(b.target));
-  const footprintWidths = new Map<string, number>();
-  const footprintPaths = new Map<string, string[]>();
-  for (const { anchor, width, path } of inputFootprints) {
-    if (dotIds.has(anchor)) {
-      footprintWidths.set(anchor, Math.max(footprintWidths.get(anchor) ?? 0, width));
-      if (path?.length && path.at(-1) === anchor && path.every((id) => dotIds.has(id))) {
-        const previous = footprintPaths.get(anchor);
-        if (!previous || JSON.stringify(path) < JSON.stringify(previous)) {
-          footprintPaths.set(anchor, [...path]);
-        }
-      }
+  if (dotIds.size !== nodes.length) {
+    throw new Error('Graphviz layout node identifiers must be unique.');
+  }
+  const matns = nodes.filter((node) => node.type === 'matn');
+  const attachments = matns.filter((node) => node.anchorId && dotIds.has(node.anchorId))
+    .map((node) => ({ source: node.anchorId!, target: node.id }));
+  const edgesByPair = new Map<string, LayoutEdge>();
+  for (const { source, target } of [...narratorEdges, ...attachments]) {
+    if (dotIds.has(source) && dotIds.has(target)) {
+      edgesByPair.set(JSON.stringify([source, target]), { source, target });
     }
   }
-  const footprints = [...footprintWidths].sort(([a], [b]) => a.localeCompare(b))
-    .map(([anchor, width]) => ({ anchor, width, path: footprintPaths.get(anchor) }));
-  const key = JSON.stringify([layers, edges, gap, footprints]);
+  const edges = [...edgesByPair.values()].sort((a, b) => (
+    a.source.localeCompare(b.source) || a.target.localeCompare(b.target)
+  ));
+  const key = JSON.stringify([nodes, edges, horizontalGap, verticalGap]);
   const cached = cachedLayouts.get(key);
   if (cached) {
     cachedLayouts.delete(key);
@@ -85,61 +90,46 @@ export function layoutGraphvizLayers(
     return copyPositions(cached);
   }
 
-  const columnByAnchor = new Map(footprints.map(({ anchor }, index) => [anchor, `column${index}`]));
+  // Matching groups let dot prefer vertical collector/card edges itself. They
+  // do not impose positions, fixed narrator levels, or a custom report order.
+  const columnByAnchor = new Map<string, string>();
+  for (const attachment of attachments) {
+    if (!columnByAnchor.has(attachment.source)) {
+      columnByAnchor.set(attachment.source, `column${columnByAnchor.size}`);
+    }
+  }
   const dot = [
     'digraph layout {',
-    `graph [rankdir=TB, nodesep=${inches(gap)}, ranksep=1, margin=0, pad=0, splines=false];`,
+    `graph [rankdir=TB, nodesep=${inches(horizontalGap)}, ranksep=${inches(verticalGap)}, margin=0, pad=0, splines=false];`,
     'node [shape=box, label="", fixedsize=true, margin=0];',
     ...nodes.map((node) => {
-      const column = columnByAnchor.get(node.id);
-      return `${dotIds.get(node.id)} [width=${inches(node.width)}, height=${inches(node.height)}`
+      const column = columnByAnchor.get(node.type === 'matn' ? node.anchorId ?? '' : node.id);
+      return `${dotIds.get(node.id)} [id="${encodeURIComponent(node.id)}", width=${inches(node.width)}, height=${inches(node.height)}`
         + `${column ? `, group=${column}` : ''}];`;
     }),
-    ...layers.filter((layer) => layer.nodes.length > 0).map((layer) => (
-      `{ rank=same; ${layer.nodes.map((node) => dotIds.get(node.id)).join('; ')}; }`
-    )),
     ...edges.map(({ source, target }) => `${dotIds.get(source)} -> ${dotIds.get(target)};`),
-    ...footprints.map(({ width }, index) => (
-      `f${index} [width=${inches(width)}, height=0.01, style=invis, group=column${index}];`
-    )),
-    ...footprints.map(({ anchor }, index) => (
-      `${dotIds.get(anchor)} -> f${index} [style=invis, weight=1000];`
-    )),
-    ...(footprints.length > 0
-      ? [`{ rank=max; ${footprints.map((_, index) => `f${index}`).join('; ')}; }`]
+    ...(matns.length > 0
+      ? [`{ rank=sink; ${matns.map((node) => dotIds.get(node.id)).join('; ')}; }`]
       : []),
     '}',
   ].join('\n');
 
-  const rendered = viz.renderJSON(dot, { engine: 'dot' }) as GraphvizOutput;
-  const xByDotId = new Map<string, number>();
+  const rendered = viz.renderJSON(dot, { engine: 'dot', yInvert: true }) as GraphvizOutput;
+  const pointsByDotId = new Map<string, Point>();
   for (const node of rendered.objects ?? []) {
     if (typeof node.name !== 'string' || typeof node.pos !== 'string') continue;
-    const x = Number(node.pos.split(',')[0]);
-    if (Number.isFinite(x)) xByDotId.set(node.name, x);
+    const [x, y] = node.pos.split(',').map(Number);
+    if (Number.isFinite(x) && Number.isFinite(y)) pointsByDotId.set(node.name, { x, y });
   }
-
-  const preferred = new Map<string, Point>();
-  for (const layer of layers) {
-    for (const node of layer.nodes) {
-      const x = xByDotId.get(dotIds.get(node.id)!);
-      if (x === undefined) {
-        throw new Error('Graphviz did not return a position for every narrator.');
-      }
-      preferred.set(node.id, { x, y: layer.y });
+  const positions = new Map<string, Point>();
+  for (const node of nodes) {
+    const point = pointsByDotId.get(dotIds.get(node.id)!);
+    if (!point) {
+      throw new Error('Graphviz did not return a position for every graph node.');
     }
+    positions.set(node.id, point);
   }
-  const orderedLayers = layers.map((layer) => ({
-    ...layer,
-    nodes: [...layer.nodes].sort((a, b) => (
-      preferred.get(a.id)!.x - preferred.get(b.id)!.x || a.id.localeCompare(b.id)
-    )),
-  }));
 
-  // The invisible bottom row guides dot's crossing reduction and card widths.
-  // Keep it out of compaction: its synthetic edges must not change which real
-  // narrator chains have one parent/child, and matns attach to collectors exactly.
-  const positions = alignVerticalChains(orderedLayers, edges, preferred, gap, footprints);
   cachedLayouts.set(key, copyPositions(positions));
   if (cachedLayouts.size > MAX_CACHED_LAYOUTS) {
     cachedLayouts.delete(cachedLayouts.keys().next().value!);

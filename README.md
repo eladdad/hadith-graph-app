@@ -127,16 +127,25 @@ Graphviz runs locally in the browser as WebAssembly; reports are not sent to a
 layout service. The engine loads once before the editor opens, and unchanged
 layouts are cached during dragging and selection.
 
-The experiment preserves narrator levels, the vertical spacing control, saved
-positions, the existing SVG renderer, and collector-aligned matn cards. Graphviz
-chooses horizontal placement; the app enforces node clearance and vertical
-alignment of unbranched chains. The local narrator focus view keeps its compact
-source/student layout.
+The direct experiment sends every narrator and matn to Graphviz with its measured
+dimensions, including collector-to-matn connections. Graphviz chooses both axes;
+the app only translates the result into the canvas and applies explicit saved
+coordinates. There is no custom rank placement, branch sorting, compaction, or
+separate matn placement after Graphviz. Dashed lines show matn attachments, while
+transmission edges retain their report selection behavior.
 
-Report paths keep matn groups in branch order after routes rejoin at a shared
-narrator, including in the Complete reports focus view. Imported coordinates
-remain in use until Auto-arrange is selected; arranging a focused view leaves
-the full graph's saved coordinates intact.
+Matns share a bottom rank, aligned by their centers rather than their top edges.
+The vertical spacing control sets Graphviz's rank separation. The local narrator
+focus view keeps its compact source/student layout; Complete reports uses the
+full Graphviz model. The graph header identifies automatic Graphviz and saved
+arrangements. Auto-arrange replaces saved positions in the current view, with
+Restore saved layout available afterward.
+
+This deliberately tests Graphviz's own output. A merged narrator graph does not
+encode which incoming report path continues into each matn, so Graphviz alone
+does not guarantee the earlier-branch ordering of matns after reconvergence.
+Those ordering objectives remain recorded as pending tests rather than being
+silently enforced by a second layout algorithm.
 
 ```bash
 cd hadith-graph-app

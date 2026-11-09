@@ -100,10 +100,10 @@ describe('automatic graph layout', () => {
     ]);
 
     expect(countProperCrossings(graph)).toBe(0);
-    expect(node(graph, 'n:A').y).toBe(node(graph, 'n:B').y);
-    expect(node(graph, 'n:Z').y).toBe(node(graph, 'n:C').y);
     expect(node(graph, 'n:A').y).toBeLessThan(node(graph, 'n:Z').y);
     expect(node(graph, 'n:Z').y).toBeLessThan(node(graph, 'c:r1').y);
+    expect(node(graph, 'n:B').y).toBeLessThan(node(graph, 'n:C').y);
+    expect(node(graph, 'n:C').y).toBeLessThan(node(graph, 'c:r2').y);
     expect(graph.nodes).toHaveLength(8);
     expect(graph.edges).toHaveLength(4);
     expect(graph.hasCycle).toBe(false);
@@ -123,7 +123,7 @@ describe('automatic graph layout', () => {
     expect(graph.edges).toHaveLength(36);
     expect(graph.hasCycle).toBe(false);
 
-    // Reordering must not change the reported chain direction or its assigned levels.
+    // Graphviz may choose new ranks, but every transmission remains downward.
     for (const edge of graph.edges) {
       expect(node(graph, edge.source).y).toBeLessThan(node(graph, edge.target).y);
     }
@@ -137,11 +137,12 @@ describe('automatic graph layout', () => {
       makeReport('r4', ['C', 'F', 'G', 'Y', 'End 4'], 'Fourth report'),
     ]);
 
-    // The paths through C place Y and Z three levels below their other teachers.
+    // Both the direct and longer incoming routes must keep their direction.
     expect(node(graph, 'n:Z').y).toBeGreaterThan(node(graph, 'n:E').y);
     expect(node(graph, 'n:Y').y).toBeGreaterThan(node(graph, 'n:G').y);
-    expect(node(graph, 'n:A').y).toBe(node(graph, 'n:C').y);
-    expect(node(graph, 'n:B').y).toBe(node(graph, 'n:C').y);
+    for (const edge of graph.edges) {
+      expect(node(graph, edge.source).y).toBeLessThan(node(graph, edge.target).y);
+    }
     // The original alphabetical-per-level layout has nine proper crossings here.
     expect(countProperCrossings(graph)).toBeLessThan(9);
     expect(graph.hasCycle).toBe(false);

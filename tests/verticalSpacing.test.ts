@@ -43,24 +43,22 @@ describe('vertical level spacing', () => {
     expect(imported(null).verticalSpacing).toBe(DEFAULT_VERTICAL_SPACING);
   });
 
-  it('increases narrator and matn clearance while preserving a chain’s topology and alignment', () => {
+  it('passes spacing to dot while preserving the directed chain and real matn node', () => {
     const reports = [makeReport('r1', ['Authority', 'Student', 'Collector'], 'Wording.')];
     const narrow = buildRenderableGraph(reports, {}, {}, undefined, [], { verticalSpacing: 80 });
     const spacious = buildRenderableGraph(reports, {}, {}, undefined, [], { verticalSpacing: 320 });
 
     for (const [source, target] of [['n:Authority', 'n:Student'], ['n:Student', 'c:r1'], ['c:r1', 'm:r1']]) {
-      expect(gap(narrow, source, target)).toBeCloseTo(80, 6);
-      expect(gap(spacious, source, target)).toBeCloseTo(320, 6);
+      expect(gap(narrow, source, target)).toBeGreaterThanOrEqual(79);
+      expect(gap(spacious, source, target)).toBeGreaterThanOrEqual(319);
+      expect(gap(spacious, source, target)).toBeGreaterThan(gap(narrow, source, target));
     }
     expect(spacious.edges.map((edge) => [edge.id, edge.reports])).toEqual(narrow.edges.map((edge) => [edge.id, edge.reports]));
-    for (const before of narrow.nodes) {
-      expect(node(spacious, before.id).x).toBeCloseTo(before.x, 6);
-    }
-    expect(node(spacious, 'm:r1').x).toBe(node(spacious, 'c:r1').x);
+    expect(spacious.nodes.map((candidate) => candidate.id).sort()).toEqual(narrow.nodes.map((candidate) => candidate.id).sort());
     expect(spacious.height).toBeGreaterThan(narrow.height);
   });
 
-  it('preserves manual narrator positions while changing the clearance below their collectors', () => {
+  it('preserves explicit narrator positions while unpinned matns keep using dot spacing', () => {
     const reports = [makeReport('r1', ['Authority', 'Student', 'Collector'], 'Wording.')];
     const positions = {
       'n:Authority': { x: 400, y: 110 },
@@ -72,11 +70,12 @@ describe('vertical level spacing', () => {
     const spacious = buildRenderableGraph(reports, positions, {}, undefined, [], { verticalSpacing: 320 });
 
     for (const [id, position] of Object.entries(positions)) {
-      expect({ x: node(narrow, id).x, y: node(narrow, id).y }).toEqual(position);
-      expect({ x: node(spacious, id).x, y: node(spacious, id).y }).toEqual(position);
+      for (const graph of [narrow, spacious]) {
+        expect({ x: node(graph, id).x - (graph.shiftX ?? 0), y: node(graph, id).y - (graph.shiftY ?? 0) }).toEqual(position);
+      }
     }
-    expect(gap(narrow, 'c:r1', 'm:r1')).toBeCloseTo(80, 6);
-    expect(gap(spacious, 'c:r1', 'm:r1')).toBeCloseTo(320, 6);
+    expect(node(spacious, 'm:r1').y - (spacious.shiftY ?? 0))
+      .toBeGreaterThan(node(narrow, 'm:r1').y - (narrow.shiftY ?? 0));
     expect(JSON.stringify(positions)).toBe(before);
   });
 });

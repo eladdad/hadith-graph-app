@@ -8,7 +8,7 @@ import {
 import type { SelectionBox } from '../hooks/useBoxSelection';
 import type { GraphNode, RenderableGraph } from '../types';
 import { ReportCountBadge } from './ReportCountBadge';
-import { REPORT_COUNT_BADGE_RADIUS } from '../edgeGeometry';
+import { buildVerticalCurve, REPORT_COUNT_BADGE_RADIUS } from '../edgeGeometry';
 
 const MARKER_HIGHLIGHT_ZOOM_THRESHOLD = 0.3;
 
@@ -182,6 +182,20 @@ export function GraphCanvas({
   );
   const badgeRevision = useMemo(() => ({ graph, zoom }), [graph, zoom]);
   const nodeLabels = useMemo(() => new Map(graph.nodes.map((node) => [node.id, node.label])), [graph.nodes]);
+  const matnAttachments = useMemo(() => {
+    const nodes = new Map(graph.nodes.map((node) => [node.id, node]));
+    return graph.nodes.flatMap((matn) => {
+      const anchor = nodes.get(matn.matnAnchorId ?? '');
+      if (matn.type !== 'matn' || !anchor) return [];
+      const direction = matn.y >= anchor.y ? 1 : -1;
+      const curve = buildVerticalCurve(
+        { x: anchor.x, y: anchor.y + direction * anchor.height / 2 },
+        { x: matn.x, y: matn.y - direction * matn.height / 2 },
+        direction,
+      );
+      return [{ id: matn.id, path: curve.path }];
+    });
+  }, [graph.nodes]);
 
   return (
     <svg
@@ -216,6 +230,15 @@ export function GraphCanvas({
           <path d="M 0 0 L 10 4 L 0 8 z" fill="var(--edge-selected)" />
         </marker>
       </defs>
+
+      {matnAttachments.map((attachment) => (
+        <path
+          key={attachment.id}
+          d={attachment.path}
+          data-matn-attachment={attachment.id}
+          className={selectedSet.has(attachment.id) ? 'matn-attachment selected' : 'matn-attachment'}
+        />
+      ))}
 
       {graph.edges.map((edge) => (
         <g key={edge.id} data-edge-path-id={edge.id}>

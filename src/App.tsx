@@ -737,6 +737,11 @@ function App() {
                 {focus ? `${focus.reports.length} of ${bundle.reports.length}` : bundle.reports.length} report{bundle.reports.length === 1 ? '' : 's'}
                 {' '}<span aria-hidden="true">·</span>{' '}
                 {graph.nodes.length} node{graph.nodes.length === 1 ? '' : 's'}
+                {!isLocalFocus && graph.nodes.length > 0 ? (
+                  <> <span aria-hidden="true">·</span> <span data-layout-engine={canAutoArrange ? 'saved' : 'graphviz-dot'}>
+                    {canAutoArrange ? 'Saved layout' : 'Graphviz dot'}
+                  </span></>
+                ) : null}
               </p>
             </div>
             <div className="graph-toolbar-actions">

@@ -73,6 +73,7 @@ export interface GraphNode {
   labelLines: string[];
   matnLines?: string[];
   matnLineSegments?: GraphTextLine[];
+  matnAnchorId?: string;
   report?: GraphReportReference;
   attributedReports?: GraphReportReference[];
   isAuthority?: boolean;

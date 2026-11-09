@@ -22,6 +22,8 @@ function pinnedBundle(): HadithBundle {
       'n:n4': { x: 1800, y: 100 }, 'n:n5': { x: 1800, y: 340 }, 'n:n6': { x: 1800, y: 580 },
       'c:a1': { x: 1800, y: 820 }, 'c:a2': { x: 2400, y: 820 },
       'c:b1': { x: 600, y: 820 }, 'c:b2': { x: 1200, y: 820 },
+      'm:a1': { x: 1800, y: 1200 }, 'm:a2': { x: 2400, y: 1200 },
+      'm:b1': { x: 600, y: 1200 }, 'm:b2': { x: 1200, y: 1200 },
     },
     nodeWidths: { 'm:a1': 440, 'm:a2': 220 },
     fontSizes: { narrator: 15, matn: 14 },

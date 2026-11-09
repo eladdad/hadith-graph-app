@@ -846,6 +846,20 @@ textarea:focus {
   opacity: 1;
 }
 
+.matn-attachment {
+  fill: none;
+  stroke: var(--edge);
+  stroke-width: 1.2;
+  stroke-dasharray: 5 5;
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.matn-attachment.selected {
+  stroke: var(--edge-selected);
+  opacity: 1;
+}
+
 .dialog-backdrop {
   position: fixed;
   inset: 0;
