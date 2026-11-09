@@ -132,10 +132,35 @@ export function alignVerticalChains(
     neighbors.set(b, Math.max(neighbors.get(b) ?? 0, distance));
   }
 
+  // Prefer finishing a branch before starting its neighbor, even when their
+  // collectors occupy different ranks. Comparing column centers alone can put
+  // a short route's matn between the leaves of a wider neighboring branch.
+  // Row separations still take precedence through the topological sort below.
+  const branchPriority = new Map<string, number>();
+  if (footprints.length > 0) {
+    const visited = new Set<string>();
+    for (const start of rank.keys()) {
+      const stack = [start];
+      while (stack.length > 0) {
+        const id = stack.pop()!;
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const group = root(id);
+        if (!branchPriority.has(group)) branchPriority.set(group, branchPriority.size);
+        const descendants = [...(children.get(id) ?? [])].sort((a, b) => (
+          preferred.get(a)!.x - preferred.get(b)!.x
+          || rank.get(a)! - rank.get(b)! || a.localeCompare(b)
+        ));
+        stack.push(...descendants.reverse());
+      }
+    }
+  }
+
   const compareTargets = (a: string, b: string): number => {
     const left = targets.get(a)!;
     const right = targets.get(b)!;
-    return left.sum / left.count - right.sum / right.count || a.localeCompare(b);
+    return (branchPriority.get(a) ?? 0) - (branchPriority.get(b) ?? 0)
+      || left.sum / left.count - right.sum / right.count || a.localeCompare(b);
   };
   const pending = [...targets.keys()].filter((id) => indegree.get(id) === 0);
   const order: string[] = [];

@@ -53,6 +53,65 @@ function unshiftedX(graph: RenderableGraph, id: string): number {
 }
 
 describe('collector and matn alignment', () => {
+  it('keeps a longer left-hand route before a shorter right-hand route in the matn row', () => {
+    const reports = [
+      makeReport('m1', ['n1', 'n3'], 'The short right-hand route.'),
+      makeReport('m2', ['n1', 'n2', 'n4', 'n5'], 'The long left-hand route.'),
+    ];
+    const graph = buildRenderableGraph(reports);
+
+    expect(node(graph, 'n:n2').x).toBeLessThan(node(graph, 'c:m1').x);
+    expect(node(graph, 'm:m2').x).toBeLessThan(node(graph, 'm:m1').x);
+    expectVerticalChain(graph, ['n:n2', 'n:n4', 'c:m2']);
+    expectAlignedMatnRow(graph, reports);
+  });
+
+  it.each(['n2', 'n3'])('keeps all matns of the forked branch through %s together', (branchName) => {
+    const reports = [
+      makeReport('short', ['n1', branchName === 'n2' ? 'n3' : 'n2'], 'The short route.'),
+      ...Array.from({ length: 4 }, (_, index) => makeReport(
+        `long-${index}`,
+        ['n1', branchName, 'n4', `Collector ${index}`],
+        `Long route ${index}.`,
+      )),
+    ];
+    const widths = { 'm:short': 440, 'm:long-0': 220, 'm:long-1': 760, 'm:long-2': 320 };
+    const original = buildRenderableGraph(reports, {}, widths);
+    const reversed = buildRenderableGraph([...reports].reverse(), {}, widths);
+
+    for (const graph of [original, reversed]) {
+      const short = node(graph, 'c:short');
+      const branch = node(graph, `n:${branchName}`);
+      const direction = Math.sign(short.x - branch.x);
+      expect(direction).not.toBe(0);
+      for (let index = 0; index < 4; index += 1) {
+        const matn = node(graph, `m:long-${index}`);
+        expect((node(graph, 'm:short').x - matn.x) * direction,
+          `${matn.id} should stay on the same side of the short route as its branch`).toBeGreaterThan(0);
+      }
+      expectAlignedMatnRow(graph, reports);
+    }
+    for (const before of original.nodes) {
+      expect(unshiftedX(reversed, before.id)).toBeCloseTo(unshiftedX(original, before.id), 6);
+    }
+  });
+
+  it('keeps nested branches together when their collectors finish at different depths', () => {
+    const reports = [
+      makeReport('r0', ['Root', 'H0', 'B3', 'Collector 5'], 'First wording.'),
+      makeReport('r1', ['Root', 'H0', 'B3', 'S6', 'Collector 7'], 'Second wording.'),
+      makeReport('r2', ['Root', 'H0', 'B3', 'J8', 'Collector 9'], 'Third wording.'),
+      makeReport('r4', ['Root', 'H13', 'Collector 14'], 'Short neighboring route.'),
+    ];
+    const graph = buildRenderableGraph(reports);
+
+    expect(node(graph, 'n:H0').x).toBeLessThan(node(graph, 'n:H13').x);
+    for (const id of ['r0', 'r1', 'r2']) {
+      expect(node(graph, `m:${id}`).x).toBeLessThan(node(graph, 'm:r4').x);
+    }
+    expectAlignedMatnRow(graph, reports);
+  });
+
   it('centers all nine moon-splitting matns below their collectors without overlapping', () => {
     const parsed = parseBundleJson(JSON.stringify(sample));
     expect(parsed.error).toBeUndefined();
