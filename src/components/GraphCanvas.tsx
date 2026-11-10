@@ -127,9 +127,6 @@ export function GraphCanvas({
   onSelectStudent,
 }: GraphCanvasProps) {
   const showHighlightMarkers = zoom <= MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
-  // Keep the whole marker stack at its threshold screen size as the graph
-  // shrinks further, including the gaps, rounded corners, and outlines.
-  const highlightMarkerScale = MARKER_HIGHLIGHT_ZOOM_THRESHOLD / zoom;
   const highlightSegmentRefs = useRef(new Map<string, SVGTSpanElement>());
   const [measuredHighlightOverlays, setMeasuredHighlightOverlays] = useState<MeasuredMatnHighlightOverlay[]>([]);
 
@@ -201,13 +198,13 @@ export function GraphCanvas({
   }, [graph.nodes]);
 
   return (
+    <>
     <svg
       ref={svgRef}
       width={graph.width * zoom}
       height={graph.height * zoom}
       viewBox={`0 0 ${graph.width} ${graph.height}`}
       className={isBoxSelecting ? 'graph-svg selecting' : 'graph-svg'}
-      style={{ overflow: showHighlightMarkers ? 'visible' : undefined }}
       onPointerDown={onCanvasPointerDown}
     >
       <defs>
@@ -287,7 +284,6 @@ export function GraphCanvas({
         const matnNodeTextX = node.width / 2 - MATN_NODE_SIDE_PADDING;
         const handleHeight = Math.max(24, node.height - 18);
         const handleY = -handleHeight / 2;
-        const collapsedMatnMarkers = node.type === 'matn' ? getCollapsedMatnMarkers(node) : [];
         const authorityReports = getAuthorityReportMetrics(node.attributedReports);
 
         return (
@@ -430,40 +426,6 @@ export function GraphCanvas({
                     </g>
                   );
                 })}
-                {showHighlightMarkers && collapsedMatnMarkers.length > 0 ? (
-                  <g
-                    className="matn-highlight-markers"
-                    transform={`translate(0, ${MATN_NODE_HEADER_HEIGHT / 2}) scale(${highlightMarkerScale}) translate(0, ${-MATN_NODE_HEADER_HEIGHT / 2})`}
-                  >
-                    {collapsedMatnMarkers.map((marker, markerIndex) => {
-                      const markerWidth = 30;
-                      const availableHeight = Math.max(1, node.height - MATN_NODE_HEADER_HEIGHT - 16);
-                      const markerGap = Math.min(10, availableHeight / (collapsedMatnMarkers.length * 2));
-                      const markerHeight = Math.min(
-                        42,
-                        (availableHeight - markerGap * (collapsedMatnMarkers.length - 1)) / collapsedMatnMarkers.length,
-                      );
-                      const markersBlockHeight =
-                        collapsedMatnMarkers.length * markerHeight + (collapsedMatnMarkers.length - 1) * markerGap;
-                      const startY = MATN_NODE_HEADER_HEIGHT / 2 - markersBlockHeight / 2;
-
-                      return (
-                        <g key={`${node.id}-${marker.key}`}>
-                          <title>{marker.label}</title>
-                          <rect
-                            x={-markerWidth / 2}
-                            y={startY + markerIndex * (markerHeight + markerGap)}
-                            width={markerWidth}
-                            height={markerHeight}
-                            rx={8}
-                            className={marker.isGeneric ? 'matn-highlight-marker matn-highlight-marker-generic' : 'matn-highlight-marker'}
-                            fill={marker.color}
-                          />
-                        </g>
-                      );
-                    })}
-                  </g>
-                ) : null}
               </>
             ) : (
               <text textAnchor="middle" className="node-label" style={{ fontSize: `${narratorFontSize}px` }}>
@@ -511,5 +473,51 @@ export function GraphCanvas({
         </g>
       ))}
     </svg>
+    {showHighlightMarkers ? (
+      // No viewBox: one unit in this overlay is one CSS pixel. Zoom only
+      // changes the stack's anchor position, never its dimensions or spacing.
+      <svg
+        className="matn-marker-overlay"
+        width={graph.width * zoom}
+        height={graph.height * zoom}
+        style={{ position: 'absolute', left: 0, top: 0, overflow: 'visible', pointerEvents: 'none' }}
+      >
+        {graph.nodes.filter((node) => node.type === 'matn').map((node) => {
+          const markers = getCollapsedMatnMarkers(node);
+          const availableHeight = Math.max(1, node.height - MATN_NODE_HEADER_HEIGHT - 16);
+          const baseGap = Math.min(10, availableHeight / (markers.length * 2));
+          const baseHeight = Math.min(42, (availableHeight - baseGap * (markers.length - 1)) / markers.length);
+          const markerWidth = 30 * MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
+          const markerHeight = baseHeight * MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
+          const markerGap = baseGap * MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
+          const blockHeight = markers.length * markerHeight + (markers.length - 1) * markerGap;
+
+          return (
+            <g
+              key={node.id}
+              className="matn-highlight-markers"
+              data-matn-node-id={node.id}
+              transform={`translate(${node.x * zoom}, ${(node.y + MATN_NODE_HEADER_HEIGHT / 2) * zoom})`}
+            >
+              {markers.map((marker, markerIndex) => (
+                <g key={marker.key}>
+                  <title>{marker.label}</title>
+                  <rect
+                    x={-markerWidth / 2}
+                    y={-blockHeight / 2 + markerIndex * (markerHeight + markerGap)}
+                    width={markerWidth}
+                    height={markerHeight}
+                    rx={8 * MARKER_HIGHLIGHT_ZOOM_THRESHOLD}
+                    className={marker.isGeneric ? 'matn-highlight-marker matn-highlight-marker-generic' : 'matn-highlight-marker'}
+                    fill={marker.color}
+                  />
+                </g>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
+    ) : null}
+    </>
   );
 }

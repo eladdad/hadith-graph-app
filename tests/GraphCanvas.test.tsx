@@ -2,7 +2,7 @@ import { createRef, type ComponentProps } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { GraphCanvas } from '../src/components/GraphCanvas';
-import { buildRenderableGraph } from '../src/graph';
+import { buildRenderableGraph, MATN_NODE_HEADER_HEIGHT } from '../src/graph';
 import type { GraphNode, RenderableGraph } from '../src/types';
 import { makeGraph, makeReport } from './helpers';
 
@@ -89,31 +89,53 @@ describe('GraphCanvas', () => {
     const graph = makeGraph({ nodes: [coloured, plain], width: 900, height: 420 });
     const { container, rerender } = render(canvas(graph, { zoom: 0.3 }));
 
-    // Convert the rendered SVG geometry to pixels rather than checking for a
-    // particular inverse-zoom expression. Both dimensions and stack gaps must
-    // survive zoom changes, including the minimum supported graph zoom.
-    function screenMarkerGeometry() {
+    function screenMarkerGeometry(zoom: number) {
+      const overlay = container.querySelector<SVGSVGElement>('svg.matn-marker-overlay')!;
+      const graphSvg = container.querySelector('svg.graph-svg')!;
+      expect(overlay).toBeInTheDocument();
+      expect(overlay.parentElement).toBe(graphSvg.parentElement);
+      // Without a viewBox or scaled ancestors these geometry values are literal
+      // screen pixels, rather than a calculation that assumes inverse scaling.
+      expect(overlay).not.toHaveAttribute('viewBox');
+      expect(overlay).not.toHaveAttribute('transform');
+      expect(Number(overlay.getAttribute('width'))).toBeCloseTo(graph.width * zoom);
+      expect(Number(overlay.getAttribute('height'))).toBeCloseTo(graph.height * zoom);
       return Array.from(container.querySelectorAll('.matn-highlight-markers')).map((stack) => {
-        const scale = Number(stack.getAttribute('transform')?.match(/scale\(([^)]+)\)/)?.[1] ?? 1);
-        const svg = stack.closest('svg')!;
-        const screenScale = Math.min(Number(svg.getAttribute('width')) / graph.width, Number(svg.getAttribute('height')) / graph.height);
+        expect(stack.closest('svg')).toBe(overlay);
+        const transform = stack.getAttribute('transform')!;
+        expect(transform).toMatch(/^translate\([^)]+\)$/);
+        const position = transform.match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi)!.map(Number);
+        const node = graph.nodes.find((candidate) => candidate.id === stack.getAttribute('data-matn-node-id'))!;
+        expect(node).toBeDefined();
+        expect(position[0]).toBeCloseTo(node.x * zoom);
+        expect(position[1]).toBeCloseTo((node.y + MATN_NODE_HEADER_HEIGHT / 2) * zoom);
+        let ancestor: Element | null = stack.parentElement;
+        while (ancestor && ancestor !== overlay) {
+          expect(ancestor).not.toHaveAttribute('transform');
+          ancestor = ancestor.parentElement;
+        }
         const markers = Array.from(stack.querySelectorAll('rect'));
         return markers.map((marker, index) => ({
           color: marker.getAttribute('fill'),
-          width: Number(marker.getAttribute('width')) * scale * screenScale,
-          height: Number(marker.getAttribute('height')) * scale * screenScale,
+          width: Number(marker.getAttribute('width')),
+          height: Number(marker.getAttribute('height')),
+          radius: Number(marker.getAttribute('rx')),
           gap: index > 0
-            ? (Number(marker.getAttribute('y')) - Number(markers[index - 1].getAttribute('y')) - Number(markers[index - 1].getAttribute('height'))) * scale * screenScale : 0,
+            ? Number(marker.getAttribute('y')) - Number(markers[index - 1].getAttribute('y')) - Number(markers[index - 1].getAttribute('height')) : 0,
         }));
       });
     }
 
-    const original = screenMarkerGeometry();
+    const original = screenMarkerGeometry(0.3);
     expect(original.map((stack) => stack.length)).toEqual([3, 1]);
     expect(original[0].map((marker) => marker.color)).toEqual(['#ffcc00', '#10b981', '#6366f1']);
+    original.flat().forEach((marker) => {
+      expect(marker.width).toBeCloseTo(9);
+      expect(marker.height).toBeGreaterThan(0);
+    });
     for (const zoom of [0.2, 0.1, 0.05, 0.005, 0.3]) {
       rerender(canvas(graph, { zoom }));
-      const current = screenMarkerGeometry();
+      const current = screenMarkerGeometry(zoom);
       expect(container.querySelector('.matn-node-text')).not.toBeInTheDocument();
       expect(current.map((stack) => stack.length)).toEqual([3, 1]);
       current.forEach((stack, stackIndex) => stack.forEach((marker, markerIndex) => {
@@ -121,12 +143,14 @@ describe('GraphCanvas', () => {
         expect(marker.color).toBe(initial.color);
         expect(marker.width).toBeCloseTo(initial.width);
         expect(marker.height).toBeCloseTo(initial.height);
+        expect(marker.radius).toBeCloseTo(initial.radius);
         expect(marker.gap).toBeCloseTo(initial.gap);
       }));
     }
 
     rerender(canvas(graph, { zoom: 0.31 }));
     expect(container.querySelector('.matn-highlight-markers')).not.toBeInTheDocument();
+    expect(container.querySelector('.matn-marker-overlay')).not.toBeInTheDocument();
     expect(screen.getByText('First')).toBeInTheDocument();
     expect(screen.getByText('Plain body')).toBeInTheDocument();
   });
@@ -139,12 +163,14 @@ describe('GraphCanvas', () => {
     const coordinates = badge.getAttribute('transform')!.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
     const radius = Number(badge.querySelector('circle')!.getAttribute('r'));
     const marker = container.querySelector('.matn-highlight-marker-generic')!;
-    const markerTop = Number(marker.getAttribute('y'));
+    const stackPosition = marker.closest('.matn-highlight-markers')!.getAttribute('transform')!
+      .match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi)!.map(Number);
+    const markerTop = stackPosition[1] + Number(marker.getAttribute('y'));
     const markerBottom = markerTop + Number(marker.getAttribute('height'));
 
-    expect(markerTop).toBeGreaterThan(coordinates[1] + radius);
-    expect(markerBottom).toBeLessThan(matn.height / 2);
-    expect(markerTop).toBeGreaterThan(-matn.height / 2);
+    expect(markerTop).toBeGreaterThan((matn.y + coordinates[1] + radius) * 0.3);
+    expect(markerBottom).toBeLessThan((matn.y + matn.height / 2) * 0.3);
+    expect(markerTop).toBeGreaterThan((matn.y - matn.height / 2) * 0.3);
   });
 
   it('shows one edge count instead of raw numbers and follows edge selection styling', () => {
