@@ -11,6 +11,8 @@ import { ReportCountBadge } from './ReportCountBadge';
 import { buildVerticalCurve, REPORT_COUNT_BADGE_RADIUS } from '../edgeGeometry';
 
 const MARKER_HIGHLIGHT_ZOOM_THRESHOLD = 0.3;
+const COMPACT_MARKER_WIDTH = 16;
+const MIN_COMPACT_MARKER_HEIGHT = 12;
 
 interface GraphCanvasProps {
   graph: RenderableGraph;
@@ -487,8 +489,8 @@ export function GraphCanvas({
           const availableHeight = Math.max(1, node.height - MATN_NODE_HEADER_HEIGHT - 16);
           const baseGap = Math.min(10, availableHeight / (markers.length * 2));
           const baseHeight = Math.min(42, (availableHeight - baseGap * (markers.length - 1)) / markers.length);
-          const markerWidth = 30 * MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
-          const markerHeight = baseHeight * MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
+          const markerWidth = COMPACT_MARKER_WIDTH;
+          const markerHeight = Math.max(MIN_COMPACT_MARKER_HEIGHT, baseHeight * MARKER_HIGHLIGHT_ZOOM_THRESHOLD);
           const markerGap = baseGap * MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
           const blockHeight = markers.length * markerHeight + (markers.length - 1) * markerGap;
 

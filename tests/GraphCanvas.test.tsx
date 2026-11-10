@@ -130,8 +130,8 @@ describe('GraphCanvas', () => {
     expect(original.map((stack) => stack.length)).toEqual([3, 1]);
     expect(original[0].map((marker) => marker.color)).toEqual(['#ffcc00', '#10b981', '#6366f1']);
     original.flat().forEach((marker) => {
-      expect(marker.width).toBeCloseTo(9);
-      expect(marker.height).toBeGreaterThan(0);
+      expect(marker.width).toBeCloseTo(16);
+      expect(marker.height).toBeGreaterThanOrEqual(12);
     });
     for (const zoom of [0.2, 0.1, 0.05, 0.005, 0.3]) {
       rerender(canvas(graph, { zoom }));
@@ -155,22 +155,17 @@ describe('GraphCanvas', () => {
     expect(screen.getByText('Plain body')).toBeInTheDocument();
   });
 
-  it('keeps a short matn marker below its count circle and within its card at the collapse threshold', () => {
+  it('keeps a short matn marker readable even when its scaled card is smaller than the marker', () => {
     const graph = buildRenderableGraph([makeReport('short', ['Collector'], 'Short.')]);
     const matn = graph.nodes.find((node) => node.type === 'matn')!;
     const { container } = render(canvas(graph, { zoom: 0.3 }));
-    const badge = container.querySelector('.matn-report-label .report-count-badge')!;
-    const coordinates = badge.getAttribute('transform')!.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
-    const radius = Number(badge.querySelector('circle')!.getAttribute('r'));
     const marker = container.querySelector('.matn-highlight-marker-generic')!;
     const stackPosition = marker.closest('.matn-highlight-markers')!.getAttribute('transform')!
       .match(/-?\d+(?:\.\d+)?(?:e[+-]?\d+)?/gi)!.map(Number);
-    const markerTop = stackPosition[1] + Number(marker.getAttribute('y'));
-    const markerBottom = markerTop + Number(marker.getAttribute('height'));
-
-    expect(markerTop).toBeGreaterThan((matn.y + coordinates[1] + radius) * 0.3);
-    expect(markerBottom).toBeLessThan((matn.y + matn.height / 2) * 0.3);
-    expect(markerTop).toBeGreaterThan((matn.y - matn.height / 2) * 0.3);
+    expect(Number(marker.getAttribute('width'))).toBe(16);
+    expect(Number(marker.getAttribute('height'))).toBeGreaterThanOrEqual(12);
+    expect(stackPosition[0]).toBeCloseTo(matn.x * 0.3);
+    expect(stackPosition[1]).toBeCloseTo((matn.y + MATN_NODE_HEADER_HEIGHT / 2) * 0.3);
   });
 
   it('shows one edge count instead of raw numbers and follows edge selection styling', () => {
