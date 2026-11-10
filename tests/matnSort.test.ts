@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { buildRenderableGraph } from '../src/graph';
-import { layoutGraphvizGraph, type GraphvizLayoutNode } from '../src/graphvizLayout';
 import type { HadithReport, HighlightLegendItem, RenderableGraph } from '../src/types';
 import { makeReport } from './helpers';
 
@@ -25,7 +24,7 @@ function matnIds(graph: RenderableGraph): string[] {
 }
 
 describe('matn graph sorting', () => {
-  it.each(['merged', 'trie'] as const)('enforces highlight order in the %s graph while dot keeps variable-size cards clear', (representation) => {
+  it.each(['merged', 'trie'] as const)('enforces highlight order in the %s graph and keeps variable-size cards clear', (representation) => {
     const before = JSON.stringify({ reports, legend });
     const options = { representation, reportNumbers: new Map(reports.map((report, index) => [report.id, 10 + index * 7])) };
     const widths = { 'm:z"first': 700, 'm:a\\second': 220, 'm:mid\nthird': 400 };
@@ -48,21 +47,16 @@ describe('matn graph sorting', () => {
     expect(JSON.stringify({ reports, legend })).toBe(before);
   });
 
-  it('keeps the default layout unchanged and isolates sorted layouts in the Graphviz cache', () => {
-    const nodes: GraphvizLayoutNode[] = [
-      { id: 'n:root', width: 190, height: 56, type: 'narrator' },
-      ...['one', 'two', 'three'].map((id, index): GraphvizLayoutNode => ({
-        id: `m:${id}`, width: 220 + index * 110, height: 80 + index * 60, type: 'matn', anchorId: 'n:root',
-      })),
-    ];
-    const original = layoutGraphvizGraph(nodes, [], 70, 180);
-    const desired = ['m:three', 'm:one', 'm:two'];
-    const sorted = layoutGraphvizGraph(nodes, [], 70, 180, desired);
-    expect([...sorted].filter(([id]) => id.startsWith('m:')).sort((a, b) => a[1].x - b[1].x).map(([id]) => id)).toEqual(desired);
-    expect(layoutGraphvizGraph(nodes, [], 70, 180)).toEqual(original);
-    expect(layoutGraphvizGraph(nodes, [], 70, 180, desired)).toEqual(sorted);
-    expect(buildRenderableGraph(reports, {}, {}, undefined, legend, { matnSort: 'default' }))
-      .toEqual(buildRenderableGraph(reports, {}, {}, undefined, legend));
+  it.each(['merged', 'trie'] as const)('keeps default and highlight layouts reproducible and separate in the %s graph', (representation) => {
+    const original = buildRenderableGraph(reports, {}, {}, undefined, legend, { representation });
+    const sorted = buildRenderableGraph(reports, {}, {}, undefined, legend, { representation, matnSort: 'highlights' });
+    expect(matnIds(sorted)).toEqual(['m:z"first', 'm:mid\nthird', 'm:a\\second', 'm:plain:fourth']);
+    expect(buildRenderableGraph(reports, {}, {}, undefined, legend, { representation }))
+      .toEqual(original);
+    expect(buildRenderableGraph(reports, {}, {}, undefined, legend, { representation, matnSort: 'default' }))
+      .toEqual(original);
+    expect(buildRenderableGraph(reports, {}, {}, undefined, legend, { representation, matnSort: 'highlights' }))
+      .toEqual(sorted);
   });
 
   it('matches the matn reading view fallback for unhighlighted and unknown-only annotations', () => {
@@ -74,13 +68,5 @@ describe('matn graph sorting', () => {
     const graph = buildRenderableGraph(unhighlighted, {}, {}, undefined, legend, { matnSort: 'highlights' });
     expect(matnIds(graph)).toEqual(unhighlighted.map((report) => `m:${report.id}`));
     expect(buildRenderableGraph([], {}, {}, undefined, legend, { matnSort: 'highlights' }).nodes).toEqual([]);
-  });
-
-  it('normalizes incomplete direct constraints without allowing arbitrary IDs into DOT', () => {
-    const nodes: GraphvizLayoutNode[] = ['a', 'b', 'c'].map((id) => ({ id: `m:${id}`, width: 240, height: 100, type: 'matn' }));
-    const positions = layoutGraphvizGraph(nodes, [], 70, 180, ['m:c', 'not a node; }', 'm:c']);
-    expect([...positions].sort((a, b) => a[1].x - b[1].x).map(([id]) => id)).toEqual(['m:c', 'm:a', 'm:b']);
-    expect(layoutGraphvizGraph(nodes, [], 70, 180, ['not a node']))
-      .toEqual(layoutGraphvizGraph(nodes, [], 70, 180));
   });
 });

@@ -15,8 +15,9 @@ import type {
   NodeWidthMap,
   RenderableGraph,
 } from './types';
-import { layoutGraphvizGraph } from './graphvizLayout';
-import type { Point } from './layerPlacement';
+import { orderLayers } from './layerOrdering';
+import { positionLayers } from './layerPlacement';
+import type { LayoutFootprint } from './layerPlacement';
 import { buildVerticalCurve, getReportCountBadgeRadius } from './edgeGeometry';
 import { normalizeVerticalSpacing } from './layoutSettings';
 
@@ -431,11 +432,16 @@ type NodeMeta = {
 };
 
 type GraphTopology = {
+  narratorNodeIds: string[];
+  matnNodeIds: string[];
+  depth: Map<string, number>;
+  rows: Map<number, string[]>;
   hasCycle: boolean;
 };
 
 type AutoLayout = {
-  positions: Map<string, Point>;
+  rowCenterY: Map<number, number>;
+  autoX: Map<string, number>;
   autoWidth: number;
   autoHeight: number;
 };
@@ -579,8 +585,16 @@ function buildIndexedGraph(
 }
 
 function buildGraphTopology(indexedGraph: IndexedGraph): GraphTopology {
-  const narratorNodeIds = [...indexedGraph.nodesById.values()]
-    .filter((node) => node.type === 'narrator').map((node) => node.id);
+  const narratorNodeIds: string[] = [];
+  const matnNodeIds: string[] = [];
+
+  for (const node of indexedGraph.nodesById.values()) {
+    if (node.type === 'narrator') {
+      narratorNodeIds.push(node.id);
+    } else {
+      matnNodeIds.push(node.id);
+    }
+  }
 
   const topoOrder = topologicalSort(
     narratorNodeIds,
@@ -588,8 +602,47 @@ function buildGraphTopology(indexedGraph: IndexedGraph): GraphTopology {
     indexedGraph.indegree,
     (a, b) => nodeLabelSort(a, b, indexedGraph.nodesById),
   );
+  const hasCycle = topoOrder.length !== narratorNodeIds.length;
+  const orderedNarratorIds = [...topoOrder];
+
+  if (hasCycle) {
+    const remainingNarrators = [...narratorNodeIds].sort((a, b) => nodeLabelSort(a, b, indexedGraph.nodesById));
+    remainingNarrators.forEach((id) => {
+      if (!orderedNarratorIds.includes(id)) {
+        orderedNarratorIds.push(id);
+      }
+    });
+  }
+
+  const depth = new Map<string, number>();
+  orderedNarratorIds.forEach((id) => depth.set(id, 0));
+
+  orderedNarratorIds.forEach((id) => {
+    const sourceDepth = depth.get(id) ?? 0;
+    for (const neighbor of indexedGraph.adjacency.get(id) ?? []) {
+      depth.set(neighbor, Math.max(depth.get(neighbor) ?? 0, sourceDepth + 1));
+    }
+  });
+
+  const rows = new Map<number, string[]>();
+  orderedNarratorIds.forEach((id) => {
+    const rowIndex = depth.get(id) ?? 0;
+    if (!rows.has(rowIndex)) {
+      rows.set(rowIndex, []);
+    }
+    rows.get(rowIndex)?.push(id);
+  });
+
+  rows.forEach((rowNodes) => {
+    rowNodes.sort((a, b) => nodeLabelSort(a, b, indexedGraph.nodesById));
+  });
+
   return {
-    hasCycle: topoOrder.length !== narratorNodeIds.length,
+    narratorNodeIds,
+    matnNodeIds,
+    depth,
+    rows,
+    hasCycle,
   };
 }
 
@@ -641,7 +694,7 @@ function buildNodeMeta(
     nodeMeta.set(node.id, {
       width: NARRATOR_NODE_WIDTH,
       // Keep the narrator's visible rectangle and edge ports unchanged while
-      // reserving the adjacent report links in the Graphviz bounding box.
+      // reserving the adjacent report links in automatic row spacing.
       layoutWidth: NARRATOR_NODE_WIDTH + (authorityReports.width > 0
         ? 2 * (AUTHORITY_REPORT_GAP + authorityReports.width)
         : 0),
@@ -654,72 +707,177 @@ function buildNodeMeta(
 }
 
 function buildAutoLayout(
-  indexedGraph: IndexedGraph,
+  rows: Map<number, string[]>,
   nodeMeta: Map<string, NodeMeta>,
+  edges: Array<{ source: string; target: string }>,
+  footprints: LayoutFootprint[],
   verticalGap: number,
-  matnOrder?: string[],
 ): AutoLayout {
-  const positions = layoutGraphvizGraph(
-    [...indexedGraph.nodesById.values()].map((node) => {
-      const meta = nodeMeta.get(node.id)!;
-      return {
-        id: node.id,
-        type: node.type,
-        width: meta.layoutWidth ?? meta.width,
-        height: meta.height,
-        anchorId: node.matnAnchorId,
-      };
-    }),
-    [...indexedGraph.edgesById.values()],
-    HORIZONTAL_GAP,
-    verticalGap,
-    matnOrder,
-  );
+  const rowIndices = Array.from(rows.keys()).sort((a, b) => a - b);
+  const rowCenterY = new Map<number, number>();
+  let yCursor = PADDING_Y;
+
+  for (const rowIndex of rowIndices) {
+    const rowNodes = rows.get(rowIndex) ?? [];
+    const rowHeight = Math.max(...rowNodes.map((id) => nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT));
+    const centerY = yCursor + rowHeight / 2;
+    rowCenterY.set(rowIndex, centerY);
+    yCursor += rowHeight + verticalGap;
+  }
 
   let autoWidth = DEFAULT_GRAPH_WIDTH;
-  let autoHeight = DEFAULT_GRAPH_HEIGHT;
-  for (const [id, point] of positions) {
-    const meta = nodeMeta.get(id)!;
-    autoWidth = Math.max(autoWidth, PADDING_X + point.x + (meta.layoutWidth ?? meta.width) / 2 + PADDING_X);
-    autoHeight = Math.max(autoHeight, PADDING_Y + point.y + meta.height / 2 + PADDING_Y);
+  const autoX = new Map<string, number>();
+
+  const layers = rowIndices.map((rowIndex) => ({
+    y: rowCenterY.get(rowIndex) ?? PADDING_Y,
+    nodes: (rows.get(rowIndex) ?? []).map((id) => ({
+      id,
+      width: nodeMeta.get(id)?.layoutWidth ?? nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
+      height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
+    })),
+  }));
+  const orderedRows = orderLayers(layers, edges, HORIZONTAL_GAP, footprints);
+  const layoutNodeById = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node] as const)));
+  const positions = positionLayers(layers.map((layer, index) => ({
+    ...layer,
+    nodes: orderedRows[index].map((id) => layoutNodeById.get(id)!),
+  })), edges, HORIZONTAL_GAP, footprints);
+
+  for (const [id, position] of positions) {
+    const x = PADDING_X + position.x;
+    autoX.set(id, x);
+    const meta = nodeMeta.get(id);
+    autoWidth = Math.max(autoWidth, x + (meta?.layoutWidth ?? meta?.width ?? NARRATOR_NODE_WIDTH) / 2 + PADDING_X);
   }
-  return { positions, autoWidth, autoHeight };
+
+  const autoHeight = rowIndices.length > 0
+    ? Math.max(DEFAULT_GRAPH_HEIGHT, yCursor - verticalGap + PADDING_Y)
+    : DEFAULT_GRAPH_HEIGHT;
+
+  return {
+    rowCenterY,
+    autoX,
+    autoWidth,
+    autoHeight,
+  };
 }
 
-function buildPositionedNodes(
+function buildNarratorNodes(
   indexedGraph: IndexedGraph,
+  topology: GraphTopology,
   nodeMeta: Map<string, NodeMeta>,
   autoLayout: AutoLayout,
   nodePositions: NodePositionMap,
 ): GraphNode[] {
-  return [...indexedGraph.nodesById.values()].map((node) => {
-    const meta = nodeMeta.get(node.id)!;
-    const automatic = autoLayout.positions.get(node.id)!;
-    const legacyPosition = node.type === 'matn'
-      ? nodePositions[`r:${node.id.slice(MATN_NODE_PREFIX.length)}`]
-      : node.id.startsWith(COLLECTOR_PREFIX)
-        ? nodePositions[getSharedNarratorNodeId(node.label)]
-        : undefined;
-    const savedPosition = nodePositions[node.id] ?? legacyPosition;
+  return topology.narratorNodeIds.map((id) => {
+    const node = indexedGraph.nodesById.get(id);
+    const meta = nodeMeta.get(id);
+    const rowIndex = topology.depth.get(id) ?? 0;
+    const defaultX = autoLayout.autoX.get(id) ?? PADDING_X;
+    const defaultY = autoLayout.rowCenterY.get(rowIndex) ?? PADDING_Y;
+
+    const legacyCollectorPosition = id.startsWith(COLLECTOR_PREFIX) && node
+      ? nodePositions[getSharedNarratorNodeId(node.label)]
+      : undefined;
+    const savedPosition = nodePositions[id] ?? legacyCollectorPosition;
 
     return {
-      id: node.id,
-      label: node.label,
-      labelLines: meta.labelLines,
-      matnLines: meta.matnLines,
-      matnLineSegments: meta.matnLineSegments,
-      matnAnchorId: node.matnAnchorId,
-      attributedReports: node.attributedReports,
-      report: node.report,
-      type: node.type,
-      width: meta.width,
-      height: meta.height,
-      x: typeof savedPosition?.x === 'number' && Number.isFinite(savedPosition.x)
-        ? savedPosition.x : PADDING_X + automatic.x,
-      y: typeof savedPosition?.y === 'number' && Number.isFinite(savedPosition.y)
-        ? savedPosition.y : PADDING_Y + automatic.y,
+      id,
+      label: node?.label ?? id,
+      labelLines: meta?.labelLines ?? [node?.label ?? id],
+      matnLines: meta?.matnLines,
+      matnLineSegments: meta?.matnLineSegments,
+      attributedReports: node?.attributedReports,
+      type: node?.type ?? 'narrator',
+      width: meta?.width ?? NARRATOR_NODE_WIDTH,
+      height: meta?.height ?? NARRATOR_MIN_HEIGHT,
+      x: typeof savedPosition?.x === 'number' && Number.isFinite(savedPosition.x) ? savedPosition.x : defaultX,
+      y: typeof savedPosition?.y === 'number' && Number.isFinite(savedPosition.y) ? savedPosition.y : defaultY,
     };
   });
+}
+
+function buildMatnNodes(
+  indexedGraph: IndexedGraph,
+  topology: GraphTopology,
+  nodeMeta: Map<string, NodeMeta>,
+  narratorNodes: GraphNode[],
+  verticalGap: number,
+  nodePositions: NodePositionMap,
+  matnOrder?: string[],
+): GraphNode[] {
+  const narratorBottom = narratorNodes.length > 0
+    ? Math.max(...narratorNodes.map((node) => node.y + node.height / 2))
+    : PADDING_Y;
+  const matnTopY = narratorBottom + verticalGap;
+  const narratorNodeById = new Map(narratorNodes.map((node) => [node.id, node]));
+  const savedPositions = new Map<string, NodePositionMap[string]>();
+  const sortedX = new Map<string, number>();
+  let sortedCenterY: number | undefined;
+  // The optional reading order arranges matns independently of their narrator
+  // columns. The default keeps each automatic card beneath its collector.
+  if (matnOrder) {
+    let x = PADDING_X;
+    let maxHeight = 0;
+    for (const id of matnOrder) {
+      const meta = nodeMeta.get(id)!;
+      sortedX.set(id, x + meta.width / 2);
+      x += meta.width + HORIZONTAL_GAP;
+      maxHeight = Math.max(maxHeight, meta.height);
+    }
+    sortedCenterY = matnTopY + maxHeight / 2;
+  }
+
+  const nodes = topology.matnNodeIds.map((id): GraphNode => {
+    const node = indexedGraph.nodesById.get(id);
+    const meta = nodeMeta.get(id);
+    const width = meta?.width ?? MATN_NODE_DEFAULT_WIDTH;
+    const height = meta?.height ?? NARRATOR_MIN_HEIGHT;
+    const anchorNode = narratorNodeById.get(node?.matnAnchorId ?? '');
+    const savedPosition = nodePositions[id] ?? nodePositions[`r:${id.slice(MATN_NODE_PREFIX.length)}`];
+    if (typeof savedPosition?.x === 'number' && Number.isFinite(savedPosition.x)
+      && typeof savedPosition.y === 'number' && Number.isFinite(savedPosition.y)) {
+      savedPositions.set(id, savedPosition);
+    }
+
+    return {
+      id,
+      label: node?.label ?? id,
+      labelLines: meta?.labelLines ?? [node?.label ?? id],
+      matnLines: meta?.matnLines,
+      matnLineSegments: meta?.matnLineSegments,
+      matnAnchorId: node?.matnAnchorId,
+      report: node?.report,
+      type: node?.type ?? 'matn',
+      width,
+      height,
+      x: savedPositions.get(id)?.x ?? sortedX.get(id) ?? anchorNode?.x ?? PADDING_X + width / 2,
+      y: savedPositions.get(id)?.y ?? sortedCenterY ?? matnTopY + height / 2,
+    };
+  });
+
+  // Fixed manual collector positions can contradict the automatic spacing.
+  // Preserve those positions and the exact attachment; use a lower text row
+  // only where the pinned columns leave insufficient horizontal room.
+  const ordered = nodes.filter((node) => !savedPositions.has(node.id))
+    .sort((a, b) => a.x - b.x || a.id.localeCompare(b.id));
+  const placed = nodes.filter((node) => savedPositions.has(node.id));
+  for (const node of ordered) {
+    let top = sortedCenterY === undefined ? matnTopY : sortedCenterY - node.height / 2;
+    const conflicts = placed
+      .filter((other) => Math.abs(other.x - node.x) < (other.width + node.width) / 2 + HORIZONTAL_GAP - 1e-6)
+      .sort((a, b) => a.y - a.height / 2 - (b.y - b.height / 2));
+    for (const other of conflicts) {
+      const otherTop = other.y - other.height / 2;
+      const otherBottom = other.y + other.height / 2;
+      if (top < otherBottom + HORIZONTAL_GAP && top + node.height > otherTop - HORIZONTAL_GAP) {
+        top = otherBottom + HORIZONTAL_GAP;
+      }
+    }
+    node.y = top + node.height / 2;
+    placed.push(node);
+  }
+  return nodes;
 }
 
 function shiftNodesIntoBounds(nodes: GraphNode[]): { shiftX: number; shiftY: number } {
@@ -823,10 +981,19 @@ export function buildRenderableGraph(
 
   const topology = buildGraphTopology(indexedGraph);
   const nodeMeta = buildNodeMeta(indexedGraph.nodesById, nodeWidths, normalizedFontSizes, highlightLegendById);
+  const footprints = topology.matnNodeIds.flatMap((id) => {
+    const anchor = indexedGraph.nodesById.get(id)?.matnAnchorId;
+    return anchor ? [{ anchor, width: nodeMeta.get(id)?.width ?? MATN_NODE_DEFAULT_WIDTH }] : [];
+  });
+  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()], footprints, verticalGap);
+  const narratorNodes = buildNarratorNodes(indexedGraph, topology, nodeMeta, autoLayout, nodePositions);
   const matnOrder = options.matnSort === 'highlights'
     ? orderMatnsBySimilarity(reports, highlightLegend).map((report) => matnNodeId(report.id)) : undefined;
-  const autoLayout = buildAutoLayout(indexedGraph, nodeMeta, verticalGap, matnOrder);
-  const nodes = buildPositionedNodes(indexedGraph, nodeMeta, autoLayout, nodePositions);
+  const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, narratorNodes, verticalGap, nodePositions, matnOrder);
+  const nodeById = new Map<string, GraphNode>([...narratorNodes, ...matnNodes].map((node) => [node.id, node]));
+  const nodes = Array.from(indexedGraph.nodesById.keys())
+    .map((id) => nodeById.get(id))
+    .filter((node): node is GraphNode => node !== undefined);
   const { shiftX, shiftY } = shiftNodesIntoBounds(nodes);
   const edges = buildEdges(indexedGraph, nodes);
   const maxX = Math.max(...nodes.map((node) => {
