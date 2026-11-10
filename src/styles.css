@@ -673,6 +673,7 @@ textarea:focus {
 .graph-toolbar {
   z-index: 2;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
@@ -698,6 +699,19 @@ textarea:focus {
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.graph-matn-sort {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.graph-matn-sort select {
+  width: auto;
+  max-width: 100%;
 }
 
 .graph-representation-toggle {

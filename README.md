@@ -16,6 +16,7 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 - Resize matn nodes horizontally and persist custom widths in the bundle.
 - Highlight normalized matn text with a shared legend of reusable labels and colors.
 - Switch to **Matns** to read full matn texts, their isnads, and highlights together, ordered by highlight similarity or original bundle order.
+- Choose **Matn order** in the graph: **Default** lets Graphviz reduce crossings, while **By elements/highlights** groups similar annotations from left to right.
 - Remove legend entries globally and automatically clear matching highlights from reports.
 - Show full wrapped matn text when zoomed in and compact highlight markers when zoomed far out. Once text collapses, the markers keep their screen size as you zoom out further.
 - Select a report from the graph or the right sidebar and keep its graph nodes, list card, and edges highlighted together.
@@ -26,6 +27,8 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 ## Graph Controls
 
 Use the **Matns** button in the header for a text-only comparison view. By default, it places reports with shared highlight labels and similar proportions of highlighted text next to one another. Reports without highlights appear last. This compares the saved highlight annotations; it does not infer textual or semantic similarity. Choose **Bundle order** to restore the original reading order. Report numbers stay the same in either order, and selecting a report number opens the existing editor. Switching views preserves the graph layout.
+
+The graph's **Matn order** menu offers **Default** and **By elements/highlights** in merged, trie, and complete-report focus views. Highlight ordering uses the same similarity measure as the Matns view and can increase edge crossings. Switching back to Default restores the original automatic or saved layout. Manual adjustments in the highlight-ordered view last for the session and stay separate from the default positions exported in the bundle. Saving report or highlight changes reapplies the similarity order.
 
 - Multi-select with box drag on empty canvas.
 - Add to the selection with `Ctrl`/`Cmd`/`Shift` + left click.

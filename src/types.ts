@@ -29,6 +29,7 @@ export type NodePositionMap = Record<string, NodePosition>;
 export type NodeWidthMap = Record<string, number>;
 
 export type GraphRepresentation = 'merged' | 'trie';
+export type MatnSortMode = 'default' | 'highlights';
 
 export interface HadithFontSizes {
   narrator: number;

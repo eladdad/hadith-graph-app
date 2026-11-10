@@ -1,4 +1,5 @@
 import { buildMatnTextSegments } from './matnHighlights';
+import { orderMatnsBySimilarity } from './matnSimilarity';
 import type {
   GraphEdge,
   GraphNode,
@@ -9,6 +10,7 @@ import type {
   HadithFontSizes,
   HadithReport,
   HighlightLegendItem,
+  MatnSortMode,
   NodePositionMap,
   NodeWidthMap,
   RenderableGraph,
@@ -655,6 +657,7 @@ function buildAutoLayout(
   indexedGraph: IndexedGraph,
   nodeMeta: Map<string, NodeMeta>,
   verticalGap: number,
+  matnOrder?: string[],
 ): AutoLayout {
   const positions = layoutGraphvizGraph(
     [...indexedGraph.nodesById.values()].map((node) => {
@@ -670,6 +673,7 @@ function buildAutoLayout(
     [...indexedGraph.edgesById.values()],
     HORIZONTAL_GAP,
     verticalGap,
+    matnOrder,
   );
 
   let autoWidth = DEFAULT_GRAPH_WIDTH;
@@ -797,6 +801,7 @@ export interface GraphBuildOptions {
   reportNumbers?: ReadonlyMap<string, number>;
   verticalSpacing?: number;
   representation?: GraphRepresentation;
+  matnSort?: MatnSortMode;
 }
 
 export function buildRenderableGraph(
@@ -818,7 +823,9 @@ export function buildRenderableGraph(
 
   const topology = buildGraphTopology(indexedGraph);
   const nodeMeta = buildNodeMeta(indexedGraph.nodesById, nodeWidths, normalizedFontSizes, highlightLegendById);
-  const autoLayout = buildAutoLayout(indexedGraph, nodeMeta, verticalGap);
+  const matnOrder = options.matnSort === 'highlights'
+    ? orderMatnsBySimilarity(reports, highlightLegend).map((report) => matnNodeId(report.id)) : undefined;
+  const autoLayout = buildAutoLayout(indexedGraph, nodeMeta, verticalGap, matnOrder);
   const nodes = buildPositionedNodes(indexedGraph, nodeMeta, autoLayout, nodePositions);
   const { shiftX, shiftY } = shiftNodesIntoBounds(nodes);
   const edges = buildEdges(indexedGraph, nodes);

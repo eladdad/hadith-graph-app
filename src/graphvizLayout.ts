@@ -55,6 +55,7 @@ export function layoutGraphvizGraph(
   narratorEdges: LayoutEdge[],
   horizontalGap: number,
   verticalGap: number,
+  matnOrder?: string[],
 ): Map<string, Point> {
   if (!viz) {
     throw new Error('Graphviz layout has not been initialized.');
@@ -71,6 +72,10 @@ export function layoutGraphvizGraph(
     throw new Error('Graphviz layout node identifiers must be unique.');
   }
   const matns = nodes.filter((node) => node.type === 'matn');
+  const matnIds = new Set(matns.map((node) => node.id));
+  const requestedOrder = [...new Set(matnOrder?.filter((id) => matnIds.has(id)) ?? [])];
+  const orderedMatnIds = requestedOrder.length > 0
+    ? [...requestedOrder, ...matns.filter((node) => !requestedOrder.includes(node.id)).map((node) => node.id)] : [];
   const attachments = matns.filter((node) => node.anchorId && dotIds.has(node.anchorId))
     .map((node) => ({ source: node.anchorId!, target: node.id }));
   const edgesByPair = new Map<string, LayoutEdge>();
@@ -82,7 +87,7 @@ export function layoutGraphvizGraph(
   const edges = [...edgesByPair.values()].sort((a, b) => (
     a.source.localeCompare(b.source) || a.target.localeCompare(b.target)
   ));
-  const key = JSON.stringify([nodes, edges, horizontalGap, verticalGap]);
+  const key = JSON.stringify([nodes, edges, horizontalGap, verticalGap, orderedMatnIds]);
   const cached = cachedLayouts.get(key);
   if (cached) {
     cachedLayouts.delete(key);
@@ -90,8 +95,7 @@ export function layoutGraphvizGraph(
     return copyPositions(cached);
   }
 
-  // Matching groups let dot prefer vertical collector/card edges itself. They
-  // do not impose positions, fixed narrator levels, or a custom report order.
+  // Matching groups let dot prefer vertical collector/card edges itself.
   const columnByAnchor = new Map<string, string>();
   for (const attachment of attachments) {
     if (!columnByAnchor.has(attachment.source)) {
@@ -110,6 +114,11 @@ export function layoutGraphvizGraph(
     ...edges.map(({ source, target }) => `${dotIds.get(source)} -> ${dotIds.get(target)};`),
     ...(matns.length > 0
       ? [`{ rank=sink; ${matns.map((node) => dotIds.get(node.id)).join('; ')}; }`]
+      : []),
+    // Flat invisible edges constrain only the matn rank's reading order. Dot
+    // still positions every node and reserves clearance for the real cards.
+    ...(orderedMatnIds.length > 1
+      ? [`${orderedMatnIds.map((id) => dotIds.get(id)).join(' -> ')} [style=invis, weight=100];`]
       : []),
     '}',
   ].join('\n');
