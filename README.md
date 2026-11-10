@@ -15,6 +15,7 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 - Drag nodes to refine layout and snap them to nearby horizontal or vertical anchor lines.
 - Resize matn nodes horizontally and persist custom widths in the bundle.
 - Highlight normalized matn text with a shared legend of reusable labels and colors.
+- Switch to **Matns** to read full matn texts and their highlights together, ordered by highlight similarity or original bundle order.
 - Remove legend entries globally and automatically clear matching highlights from reports.
 - Show full wrapped matn text when zoomed in and compact highlight markers when zoomed far out.
 - Select a report from the graph or the right sidebar and keep its graph nodes, list card, and edges highlighted together.
@@ -23,6 +24,8 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 - Toggle light and dark theme.
 
 ## Graph Controls
+
+Use the **Matns** button in the header for a text-only comparison view. By default, it places reports with shared highlight labels and similar proportions of highlighted text next to one another. Reports without highlights appear last. This compares the saved highlight annotations; it does not infer textual or semantic similarity. Choose **Bundle order** to restore the original reading order. Report numbers stay the same in either order, and selecting a report number opens the existing editor. Switching views preserves the graph layout.
 
 - Multi-select with box drag on empty canvas.
 - Add to the selection with `Ctrl`/`Cmd`/`Shift` + left click.

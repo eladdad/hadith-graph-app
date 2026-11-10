@@ -13,6 +13,7 @@ import {
 } from './bundle';
 import { AboutDialog } from './components/AboutDialog';
 import { GraphCanvas } from './components/GraphCanvas';
+import { MatnView } from './components/MatnView';
 import { NarratorFocusControls, NarratorFocusReport } from './components/NarratorFocusPanel';
 import { ReportEditorPanel } from './components/ReportEditorPanel';
 import { ReportNoteCard } from './components/ReportNoteCard';
@@ -86,6 +87,7 @@ function App() {
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
   const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [workspaceView, setWorkspaceView] = useState<'graph' | 'matns'>('graph');
   const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [noteDraft, setNoteDraft] = useState('');
@@ -745,7 +747,10 @@ function App() {
             <h1>Hadith Graph Builder</h1>
           </div>
         </div>
-        <p className="masthead-caption">A workspace for tracing traditions.</p>
+        <div className="workspace-view-toggle" role="group" aria-label="Workspace view">
+          <button type="button" aria-pressed={workspaceView === 'graph'} onClick={() => setWorkspaceView('graph')}>Transmission graph</button>
+          <button type="button" aria-pressed={workspaceView === 'matns'} onClick={() => setWorkspaceView('matns')}>Matns</button>
+        </div>
       </header>
       <main className={layoutClassName}>
         {isLeftSidebarOpen ? (
@@ -774,7 +779,21 @@ function App() {
           </aside>
         ) : null}
 
-        <section className="graph-card" aria-label="Transmission graph">
+        {workspaceView === 'matns' ? (
+          <MatnView
+            reports={bundle.reports}
+            legend={bundle.highlightLegend}
+            fontSize={bundle.fontSizes.matn}
+            selectedReportId={reportEditor.editingReport?.id}
+            isSidebarOpen={isLeftSidebarOpen}
+            onToggleSidebar={() => setIsLeftSidebarOpen((current) => !current)}
+            onSelectReport={(reportId) => {
+              handleSelectReport(reportId);
+              setIsLeftSidebarOpen(true);
+            }}
+          />
+        ) : null}
+        <section className="graph-card" aria-label="Transmission graph" hidden={workspaceView !== 'graph'}>
           <div className="graph-header">
           <div className="graph-toolbar">
             <div className="graph-title-block">
