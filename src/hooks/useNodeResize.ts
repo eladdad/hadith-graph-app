@@ -14,6 +14,7 @@ interface ResizeState {
   edge: 'left' | 'right';
   initialCenterX: number;
   initialWidth: number;
+  currentWidth: number;
   moved: boolean;
 }
 
@@ -21,6 +22,7 @@ interface UseNodeResizeParams {
   clientPointToSvg: (clientX: number, clientY: number) => { x: number; y: number } | null;
   setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
   setBundle: Dispatch<SetStateAction<HadithBundle>>;
+  onResize?: (nodeId: string, width: number) => void;
   onResizeCommitted: () => void;
 }
 
@@ -37,6 +39,7 @@ export function useNodeResize({
   clientPointToSvg,
   setSelectedNodeIds,
   setBundle,
+  onResize,
   onResizeCommitted,
 }: UseNodeResizeParams): UseNodeResizeResult {
   const [isResizing, setIsResizing] = useState(false);
@@ -67,6 +70,14 @@ export function useNodeResize({
         nextWidth = clampMatnNodeWidth(point.x - initialLeft);
       } else {
         nextWidth = clampMatnNodeWidth(initialRight - point.x);
+      }
+
+      if (onResize) {
+        if (nextWidth === resizeState.currentWidth) return;
+        resizeState.currentWidth = nextWidth;
+        resizeState.moved = true;
+        onResize(resizeState.nodeId, nextWidth);
+        return;
       }
 
       setBundle((previous) => {
@@ -113,7 +124,7 @@ export function useNodeResize({
       window.removeEventListener('pointerup', finishResizing);
       window.removeEventListener('pointercancel', finishResizing);
     };
-  }, [isResizing, clientPointToSvg, setBundle, onResizeCommitted]);
+  }, [isResizing, clientPointToSvg, setBundle, onResize, onResizeCommitted]);
 
   const handleResizePointerDown = (
     event: ReactPointerEvent<SVGRectElement>,
@@ -129,6 +140,7 @@ export function useNodeResize({
       edge,
       initialCenterX: node.x,
       initialWidth: node.width,
+      currentWidth: node.width,
       moved: false,
     };
 

@@ -3,6 +3,7 @@ import type {
   GraphEdge,
   GraphNode,
   GraphReportReference,
+  GraphRepresentation,
   GraphTextLine,
   GraphTextSegment,
   HadithFontSizes,
@@ -99,7 +100,11 @@ export function getCollectorNodeId(reportId: string): string {
 export function getNarratorNodeIdForReport(
   report: Pick<HadithReport, 'id' | 'isnad'>,
   narratorIndex: number,
+  representation: GraphRepresentation = 'merged',
 ): string {
+  if (representation === 'trie') {
+    return `t:${encodeURIComponent(JSON.stringify(report.isnad.slice(0, narratorIndex + 1)))}`;
+  }
   const narratorName = report.isnad[narratorIndex] ?? '';
   return narratorIndex === report.isnad.length - 1
     ? getCollectorNodeId(report.id)
@@ -504,7 +509,11 @@ function topologicalSort(
   return order;
 }
 
-function buildIndexedGraph(reports: HadithReport[], reportNumbers?: ReadonlyMap<string, number>): IndexedGraph {
+function buildIndexedGraph(
+  reports: HadithReport[],
+  reportNumbers?: ReadonlyMap<string, number>,
+  representation: GraphRepresentation = 'merged',
+): IndexedGraph {
   const nodesById = new Map<string, IndexedGraphNode>();
   const adjacency = new Map<string, Set<string>>();
   const indegree = new Map<string, number>();
@@ -530,12 +539,12 @@ function buildIndexedGraph(reports: HadithReport[], reportNumbers?: ReadonlyMap<
       matnHighlights: report.matnHighlights,
       report: reportReference,
       matnAnchorId: report.isnad.length > 0
-        ? getNarratorNodeIdForReport(report, report.isnad.length - 1)
+        ? getNarratorNodeIdForReport(report, report.isnad.length - 1, representation)
         : undefined,
     });
 
     report.isnad.forEach((narratorName, narratorIndex) => {
-      const narratorId = getNarratorNodeIdForReport(report, narratorIndex);
+      const narratorId = getNarratorNodeIdForReport(report, narratorIndex, representation);
       ensureNode({
         id: narratorId,
         label: narratorName,
@@ -549,8 +558,8 @@ function buildIndexedGraph(reports: HadithReport[], reportNumbers?: ReadonlyMap<
     });
 
     for (let i = 0; i < report.isnad.length - 1; i += 1) {
-      const source = getNarratorNodeIdForReport(report, i);
-      const target = getNarratorNodeIdForReport(report, i + 1);
+      const source = getNarratorNodeIdForReport(report, i, representation);
+      const target = getNarratorNodeIdForReport(report, i + 1, representation);
       addDirectedEdge(adjacency, indegree, source, target);
       const edgeId = `${source}->${target}`;
       const edge = edgesById.get(edgeId) ?? { source, target, reports: new Map<string, GraphReportReference>() };
@@ -787,6 +796,7 @@ export function hasNarratorCycle(reports: HadithReport[]): boolean {
 export interface GraphBuildOptions {
   reportNumbers?: ReadonlyMap<string, number>;
   verticalSpacing?: number;
+  representation?: GraphRepresentation;
 }
 
 export function buildRenderableGraph(
@@ -800,7 +810,7 @@ export function buildRenderableGraph(
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
   const verticalGap = normalizeVerticalSpacing(options.verticalSpacing);
   const highlightLegendById = new Map(highlightLegend.map((entry) => [entry.id, entry]));
-  const indexedGraph = buildIndexedGraph(reports, options.reportNumbers);
+  const indexedGraph = buildIndexedGraph(reports, options.reportNumbers, options.representation);
 
   if (indexedGraph.nodesById.size === 0) {
     return createEmptyRenderableGraph();

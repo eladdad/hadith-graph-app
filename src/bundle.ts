@@ -11,6 +11,7 @@ import type {
   HadithBundle,
   HadithFontSizes,
   HadithReport,
+  GraphRepresentation,
   HighlightLegendItem,
   MatnHighlight,
   NodePositionMap,
@@ -64,13 +65,13 @@ function isObjectLike(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function parseNodePositions(raw: unknown): { positions?: NodePositionMap; error?: string } {
+function parseNodePositions(raw: unknown, field = 'nodePositions'): { positions?: NodePositionMap; error?: string } {
   if (typeof raw === 'undefined') {
     return { positions: {} };
   }
 
-  if (!isObjectLike(raw)) {
-    return { error: 'Bundle field "nodePositions" must be an object.' };
+  if (!isObjectLike(raw) || Array.isArray(raw)) {
+    return { error: `Bundle field "${field}" must be an object.` };
   }
 
   const positions: NodePositionMap = {};
@@ -116,7 +117,8 @@ function normalizeLegacyMatnNodeIds<T>(input: Record<string, T>): Record<string,
 
   for (const [nodeId, value] of Object.entries(input)) {
     if (nodeId.startsWith(LEGACY_MATN_NODE_PREFIX)) {
-      normalized[`${MATN_NODE_PREFIX}${nodeId.slice(LEGACY_MATN_NODE_PREFIX.length)}`] = value;
+      const currentId = `${MATN_NODE_PREFIX}${nodeId.slice(LEGACY_MATN_NODE_PREFIX.length)}`;
+      if (!Object.hasOwn(input, currentId)) normalized[currentId] = value;
       continue;
     }
 
@@ -180,21 +182,21 @@ function parseHighlightLegend(raw: unknown): { legend?: HighlightLegendItem[]; e
   };
 }
 
-export function getNodeIdsForReport(report: HadithReport): string[] {
+export function getNodeIdsForReport(report: HadithReport, representation: GraphRepresentation = 'merged'): string[] {
   const ids = new Set<string>();
   ids.add(`${MATN_NODE_PREFIX}${report.id}`);
   for (let narratorIndex = 0; narratorIndex < report.isnad.length; narratorIndex += 1) {
-    ids.add(getNarratorNodeIdForReport(report, narratorIndex));
+    ids.add(getNarratorNodeIdForReport(report, narratorIndex, representation));
   }
   return Array.from(ids);
 }
 
-export function getEdgeIdsForReport(report: HadithReport): string[] {
+export function getEdgeIdsForReport(report: HadithReport, representation: GraphRepresentation = 'merged'): string[] {
   const edgeIds: string[] = [];
 
   for (let narratorIndex = 0; narratorIndex < report.isnad.length - 1; narratorIndex += 1) {
-    const source = getNarratorNodeIdForReport(report, narratorIndex);
-    const target = getNarratorNodeIdForReport(report, narratorIndex + 1);
+    const source = getNarratorNodeIdForReport(report, narratorIndex, representation);
+    const target = getNarratorNodeIdForReport(report, narratorIndex + 1, representation);
     edgeIds.push(`${source}->${target}`);
   }
 
@@ -236,8 +238,10 @@ function finalizeReportsUpdate(
   }
 
   const validNodeIds = new Set<string>();
+  const validTrieNodeIds = new Set<string>();
   nextReports.forEach((report) => {
     getNodeIdsForReport(report).forEach((nodeId) => validNodeIds.add(nodeId));
+    getNodeIdsForReport(report, 'trie').forEach((nodeId) => validTrieNodeIds.add(nodeId));
   });
 
   return {
@@ -246,6 +250,9 @@ function finalizeReportsUpdate(
       updatedAt: nowIso(),
       reports: nextReports,
       nodePositions: filterMapKeys(bundle.nodePositions, validNodeIds) as NodePositionMap,
+      ...(bundle.trieNodePositions !== undefined
+        ? { trieNodePositions: filterMapKeys(bundle.trieNodePositions, validTrieNodeIds) as NodePositionMap }
+        : {}),
       nodeWidths: filterMapKeys(bundle.nodeWidths, validNodeIds) as NodeWidthMap,
     },
   };
@@ -562,6 +569,12 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
     return { error: parsedNodePositions.error ?? 'Invalid node positions.' };
   }
 
+  const parsedTriePositions = parsed.trieNodePositions === undefined
+    ? undefined : parseNodePositions(parsed.trieNodePositions, 'trieNodePositions');
+  if (parsedTriePositions && !parsedTriePositions.positions) {
+    return { error: parsedTriePositions.error ?? 'Invalid trie node positions.' };
+  }
+
   const parsedNodeWidths = parseNodeWidths(parsed.nodeWidths);
   if (!parsedNodeWidths.widths) {
     return { error: parsedNodeWidths.error ?? 'Invalid node widths.' };
@@ -586,6 +599,9 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       reports,
       highlightLegend: parsedHighlightLegend.legend,
       nodePositions: normalizeLegacyMatnNodeIds(parsedNodePositions.positions) as NodePositionMap,
+      ...(parsedTriePositions?.positions
+        ? { trieNodePositions: normalizeLegacyMatnNodeIds(parsedTriePositions.positions) as NodePositionMap }
+        : {}),
       nodeWidths: normalizeLegacyMatnNodeIds(parsedNodeWidths.widths) as NodeWidthMap,
       fontSizes: parsedFontSizes.fontSizes,
       verticalSpacing: normalizeVerticalSpacing(parsed.verticalSpacing),

@@ -696,7 +696,19 @@ textarea:focus {
 .graph-toolbar-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.graph-representation-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.graph-representation-toggle button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-border);
 }
 
 .graph-workspace {

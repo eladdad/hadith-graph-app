@@ -28,6 +28,8 @@ export interface NodePosition {
 export type NodePositionMap = Record<string, NodePosition>;
 export type NodeWidthMap = Record<string, number>;
 
+export type GraphRepresentation = 'merged' | 'trie';
+
 export interface HadithFontSizes {
   narrator: number;
   matn: number;
@@ -42,6 +44,7 @@ export interface HadithBundle {
   reports: HadithReport[];
   highlightLegend: HighlightLegendItem[];
   nodePositions: NodePositionMap;
+  trieNodePositions?: NodePositionMap;
   nodeWidths: NodeWidthMap;
   fontSizes: HadithFontSizes;
   verticalSpacing?: number;

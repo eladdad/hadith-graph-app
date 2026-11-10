@@ -24,7 +24,7 @@ import {
   sanitizeHighlightColor,
   sanitizeMatnHighlights,
 } from '../matnHighlights';
-import type { HadithBundle, HadithReport, HighlightLegendItem, MatnHighlight } from '../types';
+import type { GraphRepresentation, HadithBundle, HadithReport, HighlightLegendItem, MatnHighlight } from '../types';
 
 export interface SelectionRange {
   start: number;
@@ -33,6 +33,7 @@ export interface SelectionRange {
 
 interface UseReportEditorParams {
   bundle: HadithBundle;
+  representation?: GraphRepresentation;
   setBundle: Dispatch<SetStateAction<HadithBundle>>;
   setSelectedNodeIds: Dispatch<SetStateAction<string[]>>;
   resetBoxSelection: () => void;
@@ -147,6 +148,7 @@ function getSelectionRangeWithin(root: HTMLElement): SelectionRange | null {
 
 export function useReportEditor({
   bundle,
+  representation = 'merged',
   setBundle,
   setSelectedNodeIds,
   resetBoxSelection,
@@ -293,12 +295,13 @@ export function useReportEditor({
       populateEditorFromReport(report, report.id);
     }
 
-    setSelectedNodeIds(getNodeIdsForReport(report));
+    setSelectedNodeIds(getNodeIdsForReport(report, representation));
     resetBoxSelection();
     setMessage('Editing selected report. Save changes to update the graph.');
   }, [
     confirmDiscardEditorChanges,
     editingReportId,
+    representation,
     populateEditorFromReport,
     resetBoxSelection,
     setMessage,
@@ -323,7 +326,7 @@ export function useReportEditor({
       populateEditorFromReport(report, report.id);
     }
 
-    setSelectedNodeIds(getNodeIdsForReport(report));
+    setSelectedNodeIds(getNodeIdsForReport(report, representation));
     resetBoxSelection();
     setMessage('Editing selected report. Save changes to update the graph.');
     onSelected?.();
@@ -332,6 +335,7 @@ export function useReportEditor({
     bundle.reports,
     confirmDiscardEditorChanges,
     editingReportId,
+    representation,
     populateEditorFromReport,
     resetBoxSelection,
     setMessage,
@@ -344,11 +348,12 @@ export function useReportEditor({
     }
 
     populateEditorFromReport(report, null);
-    setSelectedNodeIds(getNodeIdsForReport(report));
+    setSelectedNodeIds(getNodeIdsForReport(report, representation));
     resetBoxSelection();
     setMessage('Report copied into the add form. Adjust the chain or matn, then add it as a new report.');
   }, [
     confirmDiscardEditorChanges,
+    representation,
     populateEditorFromReport,
     resetBoxSelection,
     setMessage,
@@ -521,10 +526,7 @@ export function useReportEditor({
       const savedReport = result.bundle.reports.find((report) => report.id === editingReportId);
       if (savedReport) {
         populateEditorFromReport(savedReport, savedReport.id);
-      }
-
-      if (result.updatedNodeIds && result.updatedNodeIds.length > 0) {
-        setSelectedNodeIds(result.updatedNodeIds);
+        setSelectedNodeIds(getNodeIdsForReport(savedReport, representation));
       }
 
       setMessage('Report updated and graph refreshed.');
@@ -540,9 +542,11 @@ export function useReportEditor({
     setBundle(result.bundle);
     resetEditor();
 
-    if (result.addedNodeIds && result.addedNodeIds.length > 0) {
-      setSelectedNodeIds(result.addedNodeIds);
-      setMessage(`Report added and ${result.addedNodeIds.length} node(s) auto-selected.`);
+    const addedReport = result.bundle.reports.at(-1);
+    if (addedReport) {
+      const addedNodeIds = getNodeIdsForReport(addedReport, representation);
+      setSelectedNodeIds(addedNodeIds);
+      setMessage(`Report added and ${addedNodeIds.length} node(s) auto-selected.`);
       return;
     }
 
@@ -553,6 +557,7 @@ export function useReportEditor({
     editorHighlights,
     editorMatn,
     editorNarrators,
+    representation,
     populateEditorFromReport,
     resetEditor,
     setBundle,
