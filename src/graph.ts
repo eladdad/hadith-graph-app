@@ -712,13 +712,19 @@ function buildAutoLayout(
   edges: Array<{ source: string; target: string }>,
   footprints: LayoutFootprint[],
   verticalGap: number,
+  matnOrder?: string[],
 ): AutoLayout {
-  const rowIndices = Array.from(rows.keys()).sort((a, b) => a - b);
+  // A fixed final rank lets highlight order guide the narrator branches too.
+  // The default layout retains its narrator-only ranks and card footprints.
+  const layoutRows = matnOrder
+    ? new Map(rows).set(Math.max(-1, ...rows.keys()) + 1, matnOrder)
+    : rows;
+  const rowIndices = Array.from(layoutRows.keys()).sort((a, b) => a - b);
   const rowCenterY = new Map<number, number>();
   let yCursor = PADDING_Y;
 
   for (const rowIndex of rowIndices) {
-    const rowNodes = rows.get(rowIndex) ?? [];
+    const rowNodes = layoutRows.get(rowIndex) ?? [];
     const rowHeight = Math.max(...rowNodes.map((id) => nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT));
     const centerY = yCursor + rowHeight / 2;
     rowCenterY.set(rowIndex, centerY);
@@ -730,13 +736,14 @@ function buildAutoLayout(
 
   const layers = rowIndices.map((rowIndex) => ({
     y: rowCenterY.get(rowIndex) ?? PADDING_Y,
-    nodes: (rows.get(rowIndex) ?? []).map((id) => ({
+    nodes: (layoutRows.get(rowIndex) ?? []).map((id) => ({
       id,
       width: nodeMeta.get(id)?.layoutWidth ?? nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
       height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
     })),
   }));
-  const orderedRows = orderLayers(layers, edges, HORIZONTAL_GAP, footprints);
+  const orderedRows = orderLayers(layers, edges, HORIZONTAL_GAP, footprints,
+    matnOrder ? [layers.length - 1] : []);
   const layoutNodeById = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node] as const)));
   const positions = positionLayers(layers.map((layer, index) => ({
     ...layer,
@@ -801,6 +808,7 @@ function buildMatnNodes(
   indexedGraph: IndexedGraph,
   topology: GraphTopology,
   nodeMeta: Map<string, NodeMeta>,
+  autoLayout: AutoLayout,
   narratorNodes: GraphNode[],
   verticalGap: number,
   nodePositions: NodePositionMap,
@@ -812,21 +820,11 @@ function buildMatnNodes(
   const matnTopY = narratorBottom + verticalGap;
   const narratorNodeById = new Map(narratorNodes.map((node) => [node.id, node]));
   const savedPositions = new Map<string, NodePositionMap[string]>();
-  const sortedX = new Map<string, number>();
-  let sortedCenterY: number | undefined;
-  // The optional reading order arranges matns independently of their narrator
-  // columns. The default keeps each automatic card beneath its collector.
-  if (matnOrder) {
-    let x = PADDING_X;
-    let maxHeight = 0;
-    for (const id of matnOrder) {
-      const meta = nodeMeta.get(id)!;
-      sortedX.set(id, x + meta.width / 2);
-      x += meta.width + HORIZONTAL_GAP;
-      maxHeight = Math.max(maxHeight, meta.height);
-    }
-    sortedCenterY = matnTopY + maxHeight / 2;
-  }
+  // Keep the common reading row below actual saved narrator positions, while
+  // taking horizontal positions from the same layout as their attachments.
+  const sortedCenterY = matnOrder
+    ? matnTopY + Math.max(...matnOrder.map((id) => nodeMeta.get(id)!.height)) / 2
+    : undefined;
 
   const nodes = topology.matnNodeIds.map((id): GraphNode => {
     const node = indexedGraph.nodesById.get(id);
@@ -851,7 +849,8 @@ function buildMatnNodes(
       type: node?.type ?? 'matn',
       width,
       height,
-      x: savedPositions.get(id)?.x ?? sortedX.get(id) ?? anchorNode?.x ?? PADDING_X + width / 2,
+      x: savedPositions.get(id)?.x ?? (matnOrder ? autoLayout.autoX.get(id) : undefined)
+        ?? anchorNode?.x ?? PADDING_X + width / 2,
       y: savedPositions.get(id)?.y ?? sortedCenterY ?? matnTopY + height / 2,
     };
   });
@@ -981,15 +980,22 @@ export function buildRenderableGraph(
 
   const topology = buildGraphTopology(indexedGraph);
   const nodeMeta = buildNodeMeta(indexedGraph.nodesById, nodeWidths, normalizedFontSizes, highlightLegendById);
-  const footprints = topology.matnNodeIds.flatMap((id) => {
+  const matnOrder = options.matnSort === 'highlights'
+    ? orderMatnsBySimilarity(reports, highlightLegend).map((report) => matnNodeId(report.id)) : undefined;
+  const footprints = matnOrder ? [] : topology.matnNodeIds.flatMap((id) => {
     const anchor = indexedGraph.nodesById.get(id)?.matnAnchorId;
     return anchor ? [{ anchor, width: nodeMeta.get(id)?.width ?? MATN_NODE_DEFAULT_WIDTH }] : [];
   });
-  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...indexedGraph.edgesById.values()], footprints, verticalGap);
+  const layoutEdges = [...indexedGraph.edgesById.values()];
+  const attachments = matnOrder?.flatMap((id) => {
+    const source = indexedGraph.nodesById.get(id)?.matnAnchorId;
+    return source ? [{ source, target: id }] : [];
+  }) ?? [];
+  const autoLayout = buildAutoLayout(topology.rows, nodeMeta, [...layoutEdges, ...attachments],
+    footprints, verticalGap, matnOrder);
   const narratorNodes = buildNarratorNodes(indexedGraph, topology, nodeMeta, autoLayout, nodePositions);
-  const matnOrder = options.matnSort === 'highlights'
-    ? orderMatnsBySimilarity(reports, highlightLegend).map((report) => matnNodeId(report.id)) : undefined;
-  const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, narratorNodes, verticalGap, nodePositions, matnOrder);
+  const matnNodes = buildMatnNodes(indexedGraph, topology, nodeMeta, autoLayout, narratorNodes,
+    verticalGap, nodePositions, matnOrder);
   const nodeById = new Map<string, GraphNode>([...narratorNodes, ...matnNodes].map((node) => [node.id, node]));
   const nodes = Array.from(indexedGraph.nodesById.keys())
     .map((id) => nodeById.get(id))

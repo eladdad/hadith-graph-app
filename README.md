@@ -137,6 +137,11 @@ space for matn cards beneath their collectors. Cards share a top edge where spac
 permits and stack when a shared or pinned collector leaves insufficient room.
 The vertical spacing control adjusts the gap between narrator layers.
 
+By elements/highlights keeps matn cards in the same similarity order as the Matns
+reading view. Their measured sizes and collector connections participate in the
+layout, so narrator branches follow the ordered card row and private chains can
+stay aligned with their cards.
+
 Merged and Trie graphs, including Complete reports focus views, use this layout.
 Sources & students keeps its compact local layout. Saved node positions still
 take precedence; Auto-arrange replaces them in the current view, and Restore

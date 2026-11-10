@@ -83,6 +83,43 @@ function improves(candidate: Score, previous: Score): boolean {
     || (candidate.crossings === previous.crossings && candidate.horizontalSpan < previous.horizontalSpan);
 }
 
+/** Seed branches from their fixed descendants before crossing-reduction sweeps. */
+function orderTowardFixedRows(layers: LayoutLayer[], edges: LayoutEdge[], fixedRows: Set<number>, gap: number): void {
+  const rank = new Map(layers.flatMap((layer, index) => layer.nodes.map((node) => [node.id, index] as const)));
+  const successors = new Map<string, string[]>();
+  for (const { source, target } of edges) {
+    if ((rank.get(target) ?? -1) > (rank.get(source) ?? Infinity)) {
+      successors.set(source, [...(successors.get(source) ?? []), target]);
+    }
+  }
+  const fixedX = new Map<string, number>();
+  const descendants = new Map<string, Set<string>>();
+  for (const index of fixedRows) {
+    let x = 0;
+    for (const node of layers[index]?.nodes ?? []) {
+      fixedX.set(node.id, x + node.width / 2);
+      descendants.set(node.id, new Set([node.id]));
+      x += node.width + gap;
+    }
+  }
+  for (let index = layers.length - 1; index >= 0; index -= 1) {
+    if (fixedRows.has(index)) continue;
+    const weighted = layers[index].nodes.map((node, previousIndex) => {
+      const targets = new Set((successors.get(node.id) ?? []).flatMap((id) => [...(descendants.get(id) ?? [])]));
+      descendants.set(node.id, targets);
+      return {
+        node,
+        previousIndex,
+        target: targets.size > 0
+          ? [...targets].reduce((sum, id) => sum + fixedX.get(id)!, 0) / targets.size
+          : previousIndex * gap,
+      };
+    });
+    weighted.sort((a, b) => a.target - b.target || a.previousIndex - b.previousIndex);
+    layers[index].nodes = weighted.map(({ node }) => node);
+  }
+}
+
 /**
  * Order existing ranks without changing their levels or spacing. Barycenter
  * sweeps explore orders; actual straight-edge crossings decide which to keep,
@@ -94,12 +131,14 @@ export function orderLayers(
   inputEdges: LayoutEdge[],
   gap: number,
   inputFootprints: LayoutFootprint[] = [],
+  inputFixedRows: readonly number[] = [],
 ): string[][] {
   const edges = [...inputEdges].sort((a, b) => (
     a.source.localeCompare(b.source) || a.target.localeCompare(b.target)
   ));
   const footprints = [...inputFootprints].sort((a, b) => a.anchor.localeCompare(b.anchor));
-  const key = JSON.stringify([input, edges, gap, footprints]);
+  const fixedRows = new Set(inputFixedRows);
+  const key = JSON.stringify([input, edges, gap, footprints, [...fixedRows].sort((a, b) => a - b)]);
   if (cachedOrder?.key === key) {
     return cachedOrder.rows.map((row) => [...row]);
   }
@@ -107,6 +146,14 @@ export function orderLayers(
   let layers = copyLayers(input);
   let best = copyLayers(layers);
   let bestScore = score(best, edges, gap, footprints);
+  if (fixedRows.size > 0) {
+    orderTowardFixedRows(layers, edges, fixedRows, gap);
+    const candidate = score(layers, edges, gap, footprints);
+    if (improves(candidate, bestScore)) {
+      best = copyLayers(layers);
+      bestScore = candidate;
+    }
+  }
   const predecessors = new Map<string, string[]>();
   const successors = new Map<string, string[]>();
   for (const { source, target } of edges) {
@@ -121,8 +168,14 @@ export function orderLayers(
       indices.reverse();
     }
 
+    // Fixed sinks already provide a stable reading direction. Reuse one
+    // placement through this exploratory sweep; full placements still score
+    // every candidate. Recompacting every rank makes large fixed-sink graphs
+    // unnecessarily expensive, especially when private chains conflict.
+    const sweepCenters = fixedRows.size > 0 ? positionLayers(layers, edges, gap, footprints) : undefined;
     for (const index of indices) {
-      const centers = positionLayers(layers, edges, gap, footprints);
+      if (fixedRows.has(index)) continue;
+      const centers = sweepCenters ?? positionLayers(layers, edges, gap, footprints);
       const weighted = layers[index].nodes.map((node, previousIndex) => {
         const xs = (neighbors.get(node.id) ?? []).flatMap((id) => {
           const center = centers.get(id);
@@ -159,6 +212,7 @@ export function orderLayers(
       indices.reverse();
     }
     for (const index of indices) {
+      if (fixedRows.has(index)) continue;
       const nodes = layers[index].nodes;
       for (let step = 0; step < nodes.length - 1 && attempts > 0; step += 1) {
         const left = pass % 2 === 0 ? step : nodes.length - 2 - step;

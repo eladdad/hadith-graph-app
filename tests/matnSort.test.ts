@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildRenderableGraph } from '../src/graph';
-import type { HadithReport, HighlightLegendItem, RenderableGraph } from '../src/types';
+import { buildRenderableGraph, getNarratorNodeIdForReport } from '../src/graph';
+import type { GraphNode, HadithReport, HighlightLegendItem, RenderableGraph } from '../src/types';
 import { makeReport } from './helpers';
 
 const legend: HighlightLegendItem[] = [
@@ -23,7 +23,79 @@ function matnIds(graph: RenderableGraph): string[] {
   return graph.nodes.filter((node) => node.type === 'matn').sort((a, b) => a.x - b.x).map((node) => node.id);
 }
 
+function node(graph: RenderableGraph, id: string): GraphNode {
+  const found = graph.nodes.find((candidate) => candidate.id === id);
+  expect(found, `Missing node ${id}`).toBeDefined();
+  return found!;
+}
+
 describe('matn graph sorting', () => {
+  it.each(['merged', 'trie'] as const)('arranges private narrator chains around the highlight-ordered matns in %s mode', (representation) => {
+    for (const paths of [
+      [['Z Root', 'Z Student', 'Z Collector'], ['A Root', 'A Student', 'A Collector']],
+      [['Z Root', 'Z Student', 'Z Later student', 'Z Collector'], ['A Root', 'A Collector']],
+    ]) {
+      // Similarity ties retain this Z-before-A bundle order, opposing the
+      // narrator labels' alphabetical order in the ordinary layout.
+      const independent = [
+        highlighted('z', paths[0], 'Mercy wording. '.repeat(20), 'mercy'),
+        highlighted('a', paths[1], 'Mercy wording.', 'mercy'),
+      ];
+      const widths = { 'm:z': 700, 'm:a': 220 };
+      const original = buildRenderableGraph(independent, {}, widths, undefined, legend, { representation });
+      const sorted = buildRenderableGraph(independent, {}, widths, undefined, legend, { representation, matnSort: 'highlights' });
+
+      expect(matnIds(sorted)).toEqual(['m:z', 'm:a']);
+      for (const report of independent) {
+        const matn = node(sorted, `m:${report.id}`);
+        const chain = report.isnad.map((_, index) => node(sorted, getNarratorNodeIdForReport(report, index, representation)));
+        for (const narrator of chain) {
+          expect(narrator.x, `${narrator.id} should follow its matn column for route lengths ${paths.map((path) => path.length).join('/')}`)
+            .toBeCloseTo(matn.x, 6);
+        }
+        for (let index = 1; index < chain.length; index += 1) {
+          expect(chain[index].y).toBeGreaterThan(chain[index - 1].y);
+        }
+        expect(matn.y - matn.height / 2).toBeGreaterThan(chain.at(-1)!.y + chain.at(-1)!.height / 2);
+      }
+
+      const left = node(sorted, 'm:z');
+      const right = node(sorted, 'm:a');
+      const leftAnchor = node(sorted, left.matnAnchorId!);
+      const rightAnchor = node(sorted, right.matnAnchorId!);
+      expect((rightAnchor.x - leftAnchor.x) * (right.x - left.x), 'Collector attachments must not reverse the card order')
+        .toBeGreaterThan(0);
+      expect(right.x - right.width / 2 - (left.x + left.width / 2)).toBeGreaterThanOrEqual(40);
+      expect(buildRenderableGraph(independent, {}, widths, undefined, legend, { representation })).toEqual(original);
+    }
+  });
+
+  it('fans highlight-ordered cards out beneath a shared trie terminal without overlapping', () => {
+    const shared = ['Root', 'Student', 'Collector'];
+    const repeated = ['first', 'second', 'third'].map((id) => (
+      highlighted(id, shared, 'Mercy wording. '.repeat(10), 'mercy')
+    ));
+    const graph = buildRenderableGraph(repeated, {}, { 'm:first': 760, 'm:second': 220, 'm:third': 440 },
+      undefined, legend, { representation: 'trie', matnSort: 'highlights' });
+    const terminalId = getNarratorNodeIdForReport(repeated[0], 2, 'trie');
+    const terminal = node(graph, terminalId);
+    const matns = ['first', 'second', 'third'].map((id) => node(graph, `m:${id}`));
+
+    expect(graph.nodes.filter((candidate) => candidate.type === 'narrator')).toHaveLength(shared.length);
+    expect(matnIds(graph)).toEqual(['m:first', 'm:second', 'm:third']);
+    expect(terminal.x).toBeGreaterThanOrEqual(matns[0].x);
+    expect(terminal.x).toBeLessThanOrEqual(matns.at(-1)!.x);
+    for (const matn of matns) {
+      expect(matn.matnAnchorId).toBe(terminalId);
+      expect(matn.y - matn.height / 2).toBeGreaterThan(terminal.y + terminal.height / 2);
+    }
+    for (let index = 1; index < matns.length; index += 1) {
+      const left = matns[index - 1];
+      const right = matns[index];
+      expect(right.x - right.width / 2 - (left.x + left.width / 2)).toBeGreaterThanOrEqual(40);
+    }
+  });
+
   it.each(['merged', 'trie'] as const)('enforces highlight order in the %s graph and keeps variable-size cards clear', (representation) => {
     const before = JSON.stringify({ reports, legend });
     const options = { representation, reportNumbers: new Map(reports.map((report, index) => [report.id, 10 + index * 7])) };

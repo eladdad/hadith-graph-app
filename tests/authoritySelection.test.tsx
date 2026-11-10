@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import App from '../src/App';
@@ -15,6 +15,9 @@ async function renderReports() {
   const result = render(<App />);
   await importJson(result.container, bundleToJson(makeBundle(reports)));
   await waitFor(() => expect(result.container.querySelector('[data-node-id="m:r3"]')).not.toBeNull());
+  // Imported badges can appear before their initial layout-revision effect
+  // has closed any old popup. Settle that effect before testing activation.
+  await act(async () => {});
   return result;
 }
 
