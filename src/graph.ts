@@ -15,9 +15,9 @@ import type {
   NodeWidthMap,
   RenderableGraph,
 } from './types';
-import { layoutGraphvizGraph } from './graphvizLayout';
+import { graphvizEdgeKey, layoutGraphvizGraphWithRoutes } from './graphvizLayout';
 import type { Point } from './layerPlacement';
-import { buildVerticalCurve, getReportCountBadgeRadius } from './edgeGeometry';
+import { buildCubicPath, buildVerticalCurve, getReportCountBadgeRadius } from './edgeGeometry';
 import { normalizeVerticalSpacing } from './layoutSettings';
 
 const NARRATOR_PREFIX = 'n:';
@@ -436,6 +436,7 @@ type GraphTopology = {
 
 type AutoLayout = {
   positions: Map<string, Point>;
+  routes: Map<string, Point[]>;
   autoWidth: number;
   autoHeight: number;
 };
@@ -659,7 +660,7 @@ function buildAutoLayout(
   verticalGap: number,
   matnOrder?: string[],
 ): AutoLayout {
-  const positions = layoutGraphvizGraph(
+  const { positions, routes } = layoutGraphvizGraphWithRoutes(
     [...indexedGraph.nodesById.values()].map((node) => {
       const meta = nodeMeta.get(node.id)!;
       return {
@@ -683,7 +684,13 @@ function buildAutoLayout(
     autoWidth = Math.max(autoWidth, PADDING_X + point.x + (meta.layoutWidth ?? meta.width) / 2 + PADDING_X);
     autoHeight = Math.max(autoHeight, PADDING_Y + point.y + meta.height / 2 + PADDING_Y);
   }
-  return { positions, autoWidth, autoHeight };
+  for (const route of routes.values()) {
+    for (const point of route) {
+      autoWidth = Math.max(autoWidth, point.x + PADDING_X * 2);
+      autoHeight = Math.max(autoHeight, point.y + PADDING_Y * 2);
+    }
+  }
+  return { positions, routes, autoWidth, autoHeight };
 }
 
 function buildPositionedNodes(
@@ -738,7 +745,7 @@ function shiftNodesIntoBounds(nodes: GraphNode[]): { shiftX: number; shiftY: num
   return { shiftX, shiftY };
 }
 
-function buildEdges(indexedGraph: IndexedGraph, nodes: GraphNode[]): GraphEdge[] {
+function buildEdges(indexedGraph: IndexedGraph, nodes: GraphNode[], routes: Map<string, Point[]>, offsetX: number, offsetY: number): GraphEdge[] {
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const edges: GraphEdge[] = [];
 
@@ -753,7 +760,9 @@ function buildEdges(indexedGraph: IndexedGraph, nodes: GraphNode[]): GraphEdge[]
     const verticalDirection = dy >= 0 ? 1 : -1;
     const sourceY = source.y + verticalDirection * (source.height / 2);
     const targetY = target.y - verticalDirection * (target.height / 2);
-    const curve = buildVerticalCurve({ x: source.x, y: sourceY }, { x: target.x, y: targetY }, verticalDirection);
+    const route = routes.get(graphvizEdgeKey(source.id, target.id));
+    const curve = route ? buildCubicPath(route, offsetX, offsetY)
+      : buildVerticalCurve({ x: source.x, y: sourceY }, { x: target.x, y: targetY }, verticalDirection);
     // Label both sides of a merge to identify which source each student's
     // reports use, even when several reports share the same visible edge.
     const showReports = (indexedGraph.indegree.get(edge.source) ?? 0) > 1
@@ -828,7 +837,16 @@ export function buildRenderableGraph(
   const autoLayout = buildAutoLayout(indexedGraph, nodeMeta, verticalGap, matnOrder);
   const nodes = buildPositionedNodes(indexedGraph, nodeMeta, autoLayout, nodePositions);
   const { shiftX, shiftY } = shiftNodesIntoBounds(nodes);
-  const edges = buildEdges(indexedGraph, nodes);
+  // Saved/manual coordinates can invalidate both endpoints and routing around
+  // other nodes. Recompute their connections until Auto-arrange releases them.
+  const routes = Object.keys(nodePositions).length === 0 ? autoLayout.routes : new Map<string, Point[]>();
+  const edges = buildEdges(indexedGraph, nodes, routes, PADDING_X + shiftX, PADDING_Y + shiftY);
+  const matnAttachmentPaths: Record<string, string> = {};
+  for (const node of nodes) {
+    if (node.type !== 'matn' || !node.matnAnchorId) continue;
+    const route = routes.get(graphvizEdgeKey(node.matnAnchorId, node.id));
+    if (route) matnAttachmentPaths[node.id] = buildCubicPath(route, PADDING_X + shiftX, PADDING_Y + shiftY).path;
+  }
   const maxX = Math.max(...nodes.map((node) => {
     const authorityWidth = getAuthorityReportMetrics(node.attributedReports).width;
     return node.x + node.width / 2 + (authorityWidth > 0 ? AUTHORITY_REPORT_GAP + authorityWidth : 0);
@@ -843,5 +861,6 @@ export function buildRenderableGraph(
     hasCycle: topology.hasCycle,
     shiftX,
     shiftY,
+    ...(Object.keys(matnAttachmentPaths).length > 0 ? { matnAttachmentPaths } : {}),
   };
 }

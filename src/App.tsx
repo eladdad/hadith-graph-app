@@ -852,7 +852,7 @@ function App() {
             <div className="graph-toolbar-actions">
             {!isLocalFocus ? (
               <label className="graph-matn-sort" title={matnSort === 'highlights'
-                ? 'Groups similar highlights from left to right; this can increase edge crossings.'
+                ? 'Groups similar highlights from left to right, then reduces crossings while keeping that order.'
                 : 'Graphviz reduces edge crossings. Saved manual positions are preserved.'}>
                 <span>Matn order</span>
                 <select
