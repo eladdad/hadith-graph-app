@@ -69,6 +69,8 @@ describe('matn reading view', () => {
       expect(card(report.id).querySelector('.matn-reading-text')?.textContent).toBe(report.matn);
       expect(card(report.id).querySelector('.matn-reading-text')).toHaveStyle({ fontSize: '18px' });
       expect(within(card(report.id)).getByRole('button', { name: `Edit report #${index + 1}` })).toBeInTheDocument();
+      expect(within(card(report.id)).getByLabelText(`Report #${index + 1} isnad`))
+        .toHaveTextContent(`Isnād: ${report.isnad.join(' → ')}`);
     });
     expect(within(card('first')).getByTitle('Mercy')).toHaveTextContent('Mercy');
     expect(within(card('first')).getByTitle('Mercy')).toHaveStyle({ color: '#f59e0b' });
@@ -78,6 +80,24 @@ describe('matn reading view', () => {
     expect(within(matnView()).getByRole('list', { name: 'Matn highlight legend' })).toHaveTextContent('MercyJustice');
     expect(screen.queryByRole('region', { name: 'Transmission graph' })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Focus narrator' })).not.toBeInTheDocument();
+  });
+
+  it('keeps mixed-direction narrator names in isnad order and shows standalone attributions', async () => {
+    const user = userEvent.setup();
+    const mixedChain = ['عائشة', 'Narrator B', 'الجامع'];
+    await renderBundle({ reports: [
+      makeReport('mixed', mixedChain, 'A mixed-direction chain.'),
+      makeReport('single', ['علي'], 'A standalone attribution.'),
+    ] });
+    await user.click(screen.getByRole('button', { name: 'Matns', exact: true }));
+
+    const chain = within(card('mixed')).getByLabelText('Report #1 isnad');
+    expect(chain).toHaveAttribute('dir', 'ltr');
+    expect(chain).toHaveTextContent(`Isnād: ${mixedChain.join(' → ')}`);
+    expect(Array.from(chain.querySelectorAll('bdi')).map((name) => name.textContent)).toEqual(mixedChain);
+    const standalone = within(card('single')).getByLabelText('Report #2 isnad');
+    expect(standalone).toHaveTextContent('Isnād: علي');
+    expect(standalone).not.toHaveTextContent('→');
   });
 
   it('supports bundle order and returns to the same graph layout without changing exported data', async () => {

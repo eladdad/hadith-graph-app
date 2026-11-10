@@ -127,6 +127,9 @@ export function GraphCanvas({
   onSelectStudent,
 }: GraphCanvasProps) {
   const showHighlightMarkers = zoom <= MARKER_HIGHLIGHT_ZOOM_THRESHOLD;
+  // Keep the whole marker stack at its threshold screen size as the graph
+  // shrinks further, including the gaps, rounded corners, and outlines.
+  const highlightMarkerScale = MARKER_HIGHLIGHT_ZOOM_THRESHOLD / zoom;
   const highlightSegmentRefs = useRef(new Map<string, SVGTSpanElement>());
   const [measuredHighlightOverlays, setMeasuredHighlightOverlays] = useState<MeasuredMatnHighlightOverlay[]>([]);
 
@@ -200,10 +203,11 @@ export function GraphCanvas({
   return (
     <svg
       ref={svgRef}
-      width={Math.round(graph.width * zoom)}
-      height={Math.round(graph.height * zoom)}
+      width={graph.width * zoom}
+      height={graph.height * zoom}
       viewBox={`0 0 ${graph.width} ${graph.height}`}
       className={isBoxSelecting ? 'graph-svg selecting' : 'graph-svg'}
+      style={{ overflow: showHighlightMarkers ? 'visible' : undefined }}
       onPointerDown={onCanvasPointerDown}
     >
       <defs>
@@ -427,7 +431,10 @@ export function GraphCanvas({
                   );
                 })}
                 {showHighlightMarkers && collapsedMatnMarkers.length > 0 ? (
-                  <g className="matn-highlight-markers">
+                  <g
+                    className="matn-highlight-markers"
+                    transform={`translate(0, ${MATN_NODE_HEADER_HEIGHT / 2}) scale(${highlightMarkerScale}) translate(0, ${-MATN_NODE_HEADER_HEIGHT / 2})`}
+                  >
                     {collapsedMatnMarkers.map((marker, markerIndex) => {
                       const markerWidth = 30;
                       const availableHeight = Math.max(1, node.height - MATN_NODE_HEADER_HEIGHT - 16);

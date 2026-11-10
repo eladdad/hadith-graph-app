@@ -88,8 +88,8 @@
 
 .matn-reading-card {
   display: grid;
-  grid-template-columns: 145px minmax(0, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.75rem;
   padding: 1.5rem;
   border: 1px solid var(--line);
   border-radius: 0.65rem;
@@ -101,16 +101,37 @@
   box-shadow: 0 0 0 1px var(--accent-border);
 }
 
+.matn-reading-reference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  min-width: 0;
+}
+
 .matn-reading-reference button {
   padding: 0.3rem 0.6rem;
   font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
 }
 
 .matn-reading-labels {
-  flex-direction: column;
-  gap: 0.4rem;
+  margin: 0;
+  gap: 0.4rem 0.85rem;
   font-size: 0.7rem;
   color: var(--muted);
+}
+
+.matn-reading-isnad {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.65;
+}
+
+.matn-reading-isnad-label {
+  font-weight: 600;
 }
 
 .matn-reading-unhighlighted {
@@ -130,17 +151,6 @@
   margin: 4rem auto;
   text-align: center;
   color: var(--muted);
-}
-
-@media (max-width: 1200px) {
-  .matn-reading-card {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
-  }
-
-  .matn-reading-labels {
-    flex-direction: row;
-  }
 }
 
 @media (max-width: 560px) {

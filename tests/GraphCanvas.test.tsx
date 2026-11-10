@@ -77,10 +77,64 @@ describe('GraphCanvas', () => {
     expect(container.querySelector('.matn-highlight-marker-generic')).not.toBeInTheDocument();
   });
 
-  it('keeps a short collapsed matn marker below its count circle and within its card', () => {
+  it('keeps collapsed colours, marker sizes, and stack spacing constant on screen when zooming further out', () => {
+    const coloured = makeMatnNode([
+      { width: 150, segments: [
+        { text: 'First', width: 50, color: '#ffcc00', highlightId: 'h1', label: 'First theme' },
+        { text: 'Second', width: 50, color: '#10b981', highlightId: 'h2', label: 'Second theme' },
+        { text: 'Third', width: 50, color: '#6366f1', highlightId: 'h3', label: 'Third theme' },
+      ] },
+    ]);
+    const plain = { ...makeMatnNode([{ width: 80, segments: [{ text: 'Plain body', width: 80 }] }]), id: 'm:plain', x: 450 };
+    const graph = makeGraph({ nodes: [coloured, plain], width: 900, height: 420 });
+    const { container, rerender } = render(canvas(graph, { zoom: 0.3 }));
+
+    // Convert the rendered SVG geometry to pixels rather than checking for a
+    // particular inverse-zoom expression. Both dimensions and stack gaps must
+    // survive zoom changes, including the minimum supported graph zoom.
+    function screenMarkerGeometry() {
+      return Array.from(container.querySelectorAll('.matn-highlight-markers')).map((stack) => {
+        const scale = Number(stack.getAttribute('transform')?.match(/scale\(([^)]+)\)/)?.[1] ?? 1);
+        const svg = stack.closest('svg')!;
+        const screenScale = Math.min(Number(svg.getAttribute('width')) / graph.width, Number(svg.getAttribute('height')) / graph.height);
+        const markers = Array.from(stack.querySelectorAll('rect'));
+        return markers.map((marker, index) => ({
+          color: marker.getAttribute('fill'),
+          width: Number(marker.getAttribute('width')) * scale * screenScale,
+          height: Number(marker.getAttribute('height')) * scale * screenScale,
+          gap: index > 0
+            ? (Number(marker.getAttribute('y')) - Number(markers[index - 1].getAttribute('y')) - Number(markers[index - 1].getAttribute('height'))) * scale * screenScale : 0,
+        }));
+      });
+    }
+
+    const original = screenMarkerGeometry();
+    expect(original.map((stack) => stack.length)).toEqual([3, 1]);
+    expect(original[0].map((marker) => marker.color)).toEqual(['#ffcc00', '#10b981', '#6366f1']);
+    for (const zoom of [0.2, 0.1, 0.05, 0.005, 0.3]) {
+      rerender(canvas(graph, { zoom }));
+      const current = screenMarkerGeometry();
+      expect(container.querySelector('.matn-node-text')).not.toBeInTheDocument();
+      expect(current.map((stack) => stack.length)).toEqual([3, 1]);
+      current.forEach((stack, stackIndex) => stack.forEach((marker, markerIndex) => {
+        const initial = original[stackIndex][markerIndex];
+        expect(marker.color).toBe(initial.color);
+        expect(marker.width).toBeCloseTo(initial.width);
+        expect(marker.height).toBeCloseTo(initial.height);
+        expect(marker.gap).toBeCloseTo(initial.gap);
+      }));
+    }
+
+    rerender(canvas(graph, { zoom: 0.31 }));
+    expect(container.querySelector('.matn-highlight-markers')).not.toBeInTheDocument();
+    expect(screen.getByText('First')).toBeInTheDocument();
+    expect(screen.getByText('Plain body')).toBeInTheDocument();
+  });
+
+  it('keeps a short matn marker below its count circle and within its card at the collapse threshold', () => {
     const graph = buildRenderableGraph([makeReport('short', ['Collector'], 'Short.')]);
     const matn = graph.nodes.find((node) => node.type === 'matn')!;
-    const { container } = render(canvas(graph, { zoom: 0.2 }));
+    const { container } = render(canvas(graph, { zoom: 0.3 }));
     const badge = container.querySelector('.matn-report-label .report-count-badge')!;
     const coordinates = badge.getAttribute('transform')!.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
     const radius = Number(badge.querySelector('circle')!.getAttribute('r'));

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { orderMatnsBySimilarity } from '../matnSimilarity';
 import type { HadithReport, HighlightLegendItem } from '../types';
 import { HighlightedMatn } from './HighlightedMatn';
@@ -84,6 +84,14 @@ export function MatnView({ reports, legend, fontSize, selectedReportId, isSideba
                       )) : <li className="matn-reading-unhighlighted">No highlights</li>}
                     </ul>
                   </div>
+                  <p className="matn-reading-isnad" dir="ltr" aria-label={`Report #${reportNumber} isnad`}>
+                    <span className="matn-reading-isnad-label">Isnād: </span>
+                    {report.isnad.map((name, index) => (
+                      <Fragment key={`${name}-${index}`}>
+                        {index > 0 ? ' → ' : null}<bdi>{name}</bdi>
+                      </Fragment>
+                    ))}
+                  </p>
                   <HighlightedMatn
                     className="matn-reading-text"
                     text={report.matn}
