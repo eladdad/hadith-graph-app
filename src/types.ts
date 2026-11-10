@@ -107,5 +107,4 @@ export interface RenderableGraph {
   hasCycle: boolean;
   shiftX?: number;
   shiftY?: number;
-  matnAttachmentPaths?: Record<string, string>;
 }

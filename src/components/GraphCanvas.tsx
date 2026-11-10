@@ -195,9 +195,9 @@ export function GraphCanvas({
         { x: matn.x, y: matn.y - direction * matn.height / 2 },
         direction,
       );
-      return [{ id: matn.id, path: graph.matnAttachmentPaths?.[matn.id] ?? curve.path }];
+      return [{ id: matn.id, path: curve.path }];
     });
-  }, [graph.nodes, graph.matnAttachmentPaths]);
+  }, [graph.nodes]);
 
   return (
     <>
