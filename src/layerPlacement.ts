@@ -19,7 +19,6 @@ export interface LayoutEdge {
 export interface LayoutFootprint {
   anchor: string;
   width: number;
-  path?: string[];
 }
 
 export interface Point {

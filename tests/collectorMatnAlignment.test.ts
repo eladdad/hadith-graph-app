@@ -14,10 +14,9 @@ function node(graph: RenderableGraph, id: string): GraphNode {
   return found!;
 }
 
-function expectBottomMatnRank(graph: RenderableGraph, reports: HadithReport[]): void {
+function expectAlignedMatnRow(graph: RenderableGraph, reports: HadithReport[]): void {
   const matns = reports.map((report) => node(graph, `m:${report.id}`)).sort((a, b) => a.x - b.x);
-  const center = matns[0].y;
-  const top = Math.min(...matns.map((matn) => matn.y - matn.height / 2));
+  const top = matns[0].y - matns[0].height / 2;
   const narratorBottom = Math.max(...graph.nodes
     .filter((candidate) => candidate.type === 'narrator')
     .map((narrator) => narrator.y + narrator.height / 2));
@@ -26,11 +25,10 @@ function expectBottomMatnRank(graph: RenderableGraph, reports: HadithReport[]): 
   for (const report of reports) {
     const collector = node(graph, `c:${report.id}`);
     const matn = node(graph, `m:${report.id}`);
-    expect(matn.matnAnchorId).toBe(collector.id);
-    expect(matn.report?.id).toBe(report.id);
-    expect(matn.y).toBeGreaterThan(collector.y);
-    expect(matn.y, `${matn.id} should share the bottom rank center`)
-      .toBeCloseTo(center, 6);
+    expect(matn.x, `${matn.id} should be centered directly under ${collector.id}`)
+      .toBeCloseTo(collector.x, 6);
+    expect(matn.y - matn.height / 2, `${matn.id} should share the matn row's top`)
+      .toBeCloseTo(top, 6);
   }
 
   for (let index = 1; index < matns.length; index += 1) {
@@ -42,11 +40,11 @@ function expectBottomMatnRank(graph: RenderableGraph, reports: HadithReport[]): 
   }
 }
 
-function expectDownwardChain(graph: RenderableGraph, ids: string[]): void {
-  for (let index = 1; index < ids.length; index += 1) {
-    expect(node(graph, ids[index]).y, `${ids[index]} should remain below its source`)
-      .toBeGreaterThan(node(graph, ids[index - 1]).y);
-    expect(graph.edges.some((edge) => edge.source === ids[index - 1] && edge.target === ids[index])).toBe(true);
+function expectVerticalChain(graph: RenderableGraph, ids: string[]): void {
+  const anchor = node(graph, ids[0]);
+  for (const id of ids.slice(1)) {
+    expect(node(graph, id).x, `${id} should remain under its unbranched parent`)
+      .toBeCloseTo(anchor.x, 6);
   }
 }
 
@@ -54,19 +52,18 @@ function unshiftedX(graph: RenderableGraph, id: string): number {
   return node(graph, id).x - (graph.shiftX ?? 0);
 }
 
-describe('collector and matn layout', () => {
-  it('keeps a longer route on its branch side of a shorter route in the matn row', () => {
+describe('collector and matn alignment', () => {
+  it('keeps a longer left-hand route before a shorter right-hand route in the matn row', () => {
     const reports = [
       makeReport('m1', ['n1', 'n3'], 'The short right-hand route.'),
       makeReport('m2', ['n1', 'n2', 'n4', 'n5'], 'The long left-hand route.'),
     ];
     const graph = buildRenderableGraph(reports);
 
-    const direction = Math.sign(node(graph, 'c:m1').x - node(graph, 'n:n2').x);
-    expect(direction).not.toBe(0);
-    expect((node(graph, 'm:m1').x - node(graph, 'm:m2').x) * direction).toBeGreaterThan(0);
-    expectDownwardChain(graph, ['n:n2', 'n:n4', 'c:m2']);
-    expectBottomMatnRank(graph, reports);
+    expect(node(graph, 'n:n2').x).toBeLessThan(node(graph, 'c:m1').x);
+    expect(node(graph, 'm:m2').x).toBeLessThan(node(graph, 'm:m1').x);
+    expectVerticalChain(graph, ['n:n2', 'n:n4', 'c:m2']);
+    expectAlignedMatnRow(graph, reports);
   });
 
   it.each(['n2', 'n3'])('keeps all matns of the forked branch through %s together', (branchName) => {
@@ -92,7 +89,7 @@ describe('collector and matn layout', () => {
         expect((node(graph, 'm:short').x - matn.x) * direction,
           `${matn.id} should stay on the same side of the short route as its branch`).toBeGreaterThan(0);
       }
-      expectBottomMatnRank(graph, reports);
+      expectAlignedMatnRow(graph, reports);
     }
     for (const before of original.nodes) {
       expect(unshiftedX(reversed, before.id)).toBeCloseTo(unshiftedX(original, before.id), 6);
@@ -108,25 +105,24 @@ describe('collector and matn layout', () => {
     ];
     const graph = buildRenderableGraph(reports);
 
-    const direction = Math.sign(node(graph, 'n:H13').x - node(graph, 'n:H0').x);
-    expect(direction).not.toBe(0);
+    expect(node(graph, 'n:H0').x).toBeLessThan(node(graph, 'n:H13').x);
     for (const id of ['r0', 'r1', 'r2']) {
-      expect((node(graph, 'm:r4').x - node(graph, `m:${id}`).x) * direction).toBeGreaterThan(0);
+      expect(node(graph, `m:${id}`).x).toBeLessThan(node(graph, 'm:r4').x);
     }
-    expectBottomMatnRank(graph, reports);
+    expectAlignedMatnRow(graph, reports);
   });
 
-  it('places all nine moon-splitting matns below their collectors without overlapping', () => {
+  it('centers all nine moon-splitting matns below their collectors without overlapping', () => {
     const parsed = parseBundleJson(JSON.stringify(sample));
     expect(parsed.error).toBeUndefined();
     const reports = parsed.bundle!.reports;
     const graph = buildRenderableGraph(reports);
 
     expect(reports).toHaveLength(9);
-    expectBottomMatnRank(graph, reports);
+    expectAlignedMatnRow(graph, reports);
   });
 
-  it('reserves variable card widths while retaining independent downward chains', () => {
+  it('reserves variable card widths upstream while keeping independent chains vertical', () => {
     const reports = ['a', 'b', 'c'].map((id) => makeReport(
       id,
       [`Root ${id}`, `Student ${id}`, `Collector ${id}`],
@@ -138,16 +134,16 @@ describe('collector and matn layout', () => {
       'm:c': 440,
     });
 
-    expectBottomMatnRank(graph, reports);
+    expectAlignedMatnRow(graph, reports);
     expect(node(graph, 'm:a').width).toBe(760);
     expect(node(graph, 'm:b').width).toBe(220);
     expect(node(graph, 'm:c').width).toBe(440);
     for (const report of reports) {
-      expectDownwardChain(graph, [`n:Root ${report.id}`, `n:Student ${report.id}`, `c:${report.id}`]);
+      expectVerticalChain(graph, [`n:Root ${report.id}`, `n:Student ${report.id}`, `c:${report.id}`]);
     }
   });
 
-  it('places differing chain lengths above a common bottom matn rank', () => {
+  it('separates collectors on different ranks when their matns need the same bottom row', () => {
     const reports = [
       makeReport('short', ['Root A', 'Short collector'], 'A short route.'),
       makeReport('middle', ['Root B', 'Student B', 'Middle collector'], 'A medium route.'),
@@ -159,13 +155,14 @@ describe('collector and matn layout', () => {
       'm:long': 760,
     });
 
-    expectBottomMatnRank(graph, reports);
-    expectDownwardChain(graph, ['n:Root A', 'c:short']);
-    expectDownwardChain(graph, ['n:Root B', 'n:Student B', 'c:middle']);
-    expectDownwardChain(graph, ['n:Root C', 'n:Student C', 'n:Later student C', 'c:long']);
+    expect(new Set(reports.map((report) => node(graph, `c:${report.id}`).y)).size).toBe(3);
+    expectAlignedMatnRow(graph, reports);
+    expectVerticalChain(graph, ['n:Root A', 'c:short']);
+    expectVerticalChain(graph, ['n:Root B', 'n:Student B', 'c:middle']);
+    expectVerticalChain(graph, ['n:Root C', 'n:Student C', 'n:Later student C', 'c:long']);
   });
 
-  it('makes room in the bottom rank when a card is widened', () => {
+  it('moves collectors and their chains apart when a card is widened', () => {
     const reports = ['a', 'b'].map((id) => makeReport(
       id,
       [`Root ${id}`, `Student ${id}`, `Collector ${id}`],
@@ -173,17 +170,17 @@ describe('collector and matn layout', () => {
     ));
     const narrow = buildRenderableGraph(reports, {}, { 'm:a': 220, 'm:b': 220 });
     const widened = buildRenderableGraph(reports, {}, { 'm:a': 760, 'm:b': 220 });
-    const cardDistance = (graph: RenderableGraph) => Math.abs(node(graph, 'm:a').x - node(graph, 'm:b').x);
+    const collectorDistance = (graph: RenderableGraph) => Math.abs(node(graph, 'c:a').x - node(graph, 'c:b').x);
 
-    expectBottomMatnRank(narrow, reports);
-    expectBottomMatnRank(widened, reports);
-    expect(cardDistance(widened)).toBeGreaterThan(cardDistance(narrow));
-    expect(cardDistance(widened)).toBeGreaterThanOrEqual((760 + 220) / 2 + MIN_MATN_GAP - EPSILON);
+    expectAlignedMatnRow(narrow, reports);
+    expectAlignedMatnRow(widened, reports);
+    expect(collectorDistance(widened)).toBeGreaterThan(collectorDistance(narrow));
+    expect(collectorDistance(widened)).toBeGreaterThanOrEqual((760 + 220) / 2 + MIN_MATN_GAP - EPSILON);
     expect(reports.some((report) => Math.abs(
-      unshiftedX(widened, `m:${report.id}`) - unshiftedX(narrow, `m:${report.id}`),
+      unshiftedX(widened, `c:${report.id}`) - unshiftedX(narrow, `c:${report.id}`),
     ) > EPSILON)).toBe(true);
     for (const report of reports) {
-      expectDownwardChain(widened, [`n:Root ${report.id}`, `n:Student ${report.id}`, `c:${report.id}`]);
+      expectVerticalChain(widened, [`n:Root ${report.id}`, `n:Student ${report.id}`, `c:${report.id}`]);
     }
   });
 
@@ -197,8 +194,8 @@ describe('collector and matn layout', () => {
     const original = buildRenderableGraph(reports, {}, widths);
     const reversed = buildRenderableGraph([...reports].reverse(), {}, widths);
 
-    expectBottomMatnRank(original, reports);
-    expectBottomMatnRank(reversed, reports);
+    expectAlignedMatnRow(original, reports);
+    expectAlignedMatnRow(reversed, reports);
     for (const before of original.nodes) {
       const after = node(reversed, before.id);
       expect(after.x - (reversed.shiftX ?? 0), `${before.id} should have deterministic x`)

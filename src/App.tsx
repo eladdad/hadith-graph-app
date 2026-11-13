@@ -843,8 +843,8 @@ function App() {
                 {' '}<span aria-hidden="true">·</span>{' '}
                 {graph.nodes.length} node{graph.nodes.length === 1 ? '' : 's'}
                 {!isLocalFocus && graph.nodes.length > 0 ? (
-                  <> <span aria-hidden="true">·</span> <span data-layout-engine={canAutoArrange ? 'saved' : 'graphviz-dot'}>
-                    {canAutoArrange ? 'Saved layout' : 'Graphviz dot'}
+                  <> <span aria-hidden="true">·</span> <span data-layout-engine={canAutoArrange ? 'saved' : 'custom'}>
+                    {canAutoArrange ? 'Saved layout' : 'Automatic layout'}
                   </span></>
                 ) : null}
               </p>
@@ -852,8 +852,8 @@ function App() {
             <div className="graph-toolbar-actions">
             {!isLocalFocus ? (
               <label className="graph-matn-sort" title={matnSort === 'highlights'
-                ? 'Groups similar highlights from left to right; this can increase edge crossings.'
-                : 'Graphviz reduces edge crossings. Saved manual positions are preserved.'}>
+                ? 'Groups similar highlights from left to right and adjusts narrator branches to follow them.'
+                : 'Automatic layout reduces edge crossings. Saved manual positions are preserved.'}>
                 <span>Matn order</span>
                 <select
                   value={matnSort}

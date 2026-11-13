@@ -14,30 +14,33 @@ function node(graph: RenderableGraph, id: string): GraphNode {
   return found!;
 }
 
-function expectMatnRow(graph: RenderableGraph, automaticNarrators = true): void {
+function expectMatnRow(graph: RenderableGraph, commonTop = true): void {
   const matns = graph.nodes.filter((candidate) => candidate.type === 'matn').sort((a, b) => a.x - b.x);
   expect(matns.length).toBeGreaterThan(0);
-  const center = matns[0].y;
-  if (automaticNarrators) {
-    const narratorBottom = Math.max(...graph.nodes
-      .filter((candidate) => candidate.type === 'narrator')
-      .map((narrator) => narrator.y + narrator.height / 2));
-    expect(Math.min(...matns.map((matn) => matn.y - matn.height / 2))).toBeGreaterThan(narratorBottom);
-  }
+  const top = matns[0].y - matns[0].height / 2;
+  const narratorBottom = Math.max(...graph.nodes
+    .filter((candidate) => candidate.type === 'narrator')
+    .map((narrator) => narrator.y + narrator.height / 2));
+  expect(top).toBeGreaterThan(narratorBottom);
 
   for (const matn of matns) {
-    expect(matn.y, `${matn.id} should share Graphviz's bottom rank center`).toBeCloseTo(center, 6);
+    if (commonTop) {
+      expect(matn.y - matn.height / 2, `${matn.id} should share the matn row's top`).toBeCloseTo(top, 6);
+    }
     expect(matn.x - matn.width / 2).toBeGreaterThanOrEqual(-EPSILON);
     expect(matn.x + matn.width / 2).toBeLessThanOrEqual(graph.width + EPSILON);
     expect(matn.y + matn.height / 2).toBeLessThanOrEqual(graph.height + EPSILON);
   }
 
-  for (let index = 1; index < matns.length; index += 1) {
-    const left = matns[index - 1];
-    const right = matns[index];
-    const horizontalGap = right.x - right.width / 2 - (left.x + left.width / 2);
-    expect(horizontalGap, `${left.id} and ${right.id} should have room between their text cards`)
-      .toBeGreaterThanOrEqual(MIN_MATN_GAP - EPSILON);
+  for (let i = 0; i < matns.length; i += 1) {
+    for (const right of matns.slice(i + 1)) {
+      const left = matns[i];
+      const horizontalGap = right.x - right.width / 2 - (left.x + left.width / 2);
+      const verticalGap = Math.abs(right.y - left.y) - (left.height + right.height) / 2;
+      expect(Math.max(horizontalGap, commonTop ? -Infinity : verticalGap),
+        `${left.id} and ${right.id} should have space between their text cards`)
+        .toBeGreaterThanOrEqual(MIN_MATN_GAP - EPSILON);
+    }
   }
 }
 
@@ -64,25 +67,25 @@ describe('matn card layout', () => {
     expectMatnRow(graph);
   });
 
-  it('preserves pinned collectors without replacing the automatic matn coordinates', () => {
-    const reports = [
-      makeReport('short', ['Root A', 'Short collector'], 'A short route.'),
-      makeReport('long', ['Root B', 'Intermediate', 'Long collector'], 'A longer route.'),
-    ];
+  it('stacks cards beneath pinned collectors when manual positions leave no horizontal room', () => {
     const positions = {
       'c:short': { x: 600, y: 300 },
       'c:long': { x: 600, y: 600 },
     };
-    const automatic = buildRenderableGraph(reports);
-    const pinned = buildRenderableGraph(reports, positions);
+    const graph = buildRenderableGraph([
+      makeReport('short', ['Root A', 'Short collector'], 'A short route.'),
+      makeReport('long', ['Root B', 'Intermediate', 'Long collector'], 'A longer route.'),
+    ], positions);
 
-    expectMatnRow(pinned, false);
-    expectSameMatnPositions(automatic, pinned);
+    expectMatnRow(graph, false);
     for (const [id, position] of Object.entries(positions)) {
-      const collector = node(pinned, id);
-      expect(collector.x - (pinned.shiftX ?? 0)).toBeCloseTo(position.x, 6);
-      expect(collector.y - (pinned.shiftY ?? 0)).toBeCloseTo(position.y, 6);
+      const collector = node(graph, id);
+      expect(collector.x - (graph.shiftX ?? 0)).toBeCloseTo(position.x, 6);
+      expect(collector.y - (graph.shiftY ?? 0)).toBeCloseTo(position.y, 6);
     }
+    expect(node(graph, 'm:short').x).toBe(node(graph, 'c:short').x);
+    expect(node(graph, 'm:long').x).toBe(node(graph, 'c:long').x);
+    expect(node(graph, 'm:short').y).not.toBe(node(graph, 'm:long').y);
   });
 
   it('uses saved widths and keeps long text within the graph at large font sizes', () => {
@@ -103,13 +106,9 @@ describe('matn card layout', () => {
     expect(node(graph, 'm:narrow').height).toBeGreaterThan(node(graph, 'm:maximum').height);
     expect(node(graph, 'm:maximum').height).toBeGreaterThan(node(graph, 'm:medium').height);
     expectMatnRow(graph);
-    // Different measured card heights are retained: dot shares the centers,
-    // rather than a later custom pass moving every title to the same top edge.
-    expect(node(graph, 'm:narrow').y - node(graph, 'm:narrow').height / 2)
-      .not.toBe(node(graph, 'm:medium').y - node(graph, 'm:medium').height / 2);
   });
 
-  it('recomputes the graph after a text card is widened or its font is enlarged', () => {
+  it('recomputes the row after a text card is widened or its font is enlarged', () => {
     const reports = ['a', 'b', 'c'].map((id) => makeReport(
       id,
       ['Shared parent', `Collector ${id}`],
@@ -125,7 +124,7 @@ describe('matn card layout', () => {
     expect(node(enlarged, 'm:b').height).toBeGreaterThan(node(widened, 'm:b').height);
   });
 
-  it('preserves pinned collectors while a wider card receives a fresh automatic layout', () => {
+  it('preserves pinned collector anchors and avoids overlaps when a card is widened', () => {
     const reports = [
       makeReport('left', ['Left root', 'Left collector'], 'The left report.'),
       makeReport('right', ['Right root', 'Right collector'], 'The right report.'),
@@ -134,19 +133,30 @@ describe('matn card layout', () => {
       'c:left': { x: 600, y: 400 },
       'c:right': { x: 860, y: 400 },
     };
-    for (const widths of [{ 'm:left': 220, 'm:right': 220 }, { 'm:left': 220, 'm:right': 760 }]) {
-      const automatic = buildRenderableGraph(reports, {}, widths);
-      const pinned = buildRenderableGraph(reports, positions, widths);
-      expectMatnRow(pinned, false);
-      expectSameMatnPositions(automatic, pinned);
-      for (const [id, position] of Object.entries(positions)) {
-        expect(node(pinned, id).x - (pinned.shiftX ?? 0)).toBeCloseTo(position.x, 6);
-        expect(node(pinned, id).y - (pinned.shiftY ?? 0)).toBeCloseTo(position.y, 6);
-      }
+    const initial = buildRenderableGraph(reports, positions, { 'm:left': 220, 'm:right': 220 });
+    const widened = buildRenderableGraph(reports, positions, { 'm:left': 220, 'm:right': 760 });
+    const leftCollector = node(widened, 'c:left');
+    const rightCollector = node(widened, 'c:right');
+    const leftMatn = node(widened, 'm:left');
+    const rightMatn = node(widened, 'm:right');
+
+    expect(node(initial, 'm:left').x).toBeLessThan(node(initial, 'm:right').x);
+    expect(leftMatn.x).toBeLessThan(rightMatn.x);
+    expect(leftMatn.x).toBe(leftCollector.x);
+    expect(rightMatn.x).toBe(rightCollector.x);
+    expectMatnRow(initial, false);
+    expectMatnRow(widened, false);
+
+    // Automatic ancestors may move to reserve card width. Explicit placements
+    // remain authoritative, even when that requires a lower text row.
+    for (const narrator of initial.nodes.filter((candidate) => candidate.id in positions)) {
+      const afterResize = node(widened, narrator.id);
+      expect(afterResize.x - (widened.shiftX ?? 0)).toBeCloseTo(narrator.x - (initial.shiftX ?? 0), 6);
+      expect(afterResize.y - (widened.shiftY ?? 0)).toBeCloseTo(narrator.y - (initial.shiftY ?? 0), 6);
     }
   });
 
-  it('keeps matn positions deterministic when report order changes and pinned collectors tie', () => {
+  it('keeps positions deterministic when report order changes and collector anchors tie', () => {
     const reports = ['c', 'a', 'b'].map((id) => makeReport(id, ['Root', 'Collector'], `Report ${id}.`));
     const positions = Object.fromEntries(reports.map((report) => [`c:${report.id}`, { x: 700, y: 400 }]));
     const original = buildRenderableGraph(reports, positions);
@@ -158,6 +168,17 @@ describe('matn card layout', () => {
     expectMatnRow(reversed, false);
     expectSameMatnPositions(original, repeated);
     expectSameMatnPositions(original, reversed);
+  });
+
+  it('centers a lone card directly below its collector', () => {
+    const graph = buildRenderableGraph([
+      makeReport('only', ['Root', 'Collector'], 'The only report.'),
+    ], {}, { 'm:only': 440 });
+    const collector = node(graph, 'c:only');
+    const matn = node(graph, 'm:only');
+
+    expect(matn.x).toBeCloseTo(collector.x, 6);
+    expectMatnRow(graph);
   });
 
   it.each(['m:only', 'r:only'])('honors the saved matn coordinate %s without moving other automatic nodes', (savedId) => {

@@ -16,7 +16,7 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 - Resize matn nodes horizontally and persist custom widths in the bundle.
 - Highlight normalized matn text with a shared legend of reusable labels and colors.
 - Switch to **Matns** to read full matn texts, their isnads, and highlights together, ordered by highlight similarity or original bundle order.
-- Choose **Matn order** in the graph: **Default** lets Graphviz reduce crossings, while **By elements/highlights** groups similar annotations from left to right.
+- Choose **Matn order** in the graph: **Default** uses the custom layout to reduce crossings, while **By elements/highlights** groups similar annotations from left to right.
 - Remove legend entries globally and automatically clear matching highlights from reports.
 - Show full wrapped matn text when zoomed in and compact highlight markers when zoomed far out. Once text collapses, the markers keep their screen size as you zoom out further.
 - Select a report from the graph or the right sidebar and keep its graph nodes, list card, and edges highlighted together.
@@ -128,33 +128,25 @@ The converter reads the same bundle schema and carries over saved node positions
 
 ## Run Locally
 
-### Graphviz experiment
+### Automatic layout
 
-The `experiment/graphviz-layout` branch uses Graphviz's `dot` engine through
-[`@viz-js/viz`](https://github.com/mdaines/viz-js) for automatic graph layout.
-Graphviz runs locally in the browser as WebAssembly; reports are not sent to a
-layout service. The engine loads once before the editor opens, and unchanged
-layouts are cached during dragging and selection.
+The `experiment/restore-custom-layout` branch restores the custom layered layout
+from `fece239`, the last version before the Graphviz experiment. It orders narrator
+layers to reduce crossings, aligns private transmission chains, and reserves
+space for matn cards beneath their collectors. Cards share a top edge where space
+permits and stack when a shared or pinned collector leaves insufficient room.
+The vertical spacing control adjusts the gap between narrator layers.
 
-The direct experiment sends every narrator and matn to Graphviz with its measured
-dimensions, including collector-to-matn connections. Graphviz chooses both axes;
-the app only translates the result into the canvas and applies explicit saved
-coordinates. There is no custom rank placement, branch sorting, compaction, or
-separate matn placement after Graphviz. Dashed lines show matn attachments, while
-transmission edges retain their report selection behavior.
+By elements/highlights keeps matn cards in the same similarity order as the Matns
+reading view. Their measured sizes and collector connections participate in the
+layout, so narrator branches follow the ordered card row and private chains can
+stay aligned with their cards.
 
-Matns share a bottom rank, aligned by their centers rather than their top edges.
-The vertical spacing control sets Graphviz's rank separation. The local narrator
-focus view keeps its compact source/student layout; Complete reports uses the
-full Graphviz model. The graph header identifies automatic Graphviz and saved
-arrangements. Auto-arrange replaces saved positions in the current view, with
-Restore saved layout available afterward.
-
-This deliberately tests Graphviz's own output. A merged narrator graph does not
-encode which incoming report path continues into each matn, so Graphviz alone
-does not guarantee the earlier-branch ordering of matns after reconvergence.
-Those ordering objectives remain recorded as pending tests rather than being
-silently enforced by a second layout algorithm.
+Merged and Trie graphs, including Complete reports focus views, use this layout.
+Sources & students keeps its compact local layout. Saved node positions still
+take precedence; Auto-arrange replaces them in the current view, and Restore
+saved layout brings the previous arrangement back. The layout runs locally in
+the browser without an external engine or an initialization step.
 
 ```bash
 cd hadith-graph-app

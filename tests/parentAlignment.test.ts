@@ -5,85 +5,106 @@ import { buildRenderableGraph } from '../src/graph';
 import type { GraphNode, RenderableGraph } from '../src/types';
 import { makeReport } from './helpers';
 
+const MIN_NODE_GAP = 70;
+
 function node(graph: RenderableGraph, id: string): GraphNode {
   const found = graph.nodes.find((candidate) => candidate.id === id);
-  expect(found, 'Missing graph node ' + id).toBeDefined();
+  expect(found, `Missing graph node ${id}`).toBeDefined();
   return found!;
 }
 
-function expectDirectedAndSeparated(graph: RenderableGraph): void {
-  for (const edge of graph.edges) {
-    const source = node(graph, edge.source);
-    const target = node(graph, edge.target);
-    expect(target.y - target.height / 2).toBeGreaterThan(source.y + source.height / 2);
-  }
-  const overlaps: string[] = [];
-  for (let index = 0; index < graph.nodes.length; index += 1) {
-    const a = graph.nodes[index];
-    for (const b of graph.nodes.slice(index + 1)) {
-      if (Math.abs(a.x - b.x) < (a.width + b.width) / 2 - 1e-6
-        && Math.abs(a.y - b.y) < (a.height + b.height) / 2 - 1e-6) overlaps.push(a.id + '/' + b.id);
-    }
-  }
-  expect(overlaps).toEqual([]);
+function expectSeparated(left: GraphNode, right: GraphNode): void {
+  expect(right.x - left.x).toBeGreaterThanOrEqual((left.width + right.width) / 2 + MIN_NODE_GAP - 1e-6);
 }
 
-describe('Graphviz placement around parents', () => {
-  it('keeps independent routes directed and separated when their lengths differ', () => {
-    const reports = [
-      makeReport('left', ['A', 'Left collector'], 'The shorter route'),
-      makeReport('right', ['B', 'Right child', 'Right grandchild', 'Right collector'], 'The longer route'),
-    ];
-    const before = JSON.stringify(reports);
-    const graph = buildRenderableGraph(reports);
-    expectDirectedAndSeparated(graph);
-    expect(node(graph, 'c:right').y).toBeGreaterThan(node(graph, 'n:Right grandchild').y);
-    expect(node(graph, 'm:left').y).toBe(node(graph, 'm:right').y);
-    expect(JSON.stringify(reports)).toBe(before);
+describe('automatic parent alignment', () => {
+  it('continues a right-hand branch beneath its parent when lower ranks become sparse', () => {
+    const graph = buildRenderableGraph([
+      makeReport('left', ['A', 'Left collector'], 'The shorter left branch'),
+      makeReport('right', ['B', 'Right child', 'Right grandchild', 'Right collector'], 'The longer right branch'),
+    ]);
+
+    const parent = node(graph, 'n:B');
+    expect(parent.x).toBeGreaterThan(node(graph, 'n:A').x);
+    expect(node(graph, 'n:Right child').x).toBeCloseTo(parent.x);
+    expect(node(graph, 'n:Right grandchild').x).toBeCloseTo(parent.x);
+    expect(node(graph, 'c:right').x).toBeCloseTo(parent.x);
+    expect(node(graph, 'c:left').y).toBe(node(graph, 'n:Right child').y);
+    expect(node(graph, 'n:Right grandchild').y).toBeGreaterThan(node(graph, 'n:Right child').y);
   });
 
-  it('gives sibling branches room without changing their parent or collector identities', () => {
+  it('places siblings beside the parent column with enough space between them', () => {
     const graph = buildRenderableGraph([
       makeReport('a', ['Parent', 'Child A', 'Collector A'], 'First sibling'),
       makeReport('b', ['Parent', 'Child B', 'Collector B'], 'Second sibling'),
     ]);
-    expectDirectedAndSeparated(graph);
-    expect(graph.edges.filter((edge) => edge.source === 'n:Parent').map((edge) => edge.target).sort())
-      .toEqual(['n:Child A', 'n:Child B']);
-    expect(node(graph, 'c:a').label).toBe('Collector A');
-    expect(node(graph, 'c:b').label).toBe('Collector B');
+
+    const parent = node(graph, 'n:Parent');
+    const children = [node(graph, 'n:Child A'), node(graph, 'n:Child B')].sort((a, b) => a.x - b.x);
+    expectSeparated(children[0], children[1]);
+    expect(children[0].x).toBeLessThanOrEqual(parent.x);
+    expect(children[1].x).toBeGreaterThanOrEqual(parent.x);
+    // There are no other occupants: neither sibling needs to be pushed farther
+    // away than the one adjacent slot necessary to resolve this collision.
+    for (const child of children) {
+      expect(Math.abs(child.x - parent.x)).toBeLessThanOrEqual(child.width + MIN_NODE_GAP + 1e-6);
+    }
+    expect(node(graph, 'c:a').x).toBeCloseTo(node(graph, 'n:Child A').x);
+    expect(node(graph, 'c:b').x).toBeCloseTo(node(graph, 'n:Child B').x);
   });
 
-  it('keeps a shared child below both observed parents', () => {
+  it('centers a shared child between its parents when that column is free', () => {
     const graph = buildRenderableGraph([
       makeReport('a', ['A', 'Shared child', 'Collector A'], 'First parent route'),
       makeReport('b', ['B', 'Shared child', 'Collector B'], 'Second parent route'),
     ]);
-    expectDirectedAndSeparated(graph);
-    expect(graph.edges.filter((edge) => edge.target === 'n:Shared child').map((edge) => edge.source).sort())
-      .toEqual(['n:A', 'n:B']);
-    expect(node(graph, 'n:Shared child').y).toBeGreaterThan(Math.max(node(graph, 'n:A').y, node(graph, 'n:B').y));
+
+    const a = node(graph, 'n:A');
+    const b = node(graph, 'n:B');
+    const child = node(graph, 'n:Shared child');
+    expect(child.x).toBeCloseTo((a.x + b.x) / 2);
+    expect(child.y).toBeGreaterThan(a.y);
+    expect(child.y).toBeGreaterThan(b.y);
   });
 
-  it('retains a direct incoming edge alongside a longer incoming route', () => {
+  it('includes a parent from an earlier rank when aligning a shared descendant', () => {
     const graph = buildRenderableGraph([
       makeReport('short', ['A', 'Shared child', 'Collector A'], 'Route with a long edge'),
       makeReport('long', ['B', 'Intermediate C', 'Intermediate D', 'Shared child', 'Collector B'], 'Longer route'),
     ]);
-    expectDirectedAndSeparated(graph);
-    expect(graph.edges.find((edge) => edge.source === 'n:A' && edge.target === 'n:Shared child')?.reports)
-      .toEqual([{ id: 'short', number: 1 }]);
-    const path = ['n:B', 'n:Intermediate C', 'n:Intermediate D', 'n:Shared child', 'c:long'];
-    for (let index = 1; index < path.length; index += 1) {
-      expect(graph.edges.some((edge) => edge.source === path[index - 1] && edge.target === path[index])).toBe(true);
-    }
+
+    const a = node(graph, 'n:A');
+    const b = node(graph, 'n:B');
+    const c = node(graph, 'n:Intermediate C');
+    const d = node(graph, 'n:Intermediate D');
+    const child = node(graph, 'n:Shared child');
+    expect(c.x).toBeCloseTo(b.x);
+    expect(d.x).toBeCloseTo(c.x);
+    expect(child.x).toBeCloseTo((a.x + d.x) / 2);
+    expect(child.y).toBeGreaterThan(d.y);
+    expect(d.y).toBeGreaterThan(c.y);
+    expect(c.y).toBeGreaterThan(a.y);
   });
 
-  it('keeps every measured sample node separated without changing its graph', () => {
-    const bundle = parseBundleJson(JSON.stringify(sample)).bundle!;
-    const graph = buildRenderableGraph(bundle.reports, {}, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend);
+  it('keeps narrator boxes on every sample rank separated after parent alignment', () => {
+    const parsed = parseBundleJson(JSON.stringify(sample));
+    expect(parsed.error).toBeUndefined();
+    const bundle = parsed.bundle!;
+    const graph = buildRenderableGraph(
+      bundle.reports, bundle.nodePositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend,
+    );
+    const ranks = new Map<number, GraphNode[]>();
+    for (const narrator of graph.nodes.filter((candidate) => candidate.type === 'narrator')) {
+      ranks.set(narrator.y, [...(ranks.get(narrator.y) ?? []), narrator]);
+    }
+
     expect(graph.nodes).toHaveLength(45);
     expect(graph.edges).toHaveLength(36);
-    expectDirectedAndSeparated(graph);
+    for (const rank of ranks.values()) {
+      const ordered = [...rank].sort((a, b) => a.x - b.x);
+      for (let i = 1; i < ordered.length; i += 1) {
+        expectSeparated(ordered[i - 1], ordered[i]);
+      }
+    }
   });
 });

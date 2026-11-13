@@ -13,42 +13,7 @@ function position(container: HTMLElement, id: string): { x: number; y: number } 
   return { x: Number(match[1]), y: Number(match[2]) };
 }
 
-function positions(graph: ReturnType<typeof buildRenderableGraph>): Record<string, { x: number; y: number }> {
-  return Object.fromEntries(graph.nodes.map((node) => [node.id, { x: node.x, y: node.y }]));
-}
-
-describe('merged report paths in the direct Graphviz experiment', () => {
-  // A merged union graph has no record of which incoming path continues to
-  // which outgoing report. These remain product objectives, not guarantees
-  // of dot's unmodified node positions.
-  it.todo('orders matns by their incoming branch after two report paths reconverge');
-  it.todo('preserves incoming branch groups in the Complete reports focus view');
-  it.todo('keeps the bundled Ahnaf and Hasan report groups in branch order after they rejoin');
-
-  it('retains identical automatic positions when only the provenance through a merged graph changes', () => {
-    const original = [
-      makeReport('a', ['n0', 'n8', 'Collector A'], 'First wording.'),
-      makeReport('b', ['n0', 'n6', 'n8', 'Collector B'], 'Second wording.'),
-    ];
-    const swapped = [
-      { ...original[0], isnad: ['n0', 'n6', 'n8', 'Collector A'] },
-      { ...original[1], isnad: ['n0', 'n8', 'Collector B'] },
-    ];
-    const first = buildRenderableGraph(original);
-    const second = buildRenderableGraph(swapped);
-
-    expect(second.edges.map((edge) => edge.id).sort()).toEqual(first.edges.map((edge) => edge.id).sort());
-    expect(positions(second)).toEqual(positions(first));
-    for (const graph of [first, second]) {
-      expect(graph.nodes.filter((node) => node.type === 'matn').map((node) => node.id).sort())
-        .toEqual(['m:a', 'm:b']);
-      for (const matn of graph.nodes.filter((node) => node.type === 'matn')) {
-        expect(matn.y).toBeGreaterThan(graph.nodes.find((node) => node.id === 'n:n8')!.y);
-      }
-    }
-    expect(positions(buildRenderableGraph(original))).toEqual(positions(first));
-  });
-
+describe('automatic layout in Complete reports', () => {
   it('uses the fresh automatic graph in Complete reports without reusing full-graph saved positions', async () => {
     const user = userEvent.setup();
     const reports = [
