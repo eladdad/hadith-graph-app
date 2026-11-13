@@ -8,7 +8,7 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 
 - Create a new in-memory bundle, load the bundled example graph, and import/export `.hadith-graph.json` files.
 - Add, edit, delete, and duplicate reports with an isnad chain plus matn text.
-- In Merged, keep shared narrator nodes merged across reports while the final narrator/collector stays report-specific.
+- Designate any narrator as a collector, or reverse the setting. In Merged, collectors have a separate node per report; other narrators share one node across reports. Names appearing last in an isnad with at least two names default to collector mode. A one-name isnad alone does not make its authority a collector.
 - Switch between Merged and Trie representations in the full graph and Complete reports focus view. Trie shares common chain prefixes (including identical endpoints) and separates later occurrences after paths diverge; matns stay report-specific.
 - Automatically rebuild the graph after every report change.
 - Prevent narrator cycles during report edits and bundle import.
@@ -35,6 +35,7 @@ The graph's **Matn order** menu offers **Default** and **By elements/highlights*
 - Add to the selection with `Ctrl`/`Cmd`/`Shift` + box drag on empty canvas.
 - Drag any selected node to move the full selection together.
 - Use Auto-arrange to replace saved positions in the current graph view with the automatic layout. Restore saved layout brings the previous arrangement back.
+- Select a name in **Focus narrator**, or double-click a narrator node, to change its **Collector** checkbox. This applies to that narrator across the whole bundle. Turn it off to merge the narrator’s occurrences, including final positions, in Merged. Export JSON to save the setting. Trie retains its prefix-based structure.
 - Use Merged / Trie to change the graph representation. The choice does not change reports, numbering, notes, or highlights; Sources & students keeps its local layout.
 - Zoom in or out with `Ctrl` + mouse wheel.
 - Scroll the canvas with the mouse wheel.
@@ -72,6 +73,10 @@ The app imports and exports a versioned JSON bundle. The `format` and `version` 
       "createdAt": "2026-03-24T18:05:00.000Z"
     }
   ],
+  "collectorOverrides": {
+    "Narrator B": true,
+    "Narrator C": false
+  },
   "highlightLegend": [
     {
       "id": "theme-mercy",
@@ -81,8 +86,7 @@ The app imports and exports a versioned JSON bundle. The `format` and `version` 
   ],
   "nodePositions": {
     "n:Narrator A": { "x": 120, "y": 100 },
-    "n:Narrator B": { "x": 120, "y": 220 },
-    "c:report-uuid": { "x": 120, "y": 340 },
+    "n:Narrator C": { "x": 120, "y": 340 },
     "m:report-uuid": { "x": 680, "y": 520 }
   },
   "nodeWidths": {
@@ -102,7 +106,8 @@ Bundle rules:
 - `reports[].note` is optional; missing notes default to an empty string and note whitespace is normalized.
 - `reports[].matnHighlights` reference `highlightLegend[].id` values through `legendId`.
 - Highlight ranges are sanitized on import: invalid, unknown, empty, or overlapping ranges are dropped.
-- `nodePositions` keys use `n:<narrator name>` for shared narrator nodes, `c:<report id>` for the final collector node in each report, and `m:<report id>` for matn nodes.
+- Optional `collectorOverrides` maps narrator names to booleans: `true` uses collector mode and `false` uses a shared node. Missing entries default to collector mode only for names appearing last in an isnad with at least two names. A one-name isnad does not assign collector status: its authority stays shared unless explicitly designated as a collector or also appearing last in a longer chain. Explicit settings survive adding or editing reports and import/export.
+- `nodePositions` keys use `n:<narrator name>` for shared narrator nodes, `c:<report id>` for a final collector, `cn:<encoded [report id, narrator index]>` for an intermediate collector, and `m:<report id>` for matn nodes. Changing a narrator’s collector setting releases its merged positions for automatic placement while preserving unrelated nodes and Trie positions.
 - Optional `trieNodePositions` stores the Trie arrangement separately. Trie narrator IDs encode their complete chain prefix; matn IDs remain `m:<report id>`. Position maps survive import/export independently.
 - `nodeWidths` currently applies to matn nodes. Width values are clamped to the app's supported range.
 - `fontSizes.narrator` and `fontSizes.matn` are clamped to the supported range of `10` to `24`. The defaults are `13` and `12`.
@@ -110,7 +115,7 @@ Bundle rules:
 
 Compatibility notes:
 
-- Older bundles that omit `highlightLegend`, `matnHighlights`, `note`, `nodePositions`, `nodeWidths`, or `fontSizes` still load.
+- Older bundles that omit `collectorOverrides`, `highlightLegend`, `matnHighlights`, `note`, `nodePositions`, `nodeWidths`, or `fontSizes` still load.
 - Missing `title`, `createdAt`, `updatedAt`, report `id`, and report `createdAt` values are regenerated or defaulted during import.
 - Invalid legend colors fall back to a safe default color.
 - Older saved collector positions that used `n:<name>` instead of `c:<report id>` still load.

@@ -43,7 +43,8 @@ describe('attribution authorities', () => {
       makeReport('empty', [], 'A report without an attribution.'),
     ]);
 
-    expect(node(graph, 'c:one').attributedReports).toEqual([{ id: 'one', number: 1 }]);
+    expect(node(graph, 'n:Sole narrator').attributedReports).toEqual([{ id: 'one', number: 1 }]);
+    expect(node(graph, 'm:one').matnAnchorId).toBe('n:Sole narrator');
     expect(node(graph, 'm:one').report).toEqual({ id: 'one', number: 1 });
     expect(node(graph, 'm:empty').report).toEqual({ id: 'empty', number: 2 });
     expect(graph.nodes.filter((candidate) => candidate.attributedReports?.length)).toHaveLength(1);

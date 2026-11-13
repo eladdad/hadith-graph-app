@@ -10,7 +10,9 @@ import {
   parseBundleJson,
   removeHighlightLegendItemFromBundle,
   updateReportNoteInBundle,
+  setNarratorCollectorInBundle,
 } from './bundle';
+import { getCollectorNarrators } from './collectors';
 import { AboutDialog } from './components/AboutDialog';
 import { GraphCanvas } from './components/GraphCanvas';
 import { MatnView } from './components/MatnView';
@@ -104,6 +106,10 @@ function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fullGraphViewport = useRef<{ zoom: number; scrollLeft: number; scrollTop: number; representation: GraphRepresentation; matnSort: MatnSortMode } | null>(null);
   const fitLayoutAfterUpdate = useRef(false);
+  const collectorNarrators = useMemo(
+    () => getCollectorNarrators(bundle.reports, bundle.collectorOverrides),
+    [bundle.reports, bundle.collectorOverrides],
+  );
   const narratorOptions = useMemo(() => getNarratorOptions(bundle.reports), [bundle.reports]);
   const focus = useMemo(
     () => focusedNarrator ? getNarratorFocus(bundle.reports, focusedNarrator) : null,
@@ -134,9 +140,9 @@ function App() {
       bundle.nodeWidths,
       bundle.fontSizes,
       bundle.highlightLegend,
-      { reportNumbers, verticalSpacing: bundle.verticalSpacing, representation, matnSort },
+      { reportNumbers, verticalSpacing: bundle.verticalSpacing, representation, matnSort, collectorNarrators },
     ),
-    [bundle.reports, currentSavedPositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend, bundle.verticalSpacing, focus, isLocalFocus, reportNumbers, representation, matnSort],
+    [bundle.reports, currentSavedPositions, bundle.nodeWidths, bundle.fontSizes, bundle.highlightLegend, bundle.verticalSpacing, focus, isLocalFocus, reportNumbers, representation, matnSort, collectorNarrators],
   );
 
   const selectedSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds]);
@@ -151,12 +157,12 @@ function App() {
   }, [bundle.reports]);
 
   useEffect(() => {
-    const validNodeIds = new Set(bundle.reports.flatMap((report) => getNodeIdsForReport(report, representation)));
+    const validNodeIds = new Set(bundle.reports.flatMap((report) => getNodeIdsForReport(report, representation, collectorNarrators)));
     setSelectedNodeIds((previous) => {
       const filtered = previous.filter((id) => validNodeIds.has(id));
       return filtered.length === previous.length ? previous : filtered;
     });
-  }, [bundle.reports, representation]);
+  }, [bundle.reports, representation, collectorNarrators]);
 
   useEffect(() => {
     if (focusedNarrator && !narratorOptions.some((option) => option.name === focusedNarrator)) {
@@ -187,7 +193,7 @@ function App() {
   useEffect(() => {
     // Changed annotations must be free to produce a new similarity order.
     setHighlightPositions({});
-  }, [bundle.reports, bundle.highlightLegend]);
+  }, [bundle.reports, bundle.highlightLegend, collectorNarrators]);
 
   useEffect(() => {
     if (fitLayoutAfterUpdate.current) {
@@ -336,19 +342,19 @@ function App() {
     () => new Set(isLocalFocus
       ? graph.edges.filter((edge) => edge.reports?.some((report) => studentReportIds
         ? studentReportIds.has(report.id) : report.id === reportEditor.editingReport?.id)).map((edge) => edge.id)
-      : reportEditor.editingReport ? getEdgeIdsForReport(reportEditor.editingReport, representation) : []),
-    [graph.edges, isLocalFocus, reportEditor.editingReport, studentReportIds, representation],
+      : reportEditor.editingReport ? getEdgeIdsForReport(reportEditor.editingReport, representation, collectorNarrators) : []),
+    [graph.edges, isLocalFocus, reportEditor.editingReport, studentReportIds, representation, collectorNarrators],
   );
 
   const handleRepresentationChange = useCallback((next: GraphRepresentation): void => {
     if (next === representation || isLocalFocus || isDragging || isResizing || isBoxSelecting) return;
     setRepresentation(next);
-    setSelectedNodeIds(reportEditor.editingReport ? getNodeIdsForReport(reportEditor.editingReport, next) : []);
+    setSelectedNodeIds(reportEditor.editingReport ? getNodeIdsForReport(reportEditor.editingReport, next, collectorNarrators) : []);
     resetBoxSelection();
     setSelectedStudent(null);
     fitLayoutAfterUpdate.current = true;
     setMessage(next === 'trie' ? 'Showing chains as a prefix tree.' : 'Showing shared narrators in the merged graph.');
-  }, [representation, isLocalFocus, isDragging, isResizing, isBoxSelecting, reportEditor.editingReport, resetBoxSelection]);
+  }, [representation, isLocalFocus, isDragging, isResizing, isBoxSelecting, reportEditor.editingReport, resetBoxSelection, collectorNarrators]);
 
   const handleMatnSortChange = useCallback((next: MatnSortMode): void => {
     if (next === matnSort || isLocalFocus || isDragging || isResizing || isBoxSelecting) return;
@@ -504,7 +510,7 @@ function App() {
 
     if (!additiveSelect && event.button === 0 && reportEditor.editingReport) {
       const nextSelection = selectedSet.has(nodeId) ? selectedNodeIds : [nodeId];
-      const reportNodeIds = getNodeIdsForReport(reportEditor.editingReport, representation);
+      const reportNodeIds = getNodeIdsForReport(reportEditor.editingReport, representation, collectorNarrators);
       if (!idSetsEqual(nextSelection, reportNodeIds) && !reportEditor.clearActiveReportSelection()) {
         event.preventDefault();
         event.stopPropagation();
@@ -524,6 +530,7 @@ function App() {
     selectedNodeIds,
     selectedSet,
     representation,
+    collectorNarrators,
   ]);
 
   const handleSelectReport = useCallback((reportId: string): void => {
@@ -557,6 +564,27 @@ function App() {
     setSelectedStudent(null);
     setFocusedNarrator(name);
   }, [isDragging, isResizing, isBoxSelecting, reportEditor, resetBoxSelection, focusedNarrator, viewport, representation, matnSort]);
+
+  const handleCollectorChange = useCallback((isCollector: boolean): void => {
+    if (!focusedNarrator || isDragging || isResizing || isBoxSelecting) return;
+    const result = setNarratorCollectorInBundle(bundle, focusedNarrator, isCollector);
+    if (!result.bundle) {
+      setMessage(result.error ?? 'Could not change this narrator’s collector setting.');
+      return;
+    }
+    const nextCollectors = getCollectorNarrators(result.bundle.reports, result.bundle.collectorOverrides);
+    setBundle(result.bundle);
+    setFocusPositions({});
+    setHighlightPositions({});
+    setSavedLayoutRestore(null);
+    resetBoxSelection();
+    setSelectedNodeIds(reportEditor.editingReport
+      ? getNodeIdsForReport(reportEditor.editingReport, representation, nextCollectors) : []);
+    fitLayoutAfterUpdate.current = true;
+    setMessage(isCollector
+      ? `${focusedNarrator} is now a collector, with a separate node per report in Merged. Export JSON to save this setting.`
+      : `${focusedNarrator} now shares one node across reports in Merged. Export JSON to save this setting.`);
+  }, [bundle, focusedNarrator, isDragging, isResizing, isBoxSelecting, reportEditor.editingReport, representation, resetBoxSelection]);
 
   const handleFocusModeChange = useCallback((mode: NarratorFocusMode): void => {
     setSelectedStudent(null);
@@ -907,6 +935,9 @@ function App() {
               onModeChange={handleFocusModeChange}
               matchingReportCount={focus?.reports.length ?? bundle.reports.length}
               totalReportCount={bundle.reports.length}
+              isCollector={focusedNarrator !== null && collectorNarrators.has(focusedNarrator)}
+              onCollectorChange={handleCollectorChange}
+              collectorDisabled={isDragging || isResizing || isBoxSelecting}
             />
           ) : null}
           {studentFocus && focus ? (

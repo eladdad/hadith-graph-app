@@ -13,6 +13,9 @@ interface NarratorFocusControlsProps {
   onModeChange: (mode: NarratorFocusMode) => void;
   matchingReportCount: number;
   totalReportCount: number;
+  isCollector: boolean;
+  onCollectorChange: (isCollector: boolean) => void;
+  collectorDisabled: boolean;
 }
 
 function searchableName(value: string): string {
@@ -27,6 +30,9 @@ export function NarratorFocusControls({
   onModeChange,
   matchingReportCount,
   totalReportCount,
+  isCollector,
+  onCollectorChange,
+  collectorDisabled,
 }: NarratorFocusControlsProps) {
   const [query, setQuery] = useState('');
   const visibleOptions = useMemo(() => {
@@ -89,6 +95,24 @@ export function NarratorFocusControls({
           All reports
         </button>
       </div>
+      {narrator ? (
+        <div className="narrator-collector-setting">
+          <label>
+            <input
+              type="checkbox"
+              checked={isCollector}
+              onChange={(event) => onCollectorChange(event.target.checked)}
+              disabled={collectorDisabled}
+              aria-describedby="narrator-collector-help"
+            />
+            Collector
+          </label>
+          <p id="narrator-collector-help">
+            In Merged, collectors have a separate node for each report. Turn off to merge this narrator across reports.
+            {' '}This setting applies to the whole bundle; Trie keeps its prefix-based layout.
+          </p>
+        </div>
+      ) : null}
       <p className="narrator-focus-summary" aria-live="polite">
         {narrator
           ? <><bdi>{narrator}</bdi> appears in {matchingReportCount} of {totalReportCount} reports. Report numbers keep their original bundle numbering.</>

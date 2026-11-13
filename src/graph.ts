@@ -1,5 +1,6 @@
 import { buildMatnTextSegments } from './matnHighlights';
 import { orderMatnsBySimilarity } from './matnSimilarity';
+import { getCollectorNarrators } from './collectors';
 import type {
   GraphEdge,
   GraphNode,
@@ -23,6 +24,7 @@ import { normalizeVerticalSpacing } from './layoutSettings';
 
 const NARRATOR_PREFIX = 'n:';
 const COLLECTOR_PREFIX = 'c:';
+const INTERMEDIATE_COLLECTOR_PREFIX = 'cn:';
 const MATN_NODE_PREFIX = 'm:';
 
 const NARRATOR_NODE_WIDTH = 190;
@@ -104,14 +106,19 @@ export function getNarratorNodeIdForReport(
   report: Pick<HadithReport, 'id' | 'isnad'>,
   narratorIndex: number,
   representation: GraphRepresentation = 'merged',
+  collectorNarrators?: ReadonlySet<string>,
 ): string {
   if (representation === 'trie') {
     return `t:${encodeURIComponent(JSON.stringify(report.isnad.slice(0, narratorIndex + 1)))}`;
   }
   const narratorName = report.isnad[narratorIndex] ?? '';
-  return narratorIndex === report.isnad.length - 1
+  const isFinal = narratorIndex === report.isnad.length - 1;
+  if (!(collectorNarrators?.has(narratorName) ?? (isFinal && report.isnad.length > 1))) {
+    return getSharedNarratorNodeId(narratorName);
+  }
+  return isFinal
     ? getCollectorNodeId(report.id)
-    : getSharedNarratorNodeId(narratorName);
+    : `${INTERMEDIATE_COLLECTOR_PREFIX}${encodeURIComponent(JSON.stringify([report.id, narratorIndex]))}`;
 }
 
 function matnNodeId(sourceReportId: string): string {
@@ -521,6 +528,7 @@ function buildIndexedGraph(
   reports: HadithReport[],
   reportNumbers?: ReadonlyMap<string, number>,
   representation: GraphRepresentation = 'merged',
+  collectorNarrators?: ReadonlySet<string>,
 ): IndexedGraph {
   const nodesById = new Map<string, IndexedGraphNode>();
   const adjacency = new Map<string, Set<string>>();
@@ -547,12 +555,12 @@ function buildIndexedGraph(
       matnHighlights: report.matnHighlights,
       report: reportReference,
       matnAnchorId: report.isnad.length > 0
-        ? getNarratorNodeIdForReport(report, report.isnad.length - 1, representation)
+        ? getNarratorNodeIdForReport(report, report.isnad.length - 1, representation, collectorNarrators)
         : undefined,
     });
 
     report.isnad.forEach((narratorName, narratorIndex) => {
-      const narratorId = getNarratorNodeIdForReport(report, narratorIndex, representation);
+      const narratorId = getNarratorNodeIdForReport(report, narratorIndex, representation, collectorNarrators);
       ensureNode({
         id: narratorId,
         label: narratorName,
@@ -566,8 +574,8 @@ function buildIndexedGraph(
     });
 
     for (let i = 0; i < report.isnad.length - 1; i += 1) {
-      const source = getNarratorNodeIdForReport(report, i, representation);
-      const target = getNarratorNodeIdForReport(report, i + 1, representation);
+      const source = getNarratorNodeIdForReport(report, i, representation, collectorNarrators);
+      const target = getNarratorNodeIdForReport(report, i + 1, representation, collectorNarrators);
       addDirectedEdge(adjacency, indegree, source, target);
       const edgeId = `${source}->${target}`;
       const edge = edgesById.get(edgeId) ?? { source, target, reports: new Map<string, GraphReportReference>() };
@@ -783,7 +791,7 @@ function buildNarratorNodes(
     const defaultX = autoLayout.autoX.get(id) ?? PADDING_X;
     const defaultY = autoLayout.rowCenterY.get(rowIndex) ?? PADDING_Y;
 
-    const legacyCollectorPosition = id.startsWith(COLLECTOR_PREFIX) && node
+    const legacyCollectorPosition = (id.startsWith(COLLECTOR_PREFIX) || id.startsWith(INTERMEDIATE_COLLECTOR_PREFIX)) && node
       ? nodePositions[getSharedNarratorNodeId(node.label)]
       : undefined;
     const savedPosition = nodePositions[id] ?? legacyCollectorPosition;
@@ -959,6 +967,7 @@ export interface GraphBuildOptions {
   verticalSpacing?: number;
   representation?: GraphRepresentation;
   matnSort?: MatnSortMode;
+  collectorNarrators?: ReadonlySet<string>;
 }
 
 export function buildRenderableGraph(
@@ -972,7 +981,8 @@ export function buildRenderableGraph(
   const normalizedFontSizes = getNormalizedFontSizes(fontSizes);
   const verticalGap = normalizeVerticalSpacing(options.verticalSpacing);
   const highlightLegendById = new Map(highlightLegend.map((entry) => [entry.id, entry]));
-  const indexedGraph = buildIndexedGraph(reports, options.reportNumbers, options.representation);
+  const collectorNarrators = options.collectorNarrators ?? getCollectorNarrators(reports);
+  const indexedGraph = buildIndexedGraph(reports, options.reportNumbers, options.representation, collectorNarrators);
 
   if (indexedGraph.nodesById.size === 0) {
     return createEmptyRenderableGraph();
