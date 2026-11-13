@@ -1,6 +1,6 @@
 import type { HadithReport } from './types';
 
-/** Explicit choices override the default collector status of final narrators. */
+/** Explicit choices override collector defaults inferred from transmission chains. */
 export type CollectorOverrides = Record<string, boolean>;
 
 export function getCollectorNarrators(
@@ -9,6 +9,9 @@ export function getCollectorNarrators(
 ): ReadonlySet<string> {
   const collectors = new Set<string>();
   for (const report of reports) {
+    // A standalone attribution names its authority, not a transmitting collector.
+    // Promoting that name would split its authority nodes in every other report.
+    if (report.isnad.length < 2) continue;
     const finalNarrator = report.isnad.at(-1);
     if (finalNarrator !== undefined) collectors.add(finalNarrator);
   }

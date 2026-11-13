@@ -81,7 +81,7 @@ def get_collector_narrators(
     collectors = set()
     for report in reports:
         isnad = report.get("isnad", [])
-        if isinstance(isnad, list) and isnad:
+        if isinstance(isnad, list) and len(isnad) > 1:
             collectors.add(str(isnad[-1]))
     for raw_name, is_collector in (overrides or {}).items():
         name = re.sub(r"\s+", " ", raw_name).strip()
@@ -103,7 +103,7 @@ def get_narrator_node_id(
 
     narrator_name = str(isnad[narrator_index]) if narrator_index < len(isnad) else ""
     is_final = narrator_index == len(isnad) - 1
-    is_collector = narrator_name in collector_narrators if collector_narrators is not None else is_final
+    is_collector = narrator_name in collector_narrators if collector_narrators is not None else is_final and len(isnad) > 1
     if not is_collector:
         return get_shared_narrator_node_id(narrator_name)
     if is_final:

@@ -37,6 +37,29 @@ class CollectorModeConversionTests(unittest.TestCase):
         for report in self.reports:
             self.assertEqual(nodes[f'm:{report["id"]}'].x, nodes["n:Collector"].x)
 
+    def test_singleton_authority_stays_shared_across_other_chains(self):
+        self.reports[1]["isnad"] = ["Root"]
+        nodes, edges = self.convert(nodePositions={"n:Root": {"x": 765, "y": 123}})
+        self.assertEqual(set(nodes), {"n:Root", "n:Middle", "c:first", "m:first", "m:second"})
+        self.assertEqual(nodes["n:Root"].node_type, "narrator")
+        self.assertEqual((nodes["n:Root"].x, nodes["n:Root"].y), (765, 123))
+        self.assertEqual(nodes["m:second"].x, 765)
+        self.assertEqual(set(edges), {("n:Root", "n:Middle"), ("n:Middle", "c:first")})
+        self.assertEqual(get_narrator_node_id(self.reports[1], 0), "n:Root")
+        self.assertEqual({node for row in topological_rows(self.reports) for node in row},
+                         {"n:Root", "n:Middle", "c:first"})
+
+    def test_singleton_can_be_explicitly_designated_as_collector(self):
+        self.reports[1]["isnad"] = ["Root"]
+        nodes, edges = self.convert(collectorOverrides={"Root": True})
+        split_root = "cn:%5B%22first%22%2C0%5D"
+        self.assertIn(split_root, nodes)
+        self.assertIn("c:second", nodes)
+        self.assertNotIn("n:Root", nodes)
+        self.assertEqual(nodes["c:second"].node_type, "collector")
+        self.assertIn((split_root, "n:Middle"), edges)
+        self.assertEqual(nodes["m:second"].x, nodes["c:second"].x)
+
     def test_intermediate_collectors_have_matching_ids_edges_positions_and_topology(self):
         collectors = {"Middle"}
         first_middle = get_narrator_node_id(self.reports[0], 1, collectors)

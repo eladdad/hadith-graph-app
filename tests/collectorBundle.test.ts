@@ -24,6 +24,37 @@ describe('collector settings in bundles', () => {
     expect(getNodeIdsForReport(first, 'merged', getCollectorNarrators(bundle.reports))).toContain('c:first');
   });
 
+  it('imports a singleton authority as shared and still permits an explicit collector setting', () => {
+    const singleton = makeReport('singleton', ['Root'], 'Attributed to the authority alone.');
+    const bundle = parseBundleJson(bundleToJson(makeBundle([singleton, first]))).bundle!;
+    expect(bundle.collectorOverrides).toBeUndefined();
+    const defaults = getCollectorNarrators(bundle.reports, bundle.collectorOverrides);
+    expect([...defaults]).toEqual(['Collector']);
+    expect(getNodeIdsForReport(singleton, 'merged', defaults)).toEqual(['m:singleton', 'n:Root']);
+    expect(getNodeIdsForReport(singleton)).toEqual(['m:singleton', 'n:Root']);
+    expect(getNodeIdsForReport(first, 'merged', defaults)).toContain('n:Root');
+
+    const designated = setNarratorCollectorInBundle(bundle, 'Root', true).bundle!;
+    const restored = parseBundleJson(bundleToJson(designated)).bundle!;
+    const collectors = getCollectorNarrators(restored.reports, restored.collectorOverrides);
+    expect(restored.collectorOverrides).toEqual({ Root: true });
+    expect(getNodeIdsForReport(singleton, 'merged', collectors)).toContain('c:singleton');
+    expect(getNodeIdsForReport(first, 'merged', collectors)).not.toContain('n:Root');
+
+    const sharedAgain = setNarratorCollectorInBundle(restored, 'Root', false).bundle!;
+    expect(getNodeIdsForReport(singleton, 'merged', getCollectorNarrators(sharedAgain.reports, sharedAgain.collectorOverrides)))
+      .toContain('n:Root');
+  });
+
+  it('keeps a shared authority and its position when adding a singleton report', () => {
+    const bundle = makeBundle([first], { nodePositions: { 'n:Root': { x: 123, y: 456 } } });
+    const added = addReportToBundleFromFields(bundle, ['Root'], 'Authority-only report.');
+    expect(added.error).toBeUndefined();
+    expect(added.addedNodeIds).toEqual([`m:${added.bundle!.reports[1].id}`, 'n:Root']);
+    expect(added.bundle!.nodePositions['n:Root']).toEqual({ x: 123, y: 456 });
+    expect(getCollectorNarrators(added.bundle!.reports).has('Root')).toBe(false);
+  });
+
   it('roundtrips true and false choices, normalizing their narrator names', () => {
     const parsed = parseBundleJson(bundleToJson(makeBundle([first, second], {
       collectorOverrides: { ' Collector  ': false, '  Middle ': true },

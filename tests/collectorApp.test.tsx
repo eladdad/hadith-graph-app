@@ -55,6 +55,40 @@ async function exported(user: ReturnType<typeof userEvent.setup>, blobs: Blob[])
 }
 
 describe('narrator collector controls', () => {
+  it('leaves an authority unchecked and shared when a report contains only its attribution, while allowing explicit collector mode', async () => {
+    const user = userEvent.setup();
+    const standalone = makeReport('attribution', ['Authority'], 'Direct attribution.');
+    const mixedReports = [
+      standalone,
+      makeReport('a', ['Authority', 'Left', 'Collector'], 'First chain.'),
+      makeReport('b', ['Authority', 'Right', 'Collector'], 'Second chain.'),
+    ];
+    const { container } = await renderBundle(makeBundle(mixedReports));
+    expect(getGraphNode(container, 'n:Authority')).toBeInTheDocument();
+    expect(container.querySelector('[data-node-id="c:attribution"]')).not.toBeInTheDocument();
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Focus narrator' }), 'Authority');
+    expect(screen.getByRole('checkbox', { name: 'Collector', exact: true })).not.toBeChecked();
+    await user.click(screen.getByRole('button', { name: 'Complete reports', exact: true }));
+    const authority = getGraphNode(container, 'n:Authority');
+    expect(authority.querySelector('[data-report-count="3"]')).toBeInTheDocument();
+    selectMatn(container, 'attribution');
+    selectedPath(container, standalone, getCollectorNarrators(mixedReports));
+
+    await user.click(screen.getByRole('checkbox', { name: 'Collector', exact: true }));
+    expect(screen.getByRole('checkbox', { name: 'Collector', exact: true })).toBeChecked();
+    expect(container.querySelector('[data-node-id="n:Authority"]')).not.toBeInTheDocument();
+    const optedIn = getCollectorNarrators(mixedReports, { Authority: true });
+    for (const report of mixedReports) {
+      expect(getGraphNode(container, getNarratorNodeIdForReport(report, 0, 'merged', optedIn))).toBeInTheDocument();
+    }
+    selectedPath(container, standalone, optedIn);
+
+    await user.click(screen.getByRole('checkbox', { name: 'Collector', exact: true }));
+    expect(getGraphNode(container, 'n:Authority')).toHaveClass('selected');
+    selectedPath(container, standalone, getCollectorNarrators(mixedReports));
+  });
+
   it('uses collector defaults from the full bundle when a focus excludes the report ending with that narrator', async () => {
     const user = userEvent.setup();
     const mixedReports = [

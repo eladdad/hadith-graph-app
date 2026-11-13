@@ -8,7 +8,7 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 
 - Create a new in-memory bundle, load the bundled example graph, and import/export `.hadith-graph.json` files.
 - Add, edit, delete, and duplicate reports with an isnad chain plus matn text.
-- Designate any narrator as a collector, or reverse the setting. In Merged, collectors have a separate node per report; other narrators share one node across reports. Names at the end of an isnad default to collector mode.
+- Designate any narrator as a collector, or reverse the setting. In Merged, collectors have a separate node per report; other narrators share one node across reports. Names appearing last in an isnad with at least two names default to collector mode. A one-name isnad alone does not make its authority a collector.
 - Switch between Merged and Trie representations in the full graph and Complete reports focus view. Trie shares common chain prefixes (including identical endpoints) and separates later occurrences after paths diverge; matns stay report-specific.
 - Automatically rebuild the graph after every report change.
 - Prevent narrator cycles during report edits and bundle import.
@@ -106,7 +106,7 @@ Bundle rules:
 - `reports[].note` is optional; missing notes default to an empty string and note whitespace is normalized.
 - `reports[].matnHighlights` reference `highlightLegend[].id` values through `legendId`.
 - Highlight ranges are sanitized on import: invalid, unknown, empty, or overlapping ranges are dropped.
-- Optional `collectorOverrides` maps narrator names to booleans: `true` uses collector mode and `false` uses a shared node. Missing entries default to collector mode for any name appearing at the end of an isnad in the bundle. Explicit settings survive adding or editing reports and import/export.
+- Optional `collectorOverrides` maps narrator names to booleans: `true` uses collector mode and `false` uses a shared node. Missing entries default to collector mode only for names appearing last in an isnad with at least two names. A one-name isnad does not assign collector status: its authority stays shared unless explicitly designated as a collector or also appearing last in a longer chain. Explicit settings survive adding or editing reports and import/export.
 - `nodePositions` keys use `n:<narrator name>` for shared narrator nodes, `c:<report id>` for a final collector, `cn:<encoded [report id, narrator index]>` for an intermediate collector, and `m:<report id>` for matn nodes. Changing a narrator’s collector setting releases its merged positions for automatic placement while preserving unrelated nodes and Trie positions.
 - Optional `trieNodePositions` stores the Trie arrangement separately. Trie narrator IDs encode their complete chain prefix; matn IDs remain `m:<report id>`. Position maps survive import/export independently.
 - `nodeWidths` currently applies to matn nodes. Width values are clamped to the app's supported range.

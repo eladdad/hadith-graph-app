@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import fullMoonSplittingExample from '../examples/moon-splitting-full.hadith-graph.json';
 import { getCollectorNarrators } from '../src/collectors';
 import { buildRenderableGraph, getNarratorNodeIdForReport } from '../src/graph';
 import { makeReport } from './helpers';
@@ -9,6 +10,41 @@ const reports = [
 ];
 
 describe('collector narrator graph nodes', () => {
+  it('keeps an authority shared when a standalone attribution also names it as the only narrator', () => {
+    const standalone = makeReport('standalone', ['Authority'], 'Attributed directly to the authority.');
+    const mixed = [standalone, ...reports];
+    const graph = buildRenderableGraph(mixed);
+
+    expect([...getCollectorNarrators(mixed)]).toEqual(['Collector']);
+    expect(getNarratorNodeIdForReport(standalone, 0)).toBe('n:Authority');
+    expect(graph.nodes.filter((node) => node.label === 'Authority').map((node) => node.id)).toEqual(['n:Authority']);
+    expect(graph.nodes.find((node) => node.id === 'n:Authority')?.attributedReports).toEqual([
+      { id: 'standalone', number: 1 }, { id: 'first', number: 2 }, { id: 'second', number: 3 },
+    ]);
+    expect(graph.nodes.find((node) => node.id === 'm:standalone')?.matnAnchorId).toBe('n:Authority');
+
+    const optedIn = getCollectorNarrators(mixed, { Authority: true });
+    const split = buildRenderableGraph(mixed, {}, {}, undefined, [], { collectorNarrators: optedIn });
+    const authorityIds = mixed.map((report) => getNarratorNodeIdForReport(report, 0, 'merged', optedIn));
+    expect(new Set(authorityIds).size).toBe(3);
+    expect(split.nodes.filter((node) => node.label === 'Authority').map((node) => node.id)).toEqual(authorityIds);
+    expect(split.nodes.find((node) => node.id === 'm:standalone')?.matnAnchorId).toBe('c:standalone');
+  });
+
+  it('keeps the full moon-splitting example authorities out of collector defaults despite standalone attributions', () => {
+    const exampleReports = fullMoonSplittingExample.reports;
+    expect(exampleReports.some((report) => report.isnad.length === 1)).toBe(true);
+    const collectors = getCollectorNarrators(exampleReports);
+    const authorities = new Set(exampleReports.map((report) => report.isnad[0]));
+    const terminalCollectors = new Set(exampleReports.filter((report) => report.isnad.length > 1)
+      .map((report) => report.isnad.at(-1)!));
+
+    expect([...authorities].filter((name) => collectors.has(name))).toEqual([]);
+    expect([...terminalCollectors].filter((name) => !collectors.has(name))).toEqual([]);
+    expect(collectors.has('عبد الله بن مسعود')).toBe(false);
+    expect(collectors.has('عبد الله بن عباس')).toBe(false);
+  });
+
   it('defaults final narrator names to collector mode across all their occurrences', () => {
     const mixed = [...reports, makeReport('third', ['Authority', 'Collector', 'Later collector'], 'Third wording.')];
     const collectors = getCollectorNarrators(mixed);

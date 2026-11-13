@@ -113,7 +113,7 @@ export function getNarratorNodeIdForReport(
   }
   const narratorName = report.isnad[narratorIndex] ?? '';
   const isFinal = narratorIndex === report.isnad.length - 1;
-  if (!(collectorNarrators?.has(narratorName) ?? isFinal)) {
+  if (!(collectorNarrators?.has(narratorName) ?? (isFinal && report.isnad.length > 1))) {
     return getSharedNarratorNodeId(narratorName);
   }
   return isFinal
