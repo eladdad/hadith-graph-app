@@ -7,10 +7,12 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
+from urllib.parse import quote
 
 
 NARRATOR_PREFIX = "n:"
 COLLECTOR_PREFIX = "c:"
+INTERMEDIATE_COLLECTOR_PREFIX = "cn:"
 MATN_PREFIX = "m:"
 
 DEFAULT_NARRATOR_FONT_SIZE = 13
@@ -73,15 +75,42 @@ def get_matn_node_id(report_id: str) -> str:
     return f"{MATN_PREFIX}{report_id}"
 
 
-def get_narrator_node_id(report: dict[str, object], narrator_index: int) -> str:
+def get_collector_narrators(
+    reports: list[dict[str, object]], overrides: dict[str, object] | None = None
+) -> set[str]:
+    collectors = set()
+    for report in reports:
+        isnad = report.get("isnad", [])
+        if isinstance(isnad, list) and isnad:
+            collectors.add(str(isnad[-1]))
+    for raw_name, is_collector in (overrides or {}).items():
+        name = re.sub(r"\s+", " ", raw_name).strip()
+        if not name or not isinstance(is_collector, bool):
+            raise ValueError("Collector overrides must map non-empty narrator names to booleans.")
+        if is_collector:
+            collectors.add(name)
+        else:
+            collectors.discard(name)
+    return collectors
+
+
+def get_narrator_node_id(
+    report: dict[str, object], narrator_index: int, collector_narrators: set[str] | None = None
+) -> str:
     isnad = report.get("isnad", [])
     if not isinstance(isnad, list):
         return get_collector_node_id(str(report.get("id", "")))
 
     narrator_name = str(isnad[narrator_index]) if narrator_index < len(isnad) else ""
-    if narrator_index == len(isnad) - 1:
+    is_final = narrator_index == len(isnad) - 1
+    is_collector = narrator_name in collector_narrators if collector_narrators is not None else is_final
+    if not is_collector:
+        return get_shared_narrator_node_id(narrator_name)
+    if is_final:
         return get_collector_node_id(str(report.get("id", "")))
-    return get_shared_narrator_node_id(narrator_name)
+    identity = json.dumps([str(report.get("id", "")), narrator_index], ensure_ascii=False, separators=(",", ":"))
+    encoded_identity = quote(identity, safe="~()*!.'-")
+    return f"{INTERMEDIATE_COLLECTOR_PREFIX}{encoded_identity}"
 
 
 def clamp_font_size(value: object, fallback: int) -> int:
@@ -151,7 +180,11 @@ def strip_prefix(value: str, prefix: str) -> str:
     return value[len(prefix):] if value.startswith(prefix) else value
 
 
-def topological_rows(reports: list[dict[str, object]]) -> list[list[str]]:
+def topological_rows(
+    reports: list[dict[str, object]], collector_narrators: set[str] | None = None
+) -> list[list[str]]:
+    if collector_narrators is None:
+        collector_narrators = get_collector_narrators(reports)
     labels_by_id: dict[str, str] = {}
     adjacency: dict[str, set[str]] = {}
     indegree: dict[str, int] = {}
@@ -170,23 +203,18 @@ def topological_rows(reports: list[dict[str, object]]) -> list[list[str]]:
         indegree[target] = indegree.get(target, 0) + 1
 
     for report in reports:
-        report_id = str(report.get("id", ""))
         isnad = report.get("isnad", [])
         if not isinstance(isnad, list):
             continue
 
         for narrator_index, narrator_name in enumerate(isnad):
             label = str(narrator_name)
-            node_id = (
-                get_collector_node_id(report_id)
-                if narrator_index == len(isnad) - 1
-                else get_shared_narrator_node_id(label)
-            )
+            node_id = get_narrator_node_id(report, narrator_index, collector_narrators)
             ensure_node(node_id, label)
 
         for narrator_index in range(len(isnad) - 1):
-            source = get_narrator_node_id(report, narrator_index)
-            target = get_narrator_node_id(report, narrator_index + 1)
+            source = get_narrator_node_id(report, narrator_index, collector_narrators)
+            target = get_narrator_node_id(report, narrator_index + 1, collector_narrators)
             add_edge(source, target)
 
     queue = sorted(
@@ -350,14 +378,21 @@ def build_node_specs(bundle: dict[str, object]) -> tuple[list[NodeSpec], list[tu
     if not isinstance(raw_reports, list):
         raise ValueError('Bundle field "reports" must be an array.')
 
-    reports = [report for report in raw_reports if isinstance(report, dict)]
+    reports = [
+        {**report, "id": str(report.get("id", f"report-{index + 1}"))}
+        for index, report in enumerate(raw_reports) if isinstance(report, dict)
+    ]
+    collector_overrides = bundle.get("collectorOverrides", {})
+    if not isinstance(collector_overrides, dict):
+        raise ValueError('Bundle field "collectorOverrides" must be an object.')
+    collector_narrators = get_collector_narrators(reports, collector_overrides)
     font_sizes = parse_font_sizes(bundle)
     legend_by_id = parse_highlight_legend(bundle)
     saved_positions = parse_node_positions(bundle)
     saved_widths = parse_node_widths(bundle)
 
     auto_positions: dict[str, tuple[float, float]] = {}
-    rows = topological_rows(reports)
+    rows = topological_rows(reports, collector_narrators)
     for row_index, row_node_ids in enumerate(rows):
         x_cursor = AUTO_START_X
         y_value = AUTO_START_Y + row_index * (DEFAULT_NARRATOR_HEIGHT + AUTO_VERTICAL_GAP)
@@ -374,13 +409,16 @@ def build_node_specs(bundle: dict[str, object]) -> tuple[list[NodeSpec], list[tu
     node_specs: dict[str, NodeSpec] = {}
     edges: list[tuple[str, str]] = []
 
-    def position_for(node_id: str) -> tuple[float, float]:
-        return saved_positions.get(node_id) or auto_positions.get(node_id) or (AUTO_START_X, AUTO_START_Y)
+    def position_for(node_id: str, label: str | None = None) -> tuple[float, float]:
+        legacy_position = None
+        if node_id.startswith((COLLECTOR_PREFIX, INTERMEDIATE_COLLECTOR_PREFIX)) and label is not None:
+            legacy_position = saved_positions.get(get_shared_narrator_node_id(label))
+        return saved_positions.get(node_id) or legacy_position or auto_positions.get(node_id) or (AUTO_START_X, AUTO_START_Y)
 
     def add_narrator_node(node_id: str, label: str, is_collector: bool) -> None:
         if node_id in node_specs:
             return
-        x_value, y_value = position_for(node_id)
+        x_value, y_value = position_for(node_id, label)
         node_specs[node_id] = NodeSpec(
             node_id=node_id,
             label=label,
@@ -400,16 +438,12 @@ def build_node_specs(bundle: dict[str, object]) -> tuple[list[NodeSpec], list[tu
 
         for narrator_index, narrator_name in enumerate(isnad):
             label = str(narrator_name)
-            node_id = (
-                get_collector_node_id(report_id)
-                if narrator_index == len(isnad) - 1
-                else get_shared_narrator_node_id(label)
-            )
-            add_narrator_node(node_id, label, narrator_index == len(isnad) - 1)
+            node_id = get_narrator_node_id(report, narrator_index, collector_narrators)
+            add_narrator_node(node_id, label, label in collector_narrators)
 
         for narrator_index in range(len(isnad) - 1):
-            source = get_narrator_node_id(report, narrator_index)
-            target = get_narrator_node_id(report, narrator_index + 1)
+            source = get_narrator_node_id(report, narrator_index, collector_narrators)
+            target = get_narrator_node_id(report, narrator_index + 1, collector_narrators)
             edge = (source, target)
             if edge not in edges:
                 edges.append(edge)
@@ -420,15 +454,16 @@ def build_node_specs(bundle: dict[str, object]) -> tuple[list[NodeSpec], list[tu
             matn_highlights = []
 
         matn_node_id = get_matn_node_id(report_id)
-        if matn_node_id in saved_positions:
-            matn_x, matn_y = saved_positions[matn_node_id]
+        matn_position = saved_positions.get(matn_node_id) or saved_positions.get(f"r:{report_id}")
+        if matn_position is not None:
+            matn_x, matn_y = matn_position
         else:
-            anchor_id = get_collector_node_id(report_id)
-            anchor_x, _ = position_for(anchor_id)
-            matn_x = anchor_x
+            anchor_id = get_narrator_node_id(report, len(isnad) - 1, collector_narrators) if isnad else None
+            anchor = node_specs.get(anchor_id)
+            matn_x = anchor.x if anchor is not None else AUTO_START_X
             matn_y = narrator_bottom + AUTO_MATN_GAP
 
-        matn_width = saved_widths.get(matn_node_id, DEFAULT_MATN_WIDTH)
+        matn_width = saved_widths.get(matn_node_id, saved_widths.get(f"r:{report_id}", DEFAULT_MATN_WIDTH))
         matn_height = estimate_matn_height(matn, matn_width, font_sizes.matn)
         node_specs[matn_node_id] = NodeSpec(
             node_id=matn_node_id,

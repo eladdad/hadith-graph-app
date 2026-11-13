@@ -7,6 +7,7 @@
 } from './graph';
 import { sanitizeHighlightLegend, sanitizeMatnHighlights } from './matnHighlights';
 import { DEFAULT_VERTICAL_SPACING, normalizeVerticalSpacing } from './layoutSettings';
+import { getCollectorNarrators } from './collectors';
 import type {
   HadithBundle,
   HadithFontSizes,
@@ -63,6 +64,23 @@ function sanitizeNarrators(values: string[]): string[] {
 
 function isObjectLike(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function parseCollectorOverrides(raw: unknown): { overrides?: Record<string, boolean>; error?: string } {
+  if (typeof raw === 'undefined') return {};
+  if (!isObjectLike(raw) || Array.isArray(raw)) {
+    return { error: 'Bundle field "collectorOverrides" must be an object.' };
+  }
+
+  const entries: Array<[string, boolean]> = [];
+  for (const [rawName, isCollector] of Object.entries(raw)) {
+    const name = sanitizeText(rawName);
+    if (!name || typeof isCollector !== 'boolean') {
+      return { error: 'Collector overrides must map non-empty narrator names to booleans.' };
+    }
+    entries.push([name, isCollector]);
+  }
+  return { overrides: Object.fromEntries(entries) };
 }
 
 function parseNodePositions(raw: unknown, field = 'nodePositions'): { positions?: NodePositionMap; error?: string } {
@@ -182,21 +200,29 @@ function parseHighlightLegend(raw: unknown): { legend?: HighlightLegendItem[]; e
   };
 }
 
-export function getNodeIdsForReport(report: HadithReport, representation: GraphRepresentation = 'merged'): string[] {
+export function getNodeIdsForReport(
+  report: HadithReport,
+  representation: GraphRepresentation = 'merged',
+  collectorNarrators?: ReadonlySet<string>,
+): string[] {
   const ids = new Set<string>();
   ids.add(`${MATN_NODE_PREFIX}${report.id}`);
   for (let narratorIndex = 0; narratorIndex < report.isnad.length; narratorIndex += 1) {
-    ids.add(getNarratorNodeIdForReport(report, narratorIndex, representation));
+    ids.add(getNarratorNodeIdForReport(report, narratorIndex, representation, collectorNarrators));
   }
   return Array.from(ids);
 }
 
-export function getEdgeIdsForReport(report: HadithReport, representation: GraphRepresentation = 'merged'): string[] {
+export function getEdgeIdsForReport(
+  report: HadithReport,
+  representation: GraphRepresentation = 'merged',
+  collectorNarrators?: ReadonlySet<string>,
+): string[] {
   const edgeIds: string[] = [];
 
   for (let narratorIndex = 0; narratorIndex < report.isnad.length - 1; narratorIndex += 1) {
-    const source = getNarratorNodeIdForReport(report, narratorIndex, representation);
-    const target = getNarratorNodeIdForReport(report, narratorIndex + 1, representation);
+    const source = getNarratorNodeIdForReport(report, narratorIndex, representation, collectorNarrators);
+    const target = getNarratorNodeIdForReport(report, narratorIndex + 1, representation, collectorNarrators);
     edgeIds.push(`${source}->${target}`);
   }
 
@@ -239,8 +265,9 @@ function finalizeReportsUpdate(
 
   const validNodeIds = new Set<string>();
   const validTrieNodeIds = new Set<string>();
+  const collectorNarrators = getCollectorNarrators(nextReports, bundle.collectorOverrides);
   nextReports.forEach((report) => {
-    getNodeIdsForReport(report).forEach((nodeId) => validNodeIds.add(nodeId));
+    getNodeIdsForReport(report, 'merged', collectorNarrators).forEach((nodeId) => validNodeIds.add(nodeId));
     getNodeIdsForReport(report, 'trie').forEach((nodeId) => validTrieNodeIds.add(nodeId));
   });
 
@@ -256,6 +283,38 @@ function finalizeReportsUpdate(
       nodeWidths: filterMapKeys(bundle.nodeWidths, validNodeIds) as NodeWidthMap,
     },
   };
+}
+
+export function setNarratorCollectorInBundle(
+  bundle: HadithBundle,
+  nameInput: string,
+  isCollector: boolean,
+): { bundle?: HadithBundle; error?: string } {
+  const name = sanitizeText(nameInput);
+  if (!bundle.reports.some((report) => report.isnad.includes(name))) {
+    return { error: 'Narrator not found.' };
+  }
+
+  const previousCollectors = getCollectorNarrators(bundle.reports, bundle.collectorOverrides);
+  const collectorOverrides = { ...bundle.collectorOverrides, [name]: isCollector };
+  const result = finalizeReportsUpdate({ ...bundle, collectorOverrides }, bundle.reports);
+  if (!result.bundle || previousCollectors.has(name) === isCollector) return result;
+
+  // A changed narrator gets fresh positions so splitting a shared node cannot
+  // stack every new occurrence at the old shared coordinate. Keep all other
+  // saved nodes, including report matns and the independent Trie layout.
+  const nextCollectors = getCollectorNarrators(bundle.reports, collectorOverrides);
+  const changedNodeIds = new Set([`n:${name}`]);
+  bundle.reports.forEach((report) => {
+    report.isnad.forEach((narrator, index) => {
+      if (narrator !== name) return;
+      changedNodeIds.add(getNarratorNodeIdForReport(report, index, 'merged', previousCollectors));
+      changedNodeIds.add(getNarratorNodeIdForReport(report, index, 'merged', nextCollectors));
+    });
+  });
+  result.bundle.nodePositions = Object.fromEntries(Object.entries(result.bundle.nodePositions)
+    .filter(([nodeId]) => !changedNodeIds.has(nodeId)));
+  return result;
 }
 
 function validateReportFields(
@@ -347,7 +406,7 @@ export function addReportToBundleFromFields(
 
   return {
     bundle: result.bundle,
-    addedNodeIds: getNodeIdsForReport(report),
+    addedNodeIds: getNodeIdsForReport(report, 'merged', getCollectorNarrators(nextReports, bundle.collectorOverrides)),
   };
 }
 
@@ -383,7 +442,7 @@ export function updateReportInBundle(
 
   return {
     bundle: result.bundle,
-    updatedNodeIds: getNodeIdsForReport(updatedReport),
+    updatedNodeIds: getNodeIdsForReport(updatedReport, 'merged', getCollectorNarrators(nextReports, bundle.collectorOverrides)),
   };
 }
 
@@ -500,6 +559,9 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
     return { error: 'Bundle field "reports" must be an array.' };
   }
 
+  const parsedCollectors = parseCollectorOverrides(parsed.collectorOverrides);
+  if (parsedCollectors.error) return { error: parsedCollectors.error };
+
   const parsedHighlightLegend = parseHighlightLegend(parsed.highlightLegend);
   if (!parsedHighlightLegend.legend) {
     return { error: parsedHighlightLegend.error ?? 'Invalid highlight legend.' };
@@ -597,6 +659,7 @@ export function parseBundleJson(text: string): { bundle?: HadithBundle; error?: 
       createdAt,
       updatedAt,
       reports,
+      ...(parsedCollectors.overrides !== undefined ? { collectorOverrides: parsedCollectors.overrides } : {}),
       highlightLegend: parsedHighlightLegend.legend,
       nodePositions: normalizeLegacyMatnNodeIds(parsedNodePositions.positions) as NodePositionMap,
       ...(parsedTriePositions?.positions

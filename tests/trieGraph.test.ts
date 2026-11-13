@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getEdgeIdsForReport, getNodeIdsForReport } from '../src/bundle';
+import { getCollectorNarrators } from '../src/collectors';
 import { buildRenderableGraph, getNarratorNodeIdForReport } from '../src/graph';
 import { getNarratorFocus } from '../src/narratorFocus';
 import type { GraphNode, HadithReport, RenderableGraph } from '../src/types';
@@ -149,15 +150,16 @@ describe('merged and prefix-trie graph representations', () => {
       makeReport('right', ['Root', 'Student', 'Right', 'Shared', 'Collector'], 'Right wording.'),
     ];
     const graph = graphFor(reports, representation);
+    const collectorNarrators = getCollectorNarrators(reports);
     for (const report of reports) {
-      const ids = getNodeIdsForReport(report, representation);
-      const pathIds = report.isnad.map((_, index) => getNarratorNodeIdForReport(report, index, representation));
+      const ids = getNodeIdsForReport(report, representation, collectorNarrators);
+      const pathIds = report.isnad.map((_, index) => getNarratorNodeIdForReport(report, index, representation, collectorNarrators));
       expect(new Set(ids)).toEqual(new Set([...pathIds, `m:${report.id}`]));
       for (const id of ids) expect(graph.nodes.some((candidate) => candidate.id === id)).toBe(true);
       const selectedMatns = graph.nodes.filter((candidate) => candidate.type === 'matn' && ids.includes(candidate.id));
       expect(selectedMatns.map((candidate) => candidate.id)).toEqual([`m:${report.id}`]);
       const actualEdges = graph.edges.filter((edge) => edge.reports?.some((reference) => reference.id === report.id));
-      expect(getEdgeIdsForReport(report, representation).sort()).toEqual(actualEdges.map((edge) => edge.id).sort());
+      expect(getEdgeIdsForReport(report, representation, collectorNarrators).sort()).toEqual(actualEdges.map((edge) => edge.id).sort());
     }
   });
 });

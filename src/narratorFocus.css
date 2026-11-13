@@ -68,6 +68,38 @@
   font-size: 0.75rem;
 }
 
+.narrator-collector-setting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  flex-basis: 100%;
+}
+
+.narrator-collector-setting label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.narrator-collector-setting input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.narrator-collector-setting p {
+  flex: 1 1 340px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
 
 .narrator-focus-section-heading h3 {
   font-size: 0.9rem;

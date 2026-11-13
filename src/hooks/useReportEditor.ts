@@ -16,6 +16,7 @@ import {
   getReportIdForMatnNode,
   updateReportInBundle,
 } from '../bundle';
+import { getCollectorNarrators } from '../collectors';
 import {
   adjustMatnHighlightsForTextChange,
   adjustTextRangeForChange,
@@ -154,6 +155,10 @@ export function useReportEditor({
   resetBoxSelection,
   setMessage,
 }: UseReportEditorParams): ReportEditorController {
+  const collectorNarrators = useMemo(
+    () => getCollectorNarrators(bundle.reports, bundle.collectorOverrides),
+    [bundle.reports, bundle.collectorOverrides],
+  );
   const [editorNarrators, setEditorNarrators] = useState<string[]>(() => emptyNarratorDraft());
   const [editorMatn, setEditorMatn] = useState('');
   const [editorHighlights, setEditorHighlights] = useState<MatnHighlight[]>([]);
@@ -295,13 +300,14 @@ export function useReportEditor({
       populateEditorFromReport(report, report.id);
     }
 
-    setSelectedNodeIds(getNodeIdsForReport(report, representation));
+    setSelectedNodeIds(getNodeIdsForReport(report, representation, collectorNarrators));
     resetBoxSelection();
     setMessage('Editing selected report. Save changes to update the graph.');
   }, [
     confirmDiscardEditorChanges,
     editingReportId,
     representation,
+    collectorNarrators,
     populateEditorFromReport,
     resetBoxSelection,
     setMessage,
@@ -326,7 +332,7 @@ export function useReportEditor({
       populateEditorFromReport(report, report.id);
     }
 
-    setSelectedNodeIds(getNodeIdsForReport(report, representation));
+    setSelectedNodeIds(getNodeIdsForReport(report, representation, collectorNarrators));
     resetBoxSelection();
     setMessage('Editing selected report. Save changes to update the graph.');
     onSelected?.();
@@ -336,6 +342,7 @@ export function useReportEditor({
     confirmDiscardEditorChanges,
     editingReportId,
     representation,
+    collectorNarrators,
     populateEditorFromReport,
     resetBoxSelection,
     setMessage,
@@ -348,12 +355,13 @@ export function useReportEditor({
     }
 
     populateEditorFromReport(report, null);
-    setSelectedNodeIds(getNodeIdsForReport(report, representation));
+    setSelectedNodeIds(getNodeIdsForReport(report, representation, collectorNarrators));
     resetBoxSelection();
     setMessage('Report copied into the add form. Adjust the chain or matn, then add it as a new report.');
   }, [
     confirmDiscardEditorChanges,
     representation,
+    collectorNarrators,
     populateEditorFromReport,
     resetBoxSelection,
     setMessage,
@@ -526,7 +534,7 @@ export function useReportEditor({
       const savedReport = result.bundle.reports.find((report) => report.id === editingReportId);
       if (savedReport) {
         populateEditorFromReport(savedReport, savedReport.id);
-        setSelectedNodeIds(getNodeIdsForReport(savedReport, representation));
+        setSelectedNodeIds(getNodeIdsForReport(savedReport, representation, getCollectorNarrators(result.bundle.reports, result.bundle.collectorOverrides)));
       }
 
       setMessage('Report updated and graph refreshed.');
@@ -544,7 +552,7 @@ export function useReportEditor({
 
     const addedReport = result.bundle.reports.at(-1);
     if (addedReport) {
-      const addedNodeIds = getNodeIdsForReport(addedReport, representation);
+      const addedNodeIds = getNodeIdsForReport(addedReport, representation, getCollectorNarrators(result.bundle.reports, result.bundle.collectorOverrides));
       setSelectedNodeIds(addedNodeIds);
       setMessage(`Report added and ${addedNodeIds.length} node(s) auto-selected.`);
       return;
@@ -558,6 +566,7 @@ export function useReportEditor({
     editorMatn,
     editorNarrators,
     representation,
+    collectorNarrators,
     populateEditorFromReport,
     resetEditor,
     setBundle,

@@ -43,6 +43,7 @@ export interface HadithBundle {
   createdAt: string;
   updatedAt: string;
   reports: HadithReport[];
+  collectorOverrides?: Record<string, boolean>;
   highlightLegend: HighlightLegendItem[];
   nodePositions: NodePositionMap;
   trieNodePositions?: NodePositionMap;
