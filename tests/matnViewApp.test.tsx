@@ -77,7 +77,9 @@ describe('matn reading view', () => {
     expect(within(card('second')).getByTitle('Justice')).toHaveTextContent('Justice');
     expect(within(card('plain')).getByText('No highlights')).toBeInTheDocument();
     expect(card('plain').querySelector('.matn-reading-text')).toHaveAttribute('dir', 'auto');
-    expect(within(matnView()).getByRole('list', { name: 'Matn highlight legend' })).toHaveTextContent('MercyJustice');
+    const elementFilters = within(matnView()).getByRole('list', { name: 'Matn highlight legend' });
+    expect(within(elementFilters).getByRole('button', { name: 'Filter by Mercy' })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(elementFilters).getByRole('button', { name: 'Filter by Justice' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByRole('region', { name: 'Transmission graph' })).not.toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: 'Focus narrator' })).not.toBeInTheDocument();
   });
@@ -119,6 +121,11 @@ describe('matn reading view', () => {
     expect(readingOrder()).toEqual(['first', 'second', 'third', 'plain']);
     await user.selectOptions(within(matnView()).getByRole('combobox', { name: 'Order by' }), 'similarity');
     expect(readingOrder()).toEqual(['first', 'third', 'second', 'plain']);
+    await user.click(within(matnView()).getByRole('button', { name: 'Filter by Mercy' }));
+    expect(readingOrder()).toEqual(['first', 'third']);
+    expect(within(card('first')).getByRole('button', { name: 'Edit report #1' })).toBeInTheDocument();
+    expect(within(card('third')).getByRole('button', { name: 'Edit report #3' })).toBeInTheDocument();
+    expect(within(matnView()).getByText('2 of 4 reports')).toBeInTheDocument();
 
     let exportedBlob: Blob | null = null;
     vi.spyOn(URL, 'createObjectURL').mockImplementation((value: Blob | MediaSource) => {
@@ -143,6 +150,28 @@ describe('matn reading view', () => {
     expect(scroll.scrollLeft).toBe(230);
     expect(scroll.scrollTop).toBe(170);
     expect(screen.queryByRole('region', { name: 'Matns and highlights' })).not.toBeInTheDocument();
+  });
+
+  it('clears the element filter when importing another bundle while keeping Matns selected', async () => {
+    const user = userEvent.setup();
+    const { container } = await renderBundle();
+    await user.click(screen.getByRole('button', { name: 'Matns', exact: true }));
+    await user.click(within(matnView()).getByRole('button', { name: 'Filter by Mercy' }));
+    expect(readingOrder()).toEqual(['first', 'third']);
+
+    const nextBundle = makeBundle([reports[1], reports[3]], {
+      title: 'Another bundle',
+      createdAt: '2026-02-01T00:00:00.000Z',
+      highlightLegend,
+    });
+    await importJson(container, bundleToJson(nextBundle), 'another.hadith-graph.json');
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Imported another.hadith-graph.json with 2 report(s).'));
+
+    expect(screen.getByRole('button', { name: 'Matns', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    expect(readingOrder()).toEqual(['second', 'plain']);
+    expect(within(matnView()).getByRole('button', { name: 'Filter by Mercy' })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(matnView()).getByRole('button', { name: 'Clear filters', exact: true })).toBeDisabled();
+    expect(within(matnView()).getByText('2 reports')).toBeInTheDocument();
   });
 
   it('opens the editor from report numbers and honors unsaved edits when selecting another report', async () => {

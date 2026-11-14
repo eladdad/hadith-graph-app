@@ -28,6 +28,8 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 
 Use the **Matns** button in the header for a text-only comparison view. By default, it places reports with shared highlight labels and similar proportions of highlighted text next to one another. Reports without highlights appear last. This compares the saved highlight annotations; it does not infer textual or semantic similarity. Choose **Bundle order** to restore the original reading order. Report numbers stay the same in either order, and selecting a report number opens the existing editor. Switching views preserves the graph layout.
 
+In Matns, select labels under **Filter by matn elements** to show reports containing those saved highlights. **Any selected element** matches at least one selected label; **All selected elements** requires every selected label. Label counts show how many reports in the full bundle contain each element. **Clear filters** restores all reports. Filtering preserves report numbers and the chosen order; it does not change the bundle or graph.
+
 The graph's **Matn order** menu offers **Default** and **By elements/highlights** in merged, trie, and complete-report focus views. Highlight ordering uses the same similarity measure as the Matns view and can increase edge crossings. Switching back to Default restores the original automatic or saved layout. Manual adjustments in the highlight-ordered view last for the session and stay separate from the default positions exported in the bundle. Saving report or highlight changes reapplies the similarity order.
 
 - Multi-select with box drag on empty canvas.
