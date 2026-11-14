@@ -3,6 +3,7 @@ import { alignVerticalChains } from './verticalAlignment';
 interface LayoutNode {
   id: string;
   width: number;
+  visibleWidth?: number;
   height: number;
 }
 
@@ -74,12 +75,15 @@ export function separateRowNodes(nodes: { width: number }[], targets: number[], 
  * retain packed positions; descendants prefer the center of their parents.
  * Negative coordinates are allowed here so the caller can shift the entire
  * graph into bounds without breaking vertical alignment.
+ * Ordering trials can skip final centering; only the chosen order needs that
+ * refinement after all node and text-card spacing has been reserved.
  */
 export function positionLayers(
   layers: LayoutLayer[],
   edges: LayoutEdge[],
   gap: number,
   footprints: LayoutFootprint[] = [],
+  refineCentering = true,
 ): Map<string, Point> {
   const parents = new Map<string, Set<string>>();
   for (const { source, target } of edges) {
@@ -108,5 +112,5 @@ export function positionLayers(
     const xs = separateRowNodes(layer.nodes, targets, gap);
     layer.nodes.forEach((node, index) => centers.set(node.id, { x: xs[index], y: layer.y }));
   }
-  return alignVerticalChains(layers, edges, centers, gap, footprints);
+  return alignVerticalChains(layers, edges, centers, gap, footprints, refineCentering);
 }

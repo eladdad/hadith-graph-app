@@ -747,6 +747,7 @@ function buildAutoLayout(
     nodes: (layoutRows.get(rowIndex) ?? []).map((id) => ({
       id,
       width: nodeMeta.get(id)?.layoutWidth ?? nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
+      visibleWidth: nodeMeta.get(id)?.width ?? NARRATOR_NODE_WIDTH,
       height: nodeMeta.get(id)?.height ?? NARRATOR_MIN_HEIGHT,
     })),
   }));

@@ -1,4 +1,5 @@
 import type { LayoutEdge, LayoutFootprint, LayoutLayer, Point } from './layerPlacement';
+import { centerStudents } from './studentCentering';
 
 interface Separation {
   left: string;
@@ -44,6 +45,7 @@ export function alignVerticalChains(
   preferred: Map<string, Point>,
   gap: number,
   footprints: LayoutFootprint[] = [],
+  refineCentering = true,
 ): Map<string, Point> {
   const rank = new Map(layers.flatMap((layer, index) => layer.nodes.map((node) => [node.id, index] as const)));
   const parents = new Map<string, Set<string>>();
@@ -84,7 +86,7 @@ export function alignVerticalChains(
     || a.source.localeCompare(b.source) || a.target.localeCompare(b.target)
   ));
 
-  if (footprints.length === 0
+  if (!refineCentering && footprints.length === 0
     && candidates.every(({ source, target }) => preferred.get(source)!.x === preferred.get(target)!.x)) {
     return preferred;
   }
@@ -208,8 +210,9 @@ export function alignVerticalChains(
 
   // Both directional compactions satisfy every spacing constraint, so their
   // midpoint does too. Balancing them avoids moving all crowded branches right.
-  return new Map([...preferred].map(([id, point]) => {
-    const group = root(id);
-    return [id, { x: (leftward.get(group)! + rightward.get(group)!) / 2, y: point.y }];
-  }));
+  const balanced = new Map([...targets.keys()].map((group) => [
+    group, (leftward.get(group)! + rightward.get(group)!) / 2,
+  ]));
+  const centered = refineCentering ? centerStudents(layers, children, root, balanced, outgoing) : balanced;
+  return new Map([...preferred].map(([id, point]) => [id, { x: centered.get(root(id))!, y: point.y }]));
 }

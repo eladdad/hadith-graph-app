@@ -46,7 +46,9 @@ function intersects(a: Segment, b: Segment): boolean {
 }
 
 function score(layers: LayoutLayer[], edges: LayoutEdge[], gap: number, footprints: LayoutFootprint[]): Score {
-  const centers = positionLayers(layers, edges, gap, footprints);
+  // Keep trial placements cheap. The chosen order receives final student
+  // centering once, with its node and matn separation constraints intact.
+  const centers = positionLayers(layers, edges, gap, footprints, false);
   const heights = new Map(layers.flatMap((layer) => layer.nodes.map((node) => [node.id, node.height] as const)));
   const segments: Segment[] = [];
   let horizontalSpan = 0;
@@ -172,10 +174,10 @@ export function orderLayers(
     // placement through this exploratory sweep; full placements still score
     // every candidate. Recompacting every rank makes large fixed-sink graphs
     // unnecessarily expensive, especially when private chains conflict.
-    const sweepCenters = fixedRows.size > 0 ? positionLayers(layers, edges, gap, footprints) : undefined;
+    const sweepCenters = fixedRows.size > 0 ? positionLayers(layers, edges, gap, footprints, false) : undefined;
     for (const index of indices) {
       if (fixedRows.has(index)) continue;
-      const centers = sweepCenters ?? positionLayers(layers, edges, gap, footprints);
+      const centers = sweepCenters ?? positionLayers(layers, edges, gap, footprints, false);
       const weighted = layers[index].nodes.map((node, previousIndex) => {
         const xs = (neighbors.get(node.id) ?? []).flatMap((id) => {
           const center = centers.get(id);
