@@ -849,6 +849,7 @@ function App() {
 
         {workspaceView === 'matns' ? (
           <MatnView
+            key={bundle.createdAt}
             reports={bundle.reports}
             legend={bundle.highlightLegend}
             fontSize={bundle.fontSizes.matn}
