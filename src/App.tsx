@@ -881,7 +881,7 @@ function App() {
             {!isLocalFocus ? (
               <label className="graph-matn-sort" title={matnSort === 'highlights'
                 ? 'Groups similar highlights from left to right and adjusts narrator branches to follow them.'
-                : 'Automatic layout reduces edge crossings. Saved manual positions are preserved.'}>
+                : 'Automatic layout places narrators above their student branches. Saved manual positions are preserved.'}>
                 <span>Matn order</span>
                 <select
                   value={matnSort}
