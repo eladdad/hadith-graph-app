@@ -17,8 +17,9 @@ interface MatnViewProps {
 export function MatnView({ reports, legend, fontSize, selectedReportId, isSidebarOpen, onToggleSidebar, onSelectReport }: MatnViewProps) {
   const [order, setOrder] = useState('similarity');
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
-  const [matchElements, setMatchElements] = useState('any');
+  const [isElementsOpen, setIsElementsOpen] = useState(true);
   const filterDescriptionId = useId();
+  const elementsPanelId = `${filterDescriptionId}-panel`;
   // Removing a legend entry must also remove its filter. Keep unused entries
   // selectable so saved edits can correctly leave a filter with no matches.
   const selectedLegendIds = selectedElements.filter((id) => legend.some((entry) => entry.id === id));
@@ -35,9 +36,7 @@ export function MatnView({ reports, legend, fontSize, selectedReportId, isSideba
   const visibleReports = orderedReports.filter((report) => {
     if (selectedLegendIds.length === 0) return true;
     const reportElements = new Set(report.matnHighlights.map((highlight) => highlight.legendId));
-    return matchElements === 'all'
-      ? selectedLegendIds.every((id) => reportElements.has(id))
-      : selectedLegendIds.some((id) => reportElements.has(id));
+    return selectedLegendIds.every((id) => reportElements.has(id));
   });
   const reportNumbers = useMemo(() => new Map(reports.map((report, index) => [report.id, index + 1])), [reports]);
   const elementCounts = useMemo(() => {
@@ -67,6 +66,19 @@ export function MatnView({ reports, legend, fontSize, selectedReportId, isSideba
                 <option value="bundle">Bundle order</option>
               </select>
             </label>
+            {legend.length > 0 ? (
+              <>
+                <button
+                  type="button"
+                  aria-expanded={isElementsOpen}
+                  aria-controls={elementsPanelId}
+                  onClick={() => setIsElementsOpen((current) => !current)}
+                >{isElementsOpen ? 'Hide elements' : 'Show elements'}</button>
+                {!isElementsOpen && hasFilters ? (
+                  <button type="button" onClick={() => setSelectedElements([])}>Clear filters</button>
+                ) : null}
+              </>
+            ) : null}
             <button type="button" onClick={onToggleSidebar}>{isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}</button>
           </div>
         </div>
@@ -75,17 +87,10 @@ export function MatnView({ reports, legend, fontSize, selectedReportId, isSideba
             ? 'Matns with shared highlight labels and similar coverage are placed next to each other. Unhighlighted reports appear last.'
             : 'Reports appear in their original bundle order.'}</p>
           {legend.length > 0 ? (
-            <fieldset className="matn-element-filters">
+            <fieldset id={elementsPanelId} className="matn-element-filters" hidden={!isElementsOpen}>
               <legend>Filter by matn elements</legend>
-              <p>Select highlight labels to show reports containing those elements.</p>
+              <p>Show reports containing every selected element.</p>
               <div className="matn-filter-actions">
-                <label className="matn-order-control">
-                  <span>Match elements</span>
-                  <select value={matchElements} onChange={(event) => setMatchElements(event.target.value)}>
-                    <option value="any">Any selected element</option>
-                    <option value="all">All selected elements</option>
-                  </select>
-                </label>
                 <button type="button" disabled={!hasFilters} onClick={() => setSelectedElements([])}>Clear filters</button>
               </div>
               <ul className="matn-view-legend" aria-label="Matn highlight legend">

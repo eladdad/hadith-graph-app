@@ -61,7 +61,7 @@ function filter(label: string): HTMLElement {
 }
 
 describe('matn element filters', () => {
-  it('matches any selected element, keeps original report numbers, and clears back to every report', async () => {
+  it('requires every selected element, keeps original report numbers, and clears back to every report', async () => {
     const user = userEvent.setup();
     const onSelectReport = vi.fn();
     render(<MatnView {...props({ onSelectReport })} />);
@@ -69,6 +69,7 @@ describe('matn element filters', () => {
 
     expect(originalOrder).toHaveLength(5);
     expect(screen.getByRole('button', { name: 'Clear filters', exact: true })).toBeDisabled();
+    expect(screen.queryByRole('combobox', { name: 'Match elements' })).not.toBeInTheDocument();
     await user.click(filter('Mercy'));
     expect(filter('Mercy')).toHaveAttribute('aria-pressed', 'true');
     expect(readingIds()).toEqual(originalOrder.filter((id) => ['mercy-first', 'mercy-second', 'both'].includes(id)));
@@ -78,8 +79,8 @@ describe('matn element filters', () => {
     expect(onSelectReport).toHaveBeenCalledWith('both');
 
     await user.click(filter('Justice'));
-    expect(readingIds()).toEqual(originalOrder.filter((id) => id !== 'plain'));
-    expect(screen.getByText('4 of 5 reports')).toBeInTheDocument();
+    expect(readingIds()).toEqual(['both']);
+    expect(screen.getByText('1 of 5 reports')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Clear filters', exact: true }));
     expect(readingIds()).toEqual(originalOrder);
@@ -88,19 +89,58 @@ describe('matn element filters', () => {
     expect(screen.getByText('5 reports')).toBeInTheDocument();
   });
 
-  it('requires every selected element in all mode and restores reports as elements are deselected', async () => {
+  it('shows no results for disjoint elements and restores reports as elements are deselected', async () => {
+    const user = userEvent.setup();
+    render(<MatnView {...props({ reports: reports.filter((report) => report.id !== 'both') })} />);
+    await user.click(filter('Mercy'));
+    await user.click(filter('Justice'));
+
+    expect(readingIds()).toEqual([]);
+    expect(screen.getByText('0 of 4 reports')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'No matns match these elements' })).toBeInTheDocument();
+    await user.click(filter('Justice'));
+    expect(new Set(readingIds())).toEqual(new Set(['mercy-first', 'mercy-second']));
+    expect(screen.queryByRole('heading', { name: 'No matns match these elements' })).not.toBeInTheDocument();
+    await user.click(filter('Mercy'));
+    expect(readingIds()).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Clear filters', exact: true })).toBeDisabled();
+  });
+
+  it('hides the elements panel without clearing filters and supports reopening or clearing while collapsed', async () => {
     const user = userEvent.setup();
     render(<MatnView {...props()} />);
+    const elementsPanel = screen.getByRole('group', { name: 'Filter by matn elements' });
+    const hideElements = screen.getByRole('button', { name: 'Hide elements', exact: true });
+    expect(elementsPanel).toBeVisible();
+    expect(elementsPanel.id).not.toBe('');
+    expect(hideElements).toHaveAttribute('aria-expanded', 'true');
+    expect(hideElements).toHaveAttribute('aria-controls', elementsPanel.id);
     await user.click(filter('Mercy'));
-    await user.click(filter('Justice'));
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Match elements' }), 'all');
+    const filteredOrder = readingIds();
 
-    expect(readingIds()).toEqual(['both']);
-    expect(screen.getByText('1 of 5 reports')).toBeInTheDocument();
-    await user.click(filter('Justice'));
-    expect(new Set(readingIds())).toEqual(new Set(['mercy-first', 'mercy-second', 'both']));
-    await user.click(filter('Mercy'));
+    await user.click(hideElements);
+    const showElements = screen.getByRole('button', { name: 'Show elements', exact: true });
+    expect(showElements).toHaveAttribute('aria-expanded', 'false');
+    expect(showElements).toHaveAttribute('aria-controls', elementsPanel.id);
+    expect(elementsPanel).not.toBeVisible();
+    expect(screen.queryByRole('group', { name: 'Filter by matn elements' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Filter by Mercy' })).not.toBeInTheDocument();
+    expect(readingIds()).toEqual(filteredOrder);
+    expect(screen.getByText('3 of 5 reports')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Clear filters', exact: true })).toBeEnabled();
+
+    await user.click(showElements);
+    expect(elementsPanel).toBeVisible();
+    expect(filter('Mercy')).toHaveAttribute('aria-pressed', 'true');
+    expect(readingIds()).toEqual(filteredOrder);
+    await user.click(screen.getByRole('button', { name: 'Hide elements', exact: true }));
+    await user.click(screen.getByRole('button', { name: 'Clear filters', exact: true }));
     expect(readingIds()).toHaveLength(5);
+    expect(screen.getByText('5 reports')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Show elements', exact: true })).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(screen.getByRole('button', { name: 'Show elements', exact: true }));
+    expect(filter('Mercy')).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: 'Clear filters', exact: true })).toBeDisabled();
   });
 
