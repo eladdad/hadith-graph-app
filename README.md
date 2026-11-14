@@ -16,7 +16,7 @@ The app lets you model isnad relationships as a directed acyclic graph, highligh
 - Resize matn nodes horizontally and persist custom widths in the bundle.
 - Highlight normalized matn text with a shared legend of reusable labels and colors.
 - Switch to **Matns** to read full matn texts, their isnads, and highlights together, ordered by highlight similarity or original bundle order.
-- Choose **Matn order** in the graph: **Default** uses the custom layout to reduce crossings, while **By elements/highlights** groups similar annotations from left to right.
+- Choose **Matn order** in the graph: **Default** groups cards by their transmission branches, while **By elements/highlights** groups similar annotations from left to right.
 - Remove legend entries globally and automatically clear matching highlights from reports.
 - Show full wrapped matn text when zoomed in and compact highlight markers when zoomed far out. Once text collapses, the markers keep their screen size as you zoom out further.
 - Select a report from the graph or the right sidebar and keep its graph nodes, list card, and edges highlighted together.
@@ -135,12 +135,18 @@ The converter reads the same bundle schema and carries over saved node positions
 
 ### Automatic layout
 
-The `experiment/restore-custom-layout` branch restores the custom layered layout
-from `fece239`, the last version before the Graphviz experiment. It orders narrator
-layers to reduce crossings, aligns private transmission chains, and reserves
-space for matn cards beneath their collectors. Cards share a top edge where space
-permits and stack when a shared or pinned collector leaves insufficient room.
-The vertical spacing control adjusts the gap between narrator layers.
+The automatic layout works from the bottom upward. It reserves collector and
+matn columns first, then positions narrators above their students, choosing a
+new horizontal row order from those descendant positions. Private transmission
+chains stay aligned, and node and card widths determine the required spacing.
+Cards share a top edge where space permits and stack when a shared or pinned
+collector leaves insufficient room. The vertical spacing control adjusts the
+gap between narrator layers.
+
+All recorded transmission edges remain visible. When a direct connection also
+has a longer route through other narrators, that direct edge is treated as a
+secondary connection for placement. Shared students can still require a
+compromise between centering and keeping neighboring narrators separated.
 
 By elements/highlights keeps matn cards in the same similarity order as the Matns
 reading view. Their measured sizes and collector connections participate in the
@@ -148,7 +154,8 @@ layout, so narrator branches follow the ordered card row and private chains can
 stay aligned with their cards.
 
 Merged and Trie graphs, including Complete reports focus views, use this layout.
-Sources & students keeps its compact local layout. Saved node positions still
+Sources & students keeps its compact local layout. Load Example Graph uses
+automatic placement. Saved node positions in imported graphs still
 take precedence; Auto-arrange replaces them in the current view, and Restore
 saved layout brings the previous arrangement back. The layout runs locally in
 the browser without an external engine or an initialization step.

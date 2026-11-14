@@ -71,6 +71,26 @@ function expectContentPreserved(actual: HadithBundle, expected: HadithBundle): v
 }
 
 describe('automatic layout controls', () => {
+  it('opens the bundled example with automatic centering instead of its saved diagram positions', async () => {
+    const user = userEvent.setup();
+    const blobs = captureExports();
+    const { container } = render(<App />);
+    await user.click(screen.getByRole('button', { name: /Options/ }));
+    await user.click(screen.getByRole('button', { name: 'Load Example Graph' }));
+
+    const parentId = 'n:عبد الرحمن بن جوشن';
+    const studentIds = ['n:عيينة بن عبد الرحمن الغطفاني', 'n:علي بن زيد القرشي'];
+    await waitFor(() => expect(container.querySelector(`[data-node-id="${parentId}"]`)).not.toBeNull());
+    expect(screen.getByText('Automatic layout')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Auto-arrange' })).toBeDisabled();
+    expect(nodeX(container, parentId)).toBeCloseTo(
+      (nodeX(container, studentIds[0]) + nodeX(container, studentIds[1])) / 2, 5,
+    );
+    const exported = await exportBundle(user, blobs);
+    expect(exported.reports).toHaveLength(24);
+    expect(exported.nodePositions).toEqual({});
+  });
+
   it('preserves imported positions until requested, arranges branches, and restores the exact saved layout', async () => {
     const user = userEvent.setup();
     const bundle = pinnedBundle();
