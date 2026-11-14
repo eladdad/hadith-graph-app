@@ -728,7 +728,7 @@ function App() {
     }
 
     loadBundleIntoApp(
-      parsed.bundle,
+      { ...parsed.bundle, nodePositions: {}, trieNodePositions: {} },
       `Loaded example graph: ${parsed.bundle.title} (${parsed.bundle.reports.length} report(s)).`,
     );
   }, [loadBundleIntoApp, reportEditor]);
