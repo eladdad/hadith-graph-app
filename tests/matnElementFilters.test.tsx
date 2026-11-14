@@ -61,7 +61,7 @@ function filter(label: string): HTMLElement {
 }
 
 describe('matn element filters', () => {
-  it('requires every selected element, keeps original report numbers, and clears back to every report', async () => {
+  it('switches between all and any matching, keeps original report numbers, and clears back to every report', async () => {
     const user = userEvent.setup();
     const onSelectReport = vi.fn();
     render(<MatnView {...props({ onSelectReport })} />);
@@ -69,7 +69,8 @@ describe('matn element filters', () => {
 
     expect(originalOrder).toHaveLength(5);
     expect(screen.getByRole('button', { name: 'Clear filters', exact: true })).toBeDisabled();
-    expect(screen.queryByRole('combobox', { name: 'Match elements' })).not.toBeInTheDocument();
+    const matchElements = screen.getByRole('combobox', { name: 'Match elements' });
+    expect(matchElements).toHaveValue('all');
     await user.click(filter('Mercy'));
     expect(filter('Mercy')).toHaveAttribute('aria-pressed', 'true');
     expect(readingIds()).toEqual(originalOrder.filter((id) => ['mercy-first', 'mercy-second', 'both'].includes(id)));
@@ -81,6 +82,12 @@ describe('matn element filters', () => {
     await user.click(filter('Justice'));
     expect(readingIds()).toEqual(['both']);
     expect(screen.getByText('1 of 5 reports')).toBeInTheDocument();
+
+    await user.selectOptions(matchElements, 'any');
+    expect(readingIds()).toEqual(originalOrder.filter((id) => id !== 'plain'));
+    expect(screen.getByText('4 of 5 reports')).toBeInTheDocument();
+    await user.selectOptions(matchElements, 'all');
+    expect(readingIds()).toEqual(['both']);
 
     await user.click(screen.getByRole('button', { name: 'Clear filters', exact: true }));
     expect(readingIds()).toEqual(originalOrder);
@@ -116,7 +123,10 @@ describe('matn element filters', () => {
     expect(hideElements).toHaveAttribute('aria-expanded', 'true');
     expect(hideElements).toHaveAttribute('aria-controls', elementsPanel.id);
     await user.click(filter('Mercy'));
+    await user.click(filter('Justice'));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Match elements' }), 'any');
     const filteredOrder = readingIds();
+    expect(filteredOrder).toHaveLength(4);
 
     await user.click(hideElements);
     const showElements = screen.getByRole('button', { name: 'Show elements', exact: true });
@@ -125,13 +135,16 @@ describe('matn element filters', () => {
     expect(elementsPanel).not.toBeVisible();
     expect(screen.queryByRole('group', { name: 'Filter by matn elements' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Filter by Mercy' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: 'Match elements' })).not.toBeInTheDocument();
     expect(readingIds()).toEqual(filteredOrder);
-    expect(screen.getByText('3 of 5 reports')).toBeVisible();
+    expect(screen.getByText('4 of 5 reports')).toBeVisible();
     expect(screen.getByRole('button', { name: 'Clear filters', exact: true })).toBeEnabled();
 
     await user.click(showElements);
     expect(elementsPanel).toBeVisible();
     expect(filter('Mercy')).toHaveAttribute('aria-pressed', 'true');
+    expect(filter('Justice')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('combobox', { name: 'Match elements' })).toHaveValue('any');
     expect(readingIds()).toEqual(filteredOrder);
     await user.click(screen.getByRole('button', { name: 'Hide elements', exact: true }));
     await user.click(screen.getByRole('button', { name: 'Clear filters', exact: true }));
@@ -141,6 +154,8 @@ describe('matn element filters', () => {
 
     await user.click(screen.getByRole('button', { name: 'Show elements', exact: true }));
     expect(filter('Mercy')).toHaveAttribute('aria-pressed', 'false');
+    expect(filter('Justice')).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('combobox', { name: 'Match elements' })).toHaveValue('any');
     expect(screen.getByRole('button', { name: 'Clear filters', exact: true })).toBeDisabled();
   });
 

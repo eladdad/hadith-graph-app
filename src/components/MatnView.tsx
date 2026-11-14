@@ -17,6 +17,7 @@ interface MatnViewProps {
 export function MatnView({ reports, legend, fontSize, selectedReportId, isSidebarOpen, onToggleSidebar, onSelectReport }: MatnViewProps) {
   const [order, setOrder] = useState('similarity');
   const [selectedElements, setSelectedElements] = useState<string[]>([]);
+  const [matchElements, setMatchElements] = useState('all');
   const [isElementsOpen, setIsElementsOpen] = useState(true);
   const filterDescriptionId = useId();
   const elementsPanelId = `${filterDescriptionId}-panel`;
@@ -36,7 +37,9 @@ export function MatnView({ reports, legend, fontSize, selectedReportId, isSideba
   const visibleReports = orderedReports.filter((report) => {
     if (selectedLegendIds.length === 0) return true;
     const reportElements = new Set(report.matnHighlights.map((highlight) => highlight.legendId));
-    return selectedLegendIds.every((id) => reportElements.has(id));
+    return matchElements === 'all'
+      ? selectedLegendIds.every((id) => reportElements.has(id))
+      : selectedLegendIds.some((id) => reportElements.has(id));
   });
   const reportNumbers = useMemo(() => new Map(reports.map((report, index) => [report.id, index + 1])), [reports]);
   const elementCounts = useMemo(() => {
@@ -89,8 +92,17 @@ export function MatnView({ reports, legend, fontSize, selectedReportId, isSideba
           {legend.length > 0 ? (
             <fieldset id={elementsPanelId} className="matn-element-filters" hidden={!isElementsOpen}>
               <legend>Filter by matn elements</legend>
-              <p>Show reports containing every selected element.</p>
+              <p>{matchElements === 'all'
+                ? 'Show reports containing every selected element.'
+                : 'Show reports containing at least one selected element.'}</p>
               <div className="matn-filter-actions">
+                <label className="matn-order-control">
+                  <span>Match elements</span>
+                  <select value={matchElements} onChange={(event) => setMatchElements(event.target.value)}>
+                    <option value="all">All selected elements</option>
+                    <option value="any">Any selected element</option>
+                  </select>
+                </label>
                 <button type="button" disabled={!hasFilters} onClick={() => setSelectedElements([])}>Clear filters</button>
               </div>
               <ul className="matn-view-legend" aria-label="Matn highlight legend">
